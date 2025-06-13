@@ -1,0 +1,82 @@
+// getProducts.js
+import { ShopifyProductsData } from "@/types/shopify";
+import { client } from "./client";
+
+const productsQuery = `
+{
+  products(first: 10) {
+    edges {
+      node {
+    id
+    title
+    featuredImage {
+      id
+      url
+    }
+    onlineStoreUrl
+		variants(first: 1){
+      edges{
+        node{
+        id
+          price{
+            amount
+          }
+        }
+      }
+    }
+  }
+    }
+  }
+}
+`;
+
+export const getProducts = async () => {
+    try {
+        const { data, errors } = await client.request(productsQuery);
+
+        if (errors) {
+            throw errors;
+        }
+
+        return (data as ShopifyProductsData).products.edges;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+};
+
+const productQuery = `
+  query ProductQuery($handle: String) {
+  product(handle: $handle) {
+    id
+    title
+    featuredImage {
+      id
+      url
+    }
+  }
+}
+`;
+export const getProduct = async () => {
+    try {
+        const { data, errors, extensions } = await client.request(
+            productQuery,
+            {
+                variables: {
+                    handle: "tide-pods-9-pk-copy",
+                },
+            }
+        );
+
+        if (errors) {
+            throw errors;
+        }
+
+        console.log(data);
+
+        return data;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+};
