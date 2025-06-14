@@ -1,4 +1,4 @@
-import { get, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
     Card,
     CardContent,
@@ -7,27 +7,22 @@ import {
     CardTitle,
 } from "../ui/card";
 
-import { useDropdownStore } from "@/lib/store/dropdown";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
-import CountryDropdown from "../dropdown/countries";
-import StateDropdown from "../dropdown/states";
-import { Button } from "../ui/button";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "../ui/form";
-import { Input } from "../ui/input";
-import { cn } from "@/lib/utils";
+import { stripe } from "@/api/stripe";
+import { useFormStore } from "@/core/form";
 import {
     paymentFormSchema,
     type PaymentFormSchemaType,
 } from "@/schema/payment-form";
-import { useFormStore } from "@/core/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    Elements,
+    PaymentElement,
+    useElements,
+    useStripe,
+} from "@stripe/react-stripe-js";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { Button } from "../ui/button";
 
 // payment form for checkout
 
@@ -44,104 +39,94 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
         defaultValues: payment,
     });
 
-    const onSubmit = (data: PaymentFormSchemaType) => {
-        console.log(data);
-        addPayment(data);
+    const [clientSecret, setClientSecret] = useState("");
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const response = await axios.post(
+                "http://localhost:3000/Stripe/create-payment-intent"
+            );
+            setClientSecret(response.data.clientSecret);
+        };
+        fetchData();
+    }, []);
+
+    return (
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Shipping Service</CardTitle>
+                    <CardDescription>
+                        Fill out your card details and click Pay Now
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {clientSecret && (
+                        <Elements
+                            options={{
+                                clientSecret,
+                                appearance: {
+                                    theme: "stripe",
+                                },
+                                loader: "auto",
+                            }}
+                            stripe={stripe}
+                        >
+                            <CheckoutForm />
+                        </Elements>
+                    )}
+                </CardContent>
+            </Card>
+            <div className={"flex gap-4"}>
+                <Button
+                    className="flex-auto"
+                    type="button"
+                    onClick={() => {
+                        addPayment(form.getValues());
+                        prevTab();
+                    }}
+                >
+                    {" "}
+                    Previous{" "}
+                </Button>
+            </div>
+        </>
+    );
+}
+
+const CheckoutForm = () => {
+    const elements = useElements();
+    const stripe = useStripe();
+
+    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (stripe && elements) {
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    return_url: "http://localhost:3000/success",
+                },
+                redirect: "if_required",
+            });
+
+            if (error) {
+                console.error(error);
+            }
+        }
     };
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Shipping Service</CardTitle>
-                        <CardDescription>
-                            Fill out your card details and click Pay Now
-                        </CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="flex flex-col gap-4">
-                        <FormField
-                            control={form.control}
-                            name="cardNumber"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Card Number</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4 w-full">
-                            <FormField
-                                control={form.control}
-                                name="expDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Expiration Date (MM/YY)
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                pattern="(0[1-9]|1[0-2])\/\d{2}"
-                                            />
-                                        </FormControl>
-
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="CVV"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Security Code</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Name on Card</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-                <div className={"flex gap-4"}>
-                    <Button
-                        className="flex-auto"
-                        type="button"
-                        onClick={() => {
-                            addPayment(form.getValues());
-                            prevTab();
-                        }}
-                    >
-                        {" "}
-                        Previous{" "}
-                    </Button>
-
-                    <Button className="flex-auto"> Pay Now </Button>
-                </div>
-            </form>
-        </Form>
+        <form
+            onSubmit={handleSubmit}
+            id="payment-form"
+            className="flex flex-col gap-2"
+        >
+            <PaymentElement options={{ layout: "auto" }} id="payment-element" />
+            <Button className="flex-auto" type="submit">
+                {" "}
+                Pay Now{" "}
+            </Button>
+        </form>
     );
-}
+};

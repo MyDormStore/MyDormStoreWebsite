@@ -47,7 +47,6 @@ export default function App() {
             );
             const products = await getProducts();
             if (products) {
-                console.log(products);
                 setProduct(products);
             }
         };

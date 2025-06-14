@@ -1,8 +1,13 @@
-import { Request } from "express";
+import { Request, Response } from "express";
 import Stripe from "stripe";
+
+import { config } from "dotenv";
+
+config({ path: ".env" });
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
+// TODO: initially using checkoutsession but don't need
 export const createCheckoutSession = async (req: Request, res: Response) => {
     const session = await stripe.checkout.sessions.create({
         line_items: [
@@ -23,4 +28,52 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
         return_url:
             "https://example.com/return?session_id={CHECKOUT_SESSION_ID}",
     });
+
+    res.json({ checkoutSessionClientSecret: session.client_secret });
+};
+
+export const createPaymentIntent = async (req: Request, res: Response) => {
+    const paymentIntent = await stripe.paymentIntents.create({
+        amount: 1000, // price changes
+        currency: "cad",
+    });
+
+    res.send({
+        clientSecret: paymentIntent.client_secret,
+    });
+};
+
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+export const webhook = async (req: Request, res: Response) => {
+    let event: Stripe.Event = req.body;
+
+    if (endpointSecret) {
+        const signature = req.headers["stripe-signature"];
+        if (signature) {
+            try {
+                event = stripe.webhooks.constructEvent(
+                    req.body,
+                    signature,
+                    endpointSecret
+                );
+            } catch (err) {
+                console.error(`Webhook signature verification failed.`, err);
+                res.sendStatus(400);
+            }
+        }
+    }
+
+    switch (event.type) {
+        case "payment_intent.succeeded":
+            const paymentIntent = event.data.object;
+            console.log(
+                `PaymentIntent for ${paymentIntent.amount} was successful!`
+            );
+            break;
+        default:
+            console.log(`unhandled event type ${event.type}`);
+    }
+
+    res.status(200).send();
 };

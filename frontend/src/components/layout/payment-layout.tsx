@@ -11,8 +11,8 @@ const tabArray = ["Delivery", "Shipping", "Payment"];
 type TabNames = (typeof tabArray)[number];
 
 export default function PaymentLayout({ dorm }: { dorm: string }) {
-    const [currentTab, setCurrentTab] = useState<TabNames>("Delivery");
-    const [index, setIndex] = useState(0);
+    const [currentTab, setCurrentTab] = useState<TabNames>("Payment");
+    const [index, setIndex] = useState(2);
 
     const nextTab = () => {
         setIndex(index + 1);
