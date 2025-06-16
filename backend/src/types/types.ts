@@ -1,5 +1,5 @@
 export type LineItems = {
-    variantID: string;
+    variantId: string;
     quantity: number;
 };
 

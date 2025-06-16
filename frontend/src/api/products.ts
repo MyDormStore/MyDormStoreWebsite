@@ -81,9 +81,56 @@ export const getProduct = async () => {
     }
 };
 
+// const productsDormQuery = `
+// query GetProductsByTag($tag: String!) {
+//   products(first: 10, query: $tag) {
+//     edges {
+//       node {
+//         id
+//         title
+//         featuredImage {
+//           url
+//         }
+//         tags
+//         onlineStoreUrl
+//         variants(first: 1) {
+//           edges {
+//             node {
+//               id
+//               price {
+//                 amount
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+// }
+// `;
+
+// export const getProductsByDorm = async (tag: string) => {
+//     try {
+//         const { data, errors } = await client.request(productsDormQuery, {
+//             variables: {
+//                 tag: "tag:campusone",
+//             },
+//         });
+
+//         if (errors) {
+//             throw errors;
+//         }
+
+//         return (data as ShopifyProductsData).products.edges;
+//     } catch (err) {
+//         console.error(err);
+//         return null;
+//     }
+// };
+
 const productsDormQuery = `
-query GetProductsByTag($tag: String!) {
-  products(first: 10, query: $tag) {
+query GetProductsByMetafield($metafieldQuery: String!) {
+  products(first: 10, query: $metafieldQuery) {
     edges {
       node {
         id
@@ -113,13 +160,15 @@ export const getProductsByDorm = async (tag: string) => {
     try {
         const { data, errors } = await client.request(productsDormQuery, {
             variables: {
-                tag: "tag:campusone",
+                metafieldQuery: "metafield:residence.dorm:campusOne",
             },
         });
 
         if (errors) {
             throw errors;
         }
+
+        console.log(data);
 
         return (data as ShopifyProductsData).products.edges;
     } catch (err) {

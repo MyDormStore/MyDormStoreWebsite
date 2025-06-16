@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { Control, useForm } from "react-hook-form";
 import {
     Card,
     CardContent,
@@ -13,7 +13,7 @@ import {
     type DeliveryFormSchemaType,
 } from "@/schema/delivery-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CountryDropdown from "../dropdown/countries";
 import StateDropdown from "../dropdown/states";
 import { Button } from "../ui/button";
@@ -30,6 +30,8 @@ import { useFormStore } from "@/core/form";
 import { Separator } from "../ui/separator";
 import { getAddress } from "@/lib/address";
 import { dorm } from "@/data/residence";
+import { Checkbox } from "../ui/checkbox";
+import { Label } from "../ui/label";
 
 // delivery form for checkout
 
@@ -51,13 +53,13 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
     });
 
     useEffect(() => {
-        form.setValue("address.country", countryValue);
-        form.clearErrors("address.country");
+        form.setValue("shippingAddress.country", countryValue);
+        form.clearErrors("shippingAddress.country");
     }, [countryValue]);
 
     useEffect(() => {
-        form.setValue("address.state", stateValue);
-        form.clearErrors("address.state");
+        form.setValue("shippingAddress.state", stateValue);
+        form.clearErrors("shippingAddress.state");
     }, [stateValue]);
 
     const onSubmit = (data: DeliveryFormSchemaType) => {
@@ -65,16 +67,19 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         nextTab();
     };
 
-    console.log(form.getValues());
     useEffect(() => {
         console.log(dorm);
         const address = getAddress(dorm as dorm);
         if (address) {
-            form.setValue("address", address);
+            form.setValue("shippingAddress", address);
             setCountryValue(address.country);
             setStateValue(address.state);
         }
     }, [dorm]);
+
+    const [isSeperateBilling, setIsSeperateBilling] = useState(
+        delivery.billingAddress.street !== undefined ? true : false
+    );
 
     return (
         <Form {...form}>
@@ -167,90 +172,34 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                             />
 
                             <Separator />
-                            <FormField
+                            <AddressForm
                                 control={form.control}
-                                name="address.street"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Residence Address</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
+                                type="shippingAddress"
                             />
-                            {/* <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            /> */}
-                            <FormField
-                                control={form.control}
-                                name="address.city"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>City</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <div className="grid gap-2 2xl:grid-cols-3">
-                                <FormField
-                                    control={form.control}
-                                    name="address.country"
-                                    render={() => {
-                                        return (
-                                            <FormItem>
-                                                <FormLabel>Country</FormLabel>
-                                                <CountryDropdown />
-                                                <FormMessage />
-                                            </FormItem>
+                            <div className="flex gap-2">
+                                <Checkbox
+                                    checked={isSeperateBilling}
+                                    onCheckedChange={() => {
+                                        setIsSeperateBilling(
+                                            !isSeperateBilling
                                         );
+                                        if (isSeperateBilling) {
+                                            form.setValue("billingAddress", {});
+                                        }
                                     }}
+                                    name="isSeperateBilling"
+                                    id="isSeperateBilling"
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="address.state"
-                                    render={() => {
-                                        return (
-                                            <FormItem>
-                                                <FormLabel>State</FormLabel>
-                                                <StateDropdown />
-                                                <FormMessage />
-                                            </FormItem>
-                                        );
-                                    }}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="address.postalCode"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Postal Code</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <Label htmlFor="isSeperateBilling">
+                                    Use a seperate billing address
+                                </Label>
                             </div>
+                            {isSeperateBilling && (
+                                <AddressForm
+                                    control={form.control}
+                                    type="billingAddress"
+                                />
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -261,3 +210,85 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         </Form>
     );
 }
+
+interface AddressFormProps {
+    control: Control<DeliveryFormSchemaType>;
+    type: "shippingAddress" | "billingAddress";
+}
+
+const AddressForm = ({ control, type }: AddressFormProps) => {
+    return (
+        <>
+            <FormField
+                control={control}
+                name={`${type}.street`}
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Residence Address</FormLabel>
+                        <FormControl>
+                            <Input {...field} />
+                        </FormControl>
+
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={control}
+                name={`${type}.city`}
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                            <Input {...field} />
+                        </FormControl>
+
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <div className="grid gap-2 2xl:grid-cols-3">
+                <FormField
+                    control={control}
+                    name={`${type}.country`}
+                    render={() => {
+                        return (
+                            <FormItem>
+                                <FormLabel>Country</FormLabel>
+                                <CountryDropdown />
+                                <FormMessage />
+                            </FormItem>
+                        );
+                    }}
+                />
+                <FormField
+                    control={control}
+                    name={`${type}.state`}
+                    render={() => {
+                        return (
+                            <FormItem>
+                                <FormLabel>State</FormLabel>
+                                <StateDropdown />
+                                <FormMessage />
+                            </FormItem>
+                        );
+                    }}
+                />
+                <FormField
+                    control={control}
+                    name={`${type}.postalCode`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Postal Code</FormLabel>
+                            <FormControl>
+                                <Input {...field} />
+                            </FormControl>
+
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+        </>
+    );
+};

@@ -13,7 +13,8 @@ export const deliveryFormSchema = z.object({
     email: z.string().email(),
     firstName: z.string(),
     lastName: z.string(),
-    address: addressSchema,
+    shippingAddress: addressSchema,
+    billingAddress: addressSchema.partial(),
     phoneNumber: z.string(),
     moveInDate: z.string().optional(),
 });

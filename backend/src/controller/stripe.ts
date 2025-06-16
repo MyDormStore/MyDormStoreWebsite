@@ -3,6 +3,7 @@ import Stripe from "stripe";
 
 import { config } from "dotenv";
 import { Payload } from "../types/types";
+import { createOrder } from "../utils/shopify";
 
 config({ path: ".env" });
 
@@ -81,6 +82,7 @@ export const webhook = async (req: Request, res: Response) => {
                 lineItems: JSON.parse(metadata.lineItems),
             };
             console.log(payload);
+            await createOrder(payload.lineItems);
             console.log(
                 `PaymentIntent for ${paymentIntent.amount} was successful!`
             );

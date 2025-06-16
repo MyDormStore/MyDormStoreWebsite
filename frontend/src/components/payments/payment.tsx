@@ -52,7 +52,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     customer: "customer ID", // TODO: get the ID from shopify
                     lineItems: lineItems.map((cartItem) => {
                         return {
-                            variantID: cartItem.merchandise.id,
+                            variantId: cartItem.merchandise.id,
                             quantity: cartItem.quantity,
                         };
                     }),
