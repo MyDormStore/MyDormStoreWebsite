@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Stripe from "stripe";
 
 import { config } from "dotenv";
+import { Payload } from "../types/types";
 
 config({ path: ".env" });
 
@@ -33,9 +34,16 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 };
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
+    const payload: Payload = req.body;
+    console.log(payload);
+
     const paymentIntent = await stripe.paymentIntents.create({
         amount: 1000, // price changes
         currency: "cad",
+        metadata: {
+            customer: payload.customer,
+            lineItems: JSON.stringify(payload.lineItems),
+        },
     });
 
     res.send({
@@ -67,6 +75,12 @@ export const webhook = async (req: Request, res: Response) => {
     switch (event.type) {
         case "payment_intent.succeeded":
             const paymentIntent = event.data.object;
+            const metadata = paymentIntent.metadata;
+            const payload: Payload = {
+                customer: metadata.customer,
+                lineItems: JSON.parse(metadata.lineItems),
+            };
+            console.log(payload);
             console.log(
                 `PaymentIntent for ${paymentIntent.amount} was successful!`
             );

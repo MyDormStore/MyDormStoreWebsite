@@ -1,4 +1,3 @@
-import { products } from "@/data/products";
 import {
     Table,
     TableBody,
@@ -24,7 +23,6 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { removeProductToCart, updateProductQuantity } from "@/api/cart";
-import { updateCart } from "@/hooks/use-update-cart";
 
 export function ProductTable({ dorm }: { dorm: string }) {
     const { cart, setCart } = useCartContext();
@@ -57,7 +55,8 @@ export function ProductTable({ dorm }: { dorm: string }) {
                     return (
                         <div
                             className="grid gap-2 shadow p-2"
-                            key={product.merchandise.title}>
+                            key={product.merchandise.title}
+                        >
                             <ProductDetails
                                 id={product.merchandise.id}
                                 name={product.merchandise.title}
@@ -150,7 +149,8 @@ export function ProductTable({ dorm }: { dorm: string }) {
                                         //         dorm === "chestnut")
                                         //     ? "-left-2.5 relative"
                                         //     : ""
-                                    )}>
+                                    )}
+                                >
                                     <Button
                                         variant={"outline"}
                                         size={"icon"}
@@ -160,7 +160,8 @@ export function ProductTable({ dorm }: { dorm: string }) {
                                                 product.quantity - 1
                                             );
                                         }}
-                                        disabled={product.quantity === 1}>
+                                        disabled={product.quantity === 1}
+                                    >
                                         <Minus />
                                     </Button>
                                     <span className="w-4 text-center">
@@ -174,7 +175,8 @@ export function ProductTable({ dorm }: { dorm: string }) {
                                                 product.id,
                                                 product.quantity + 1
                                             );
-                                        }}>
+                                        }}
+                                    >
                                         <Plus />
                                     </Button>
                                 </div>
@@ -323,7 +325,8 @@ export function ProductTable({ dorm }: { dorm: string }) {
                                                 product.quantity - 1
                                             );
                                         }}
-                                        disabled={product.quantity === 1}>
+                                        disabled={product.quantity === 1}
+                                    >
                                         <Minus />
                                     </Button>
                                     <span className="w-4 text-center">
@@ -337,7 +340,8 @@ export function ProductTable({ dorm }: { dorm: string }) {
                                                 product.id,
                                                 product.quantity + 1
                                             );
-                                        }}>
+                                        }}
+                                    >
                                         <Plus />
                                     </Button>
                                 </div>

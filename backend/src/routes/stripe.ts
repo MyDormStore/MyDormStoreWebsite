@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import {
     createCheckoutSession,
     createPaymentIntent,
@@ -9,6 +9,5 @@ const router = Router();
 
 router.post("/create-checkout-session", createCheckoutSession);
 router.post("/create-payment-intent", createPaymentIntent);
-router.post("/webhook", webhook);
 
 export default router;

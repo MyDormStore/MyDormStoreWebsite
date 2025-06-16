@@ -1,31 +1,26 @@
+import { ChevronLeft, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import CheckoutLayout from "./components/layout/checkout-layout";
 import { Button } from "./components/ui/button";
-import { ChevronLeft, ShoppingCart } from "lucide-react";
 // import { products } from "./data/products";
+import { getCart } from "./api/cart";
+import { getProducts, getProductsByDorm } from "./api/products";
+import { DiscountInput } from "./components/discount-input";
+import NavBar from "./components/layout/navbar";
+import PaymentLayout from "./components/layout/payment-layout";
 import { ProductDetailsCard } from "./components/product-details";
 import { ProductTable } from "./components/product-table";
-import PaymentLayout from "./components/layout/payment-layout";
-import { cart as cartData } from "./data/cart";
+import { RecommendedProducts } from "./components/recommended-products";
+import { SelectDorm } from "./components/select-dorm";
 import { TotalDetails } from "./components/total-details";
 import { CartContextProvider } from "./context/cartContext";
-import type { CartDetailsType } from "./types/types";
-import { RecommendedProducts } from "./components/recommended-products";
-import { DiscountInput } from "./components/discount-input";
-import { SelectDorm } from "./components/select-dorm";
-import NavBar from "./components/layout/navbar";
-import { dormSelectList } from "./data/residence";
 import { ShippingContextProvider } from "./context/shippingContext";
-import { getProduct, getProducts } from "./api/products";
-import { getShop } from "./api/shop";
-import { getCart } from "./api/cart";
+import { dormSelectList } from "./data/residence";
 import {
     Cart,
-    CartLine,
     ShopifyProductsData,
     ShopifyProductsType,
 } from "./types/shopify";
-import { updateCart } from "./hooks/use-update-cart";
 
 export default function App() {
     const [cart, setCart] = useState<Cart | null>(null);
@@ -45,13 +40,24 @@ export default function App() {
                     "gid://shopify/Cart/Z2NwLXVzLWNlbnRyYWwxOjAxSlhEWDIyTlQ2WkVNQkZQTTREUEQ3NjZY?key=2649bf3eca523015f392cd2b5747bb55"
                 )
             );
-            const products = await getProducts();
+        };
+        fetchAPI();
+    }, []);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            console.log(dorm);
+            const products =
+                dorm !== ""
+                    ? await getProductsByDorm(dorm)
+                    : await getProducts();
             if (products) {
                 setProduct(products);
             }
         };
-        fetchAPI();
-    }, []);
+
+        fetchProducts();
+    }, [dorm]);
 
     return (
         <CartContextProvider value={{ cart, setCart }}>
@@ -90,24 +96,6 @@ export default function App() {
                                     )?.label ?? "Your Residence"}
                                 </h1>
                                 <RecommendedProducts>
-                                    {/* {products
-                                        .filter((product) => {
-                                            if (dorm === "") {
-                                                return true;
-                                            }
-                                            return (
-                                                product.dorm === undefined ||
-                                                product.dorm.find(
-                                                    (value) => value === dorm
-                                                )
-                                            );
-                                        })
-                                        .map((product) => (
-                                            <ProductDetailsCard
-                                                {...product}
-                                                key={product.name}
-                                            />
-                                        ))} */}
                                     {product.length > 0 &&
                                         product.map((value) => {
                                             const data =

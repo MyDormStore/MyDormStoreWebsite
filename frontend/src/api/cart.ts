@@ -4,7 +4,6 @@ import { client } from "./client";
 const cartResponse = `
 id
     totalQuantity
-    checkoutUrl
     lines(first: 250) {
       nodes {
         id

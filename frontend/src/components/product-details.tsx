@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { CirclePlus, Loader2 } from "lucide-react";
 import { useCartContext } from "@/context/cartContext";
 import { addProductToCart } from "@/api/cart";
-import { updateCart } from "@/hooks/use-update-cart";
+// import { updateCart } from "@/hooks/use-update-cart";
 import { useState } from "react";
 import { ShopifyProductsData, ShopifyProductsType } from "@/types/shopify";
 
@@ -52,7 +52,8 @@ export function ProductDetailsCard(product: ProductsType) {
                     variant={loading ? "ghost" : "secondary"}
                     size={"icon"}
                     disabled={loading}
-                    onClick={addProduct}>
+                    onClick={addProduct}
+                >
                     {loading ? (
                         <Loader2 className="animate-spin" />
                     ) : (

@@ -23,6 +23,7 @@ import {
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
+import { useCartContext } from "@/context/cartContext";
 
 // payment form for checkout
 
@@ -31,6 +32,8 @@ interface PaymentFormProps {
 }
 
 export default function PaymentForm({ prevTab }: PaymentFormProps) {
+    const { cart } = useCartContext();
+
     const payment = useFormStore((state) => state.payment);
     const addPayment = useFormStore((state) => state.addPayment);
 
@@ -43,13 +46,26 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
 
     useEffect(() => {
         const fetchData = async () => {
-            const response = await axios.post(
-                "http://localhost:3000/Stripe/create-payment-intent"
-            );
-            setClientSecret(response.data.clientSecret);
+            if (cart) {
+                const lineItems = cart.lines.nodes; // contains cart items
+                const payload = {
+                    customer: "customer ID", // TODO: get the ID from shopify
+                    lineItems: lineItems.map((cartItem) => {
+                        return {
+                            variantID: cartItem.merchandise.id,
+                            quantity: cartItem.quantity,
+                        };
+                    }),
+                };
+                const response = await axios.post(
+                    "http://localhost:3000/Stripe/create-payment-intent",
+                    payload
+                );
+                setClientSecret(response.data.clientSecret);
+            }
         };
         fetchData();
-    }, []);
+    }, [cart]);
 
     return (
         <>
