@@ -32,25 +32,15 @@ import { useDropdownStore } from "@/lib/store/dropdown";
 
 interface CountryDropdownProps {
     disabled?: boolean;
-    countryValue: string;
-    setCountryValue: (country: string) => void;
-    openCountryDropdown: boolean;
-    setOpenCountryDropdown: (open: boolean) => void;
 }
 
-const CountryDropdown = ({
-    disabled,
-    countryValue,
-    setCountryValue,
-    openCountryDropdown,
-    setOpenCountryDropdown,
-}: CountryDropdownProps) => {
-    // const {
-    //     countryValue,
-    //     setCountryValue,
-    //     openCountryDropdown,
-    //     setOpenCountryDropdown,
-    // } = useDropdownStore();
+const CountryDropdown = ({ disabled }: CountryDropdownProps) => {
+    const {
+        countryValue,
+        setCountryValue,
+        openCountryDropdown,
+        setOpenCountryDropdown,
+    } = useDropdownStore();
     const C = countries as CountryProps[];
 
     return (

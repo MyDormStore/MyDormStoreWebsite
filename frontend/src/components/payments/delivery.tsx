@@ -1,4 +1,4 @@
-import { Control, useForm } from "react-hook-form";
+import { Control, useForm, UseFormReturn } from "react-hook-form";
 import {
     Card,
     CardContent,
@@ -41,8 +41,8 @@ interface DeliveryFormProps {
 }
 
 export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
-    const { countryValue, stateValue, setCountryValue, setStateValue } =
-        useDropdownStore();
+    // const { countryValue, stateValue, setCountryValue, setStateValue } =
+    //     useDropdownStore();
 
     const delivery = useFormStore((state) => state.delivery);
     const addDelivery = useFormStore((state) => state.addDelivery);
@@ -52,30 +52,20 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         defaultValues: delivery,
     });
 
-    useEffect(() => {
-        form.setValue("shippingAddress.country", countryValue);
-        form.clearErrors("shippingAddress.country");
-    }, [countryValue]);
-
-    useEffect(() => {
-        form.setValue("shippingAddress.state", stateValue);
-        form.clearErrors("shippingAddress.state");
-    }, [stateValue]);
-
     const onSubmit = (data: DeliveryFormSchemaType) => {
         addDelivery(data);
         nextTab();
     };
 
-    useEffect(() => {
-        console.log(dorm);
-        const address = getAddress(dorm as dorm);
-        if (address) {
-            form.setValue("shippingAddress", address);
-            setCountryValue(address.country);
-            setStateValue(address.state);
-        }
-    }, [dorm]);
+    // useEffect(() => {
+    //     console.log(dorm);
+    //     const address = getAddress(dorm as dorm);
+    //     if (address) {
+    //         form.setValue("shippingAddress", address);
+    //         setCountryValue(address.country);
+    //         setStateValue(address.state);
+    //     }
+    // }, [dorm]);
 
     const [toggleSecondaryDetails, setToggleSecondaryDetails] = useState(
         delivery.secondaryDetails
@@ -184,10 +174,7 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                             />
 
                             <Separator />
-                            <AddressForm
-                                control={form.control}
-                                type="shippingAddress"
-                            />
+                            <AddressForm form={form} type="shippingAddress" />
                             <div className="flex gap-2">
                                 <Checkbox
                                     checked={toggleSecondaryDetails}
@@ -283,7 +270,7 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                                         )}
                                     />
                                     <AddressForm
-                                        control={form.control}
+                                        form={form}
                                         type="secondaryDetails.billingAddress"
                                     />
                                 </>
@@ -300,11 +287,33 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
 }
 
 interface AddressFormProps {
-    control: Control<DeliveryFormSchemaType>;
+    form: UseFormReturn<DeliveryFormSchemaType>;
     type: "shippingAddress" | "secondaryDetails.billingAddress";
 }
 
-const AddressForm = ({ control, type }: AddressFormProps) => {
+const AddressForm = ({ form, type }: AddressFormProps) => {
+    const { control } = form;
+
+    const [countryValue, setCountryValue] = useState(
+        form.getValues(`${type}.country`) || ""
+    );
+    const [stateValue, setStateValue] = useState(
+        form.getValues(`${type}.state`) || ""
+    );
+
+    const [openCountryDropdown, setOpenCountryDropdown] = useState(false);
+    const [openStateDropdown, setOpenStateDropdown] = useState(false);
+
+    useEffect(() => {
+        form.setValue(`${type}.country`, countryValue);
+        form.clearErrors(`${type}.country`);
+    }, [countryValue]);
+
+    useEffect(() => {
+        form.setValue(`${type}.state`, stateValue);
+        form.clearErrors(`${type}.state`);
+    }, [stateValue]);
+
     return (
         <>
             <FormField
@@ -347,7 +356,14 @@ const AddressForm = ({ control, type }: AddressFormProps) => {
                         return (
                             <FormItem>
                                 <FormLabel>Country</FormLabel>
-                                <CountryDropdown />
+                                <CountryDropdown
+                                    countryValue={countryValue}
+                                    setCountryValue={setCountryValue}
+                                    openCountryDropdown={openCountryDropdown}
+                                    setOpenCountryDropdown={
+                                        setOpenCountryDropdown
+                                    }
+                                />
                                 <FormMessage />
                             </FormItem>
                         );
@@ -360,7 +376,13 @@ const AddressForm = ({ control, type }: AddressFormProps) => {
                         return (
                             <FormItem>
                                 <FormLabel>State</FormLabel>
-                                <StateDropdown />
+                                <StateDropdown
+                                    countryValue={countryValue}
+                                    stateValue={stateValue}
+                                    setStateValue={setStateValue}
+                                    openStateDropdown={openStateDropdown}
+                                    setOpenStateDropdown={setOpenStateDropdown}
+                                />
                                 <FormMessage />
                             </FormItem>
                         );

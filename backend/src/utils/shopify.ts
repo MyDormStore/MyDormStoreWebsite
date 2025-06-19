@@ -21,12 +21,12 @@ export const createOrder = async (payload: Payload) => {
 
     const {
         shippingAddress,
-        billingAddress,
+        secondaryDetails,
         firstName,
         lastName,
         email,
         phoneNumber,
-        toggleBillingAddress,
+        toggleSecondaryDetails,
     } = deliveryDetails;
 
     let order: Order = {
@@ -61,15 +61,15 @@ export const createOrder = async (payload: Payload) => {
         ],
     };
 
-    if (toggleBillingAddress) {
+    if (toggleSecondaryDetails && secondaryDetails) {
         order.billingAddress = {
-            firstName: firstName,
-            lastName: lastName,
-            address1: shippingAddress.street,
-            city: shippingAddress.city,
-            countryCode: shippingAddress.country,
-            zip: shippingAddress.postalCode,
-            provinceCode: shippingAddress.state,
+            firstName: secondaryDetails.firstName,
+            lastName: secondaryDetails.lastName,
+            address1: secondaryDetails.billingAddress.street,
+            city: secondaryDetails.billingAddress.city,
+            countryCode: secondaryDetails.billingAddress.country,
+            zip: secondaryDetails.billingAddress.postalCode,
+            provinceCode: secondaryDetails.billingAddress.state,
         };
     }
 

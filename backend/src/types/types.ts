@@ -6,32 +6,33 @@ export type LineItems = {
 export type Payload = {
     customer: string;
     lineItems: LineItems[];
-    deliveryDetails: {
+    deliveryDetails: DeliveryForm;
+};
+
+type DeliveryForm = {
+    email: string;
+    firstName: string;
+    lastName: string;
+    shippingAddress: AddressSchemaType;
+    phoneNumber: string;
+    moveInDate?: string;
+    toggleSecondaryDetails?: boolean;
+    secondaryDetails?: {
         email: string;
         firstName: string;
         lastName: string;
-        shippingAddress: {
-            postalCode: string;
-            country: string;
-            city: string;
-            state: string;
-            street: string;
-            residential?: boolean | undefined;
-        };
+        billingAddress: AddressSchemaType;
         phoneNumber: string;
-        billingAddress?:
-            | {
-                  postalCode: string;
-                  country: string;
-                  city: string;
-                  state: string;
-                  street: string;
-                  residential?: boolean | undefined;
-              }
-            | undefined;
-        toggleBillingAddress?: boolean | undefined;
-        moveInDate?: string | undefined;
     };
+};
+
+type AddressSchemaType = {
+    state: string;
+    postalCode: string;
+    country: string;
+    city: string;
+    street: string;
+    residential?: boolean | undefined;
 };
 
 export type Order = {

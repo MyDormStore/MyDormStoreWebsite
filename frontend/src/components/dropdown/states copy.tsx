@@ -29,28 +29,14 @@ import { useDropdownStore } from "@/lib/store/dropdown";
 
 import { type StateProps } from "@/lib/types";
 
-interface StateDropdownProps {
-    countryValue: string;
-    stateValue: string;
-    openStateDropdown: boolean;
-    setOpenStateDropdown: (open: boolean) => void;
-    setStateValue: (state: string) => void;
-}
-
-const StateDropdown = ({
-    countryValue,
-    stateValue,
-    openStateDropdown,
-    setOpenStateDropdown,
-    setStateValue,
-}: StateDropdownProps) => {
-    // const {
-    //     countryValue,
-    //     stateValue,
-    //     openStateDropdown,
-    //     setOpenStateDropdown,
-    //     setStateValue,
-    // } = useDropdownStore();
+const StateDropdown = () => {
+    const {
+        countryValue,
+        stateValue,
+        openStateDropdown,
+        setOpenStateDropdown,
+        setStateValue,
+    } = useDropdownStore();
 
     const SD = states as StateProps[];
     const S = SD.filter((state) => state.country_code === countryValue);
