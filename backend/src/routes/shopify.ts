@@ -1,16 +1,10 @@
 import { Router } from "express";
-import {
-    createOrder,
-    getAvailableRates,
-    // getProducts,
-    // getProductsByDorm,
-} from "../controller/shopify";
+import { calculateOrder, createOrder, draftOrder } from "../controller/shopify";
 
 const router = Router();
 
-// router.get("/products", getProducts);
-// router.get("/products/:dorm", getProductsByDorm);
-
 router.post("/order", createOrder);
-router.get("/rates", getAvailableRates);
+router.post("/draft", draftOrder);
+router.post("/calculate", calculateOrder);
+
 export default router;

@@ -32,6 +32,8 @@ import { getAddress } from "@/lib/address";
 import { dorm } from "@/data/residence";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
+import { useCartContext } from "@/context/cartContext";
+import axios from "axios";
 
 // delivery form for checkout
 
@@ -41,9 +43,6 @@ interface DeliveryFormProps {
 }
 
 export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
-    // const { countryValue, stateValue, setCountryValue, setStateValue } =
-    //     useDropdownStore();
-
     const delivery = useFormStore((state) => state.delivery);
     const addDelivery = useFormStore((state) => state.addDelivery);
 
@@ -52,11 +51,12 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         defaultValues: delivery,
     });
 
-    const onSubmit = (data: DeliveryFormSchemaType) => {
+    const onSubmit = async (data: DeliveryFormSchemaType) => {
         addDelivery(data);
         nextTab();
     };
 
+    //  TODO: APPLY DORM ADDRESS TO THE FORM
     // useEffect(() => {
     //     console.log(dorm);
     //     const address = getAddress(dorm as dorm);

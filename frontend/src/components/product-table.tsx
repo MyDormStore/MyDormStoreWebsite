@@ -213,10 +213,6 @@ export function ProductTable({
             </TableHeader>
             <TableBody>
                 {cart.lines.nodes.map((product, index) => {
-                    console.log(
-                        product.merchandise.metafields[2]?.value.includes(dorm)
-                    );
-
                     return (
                         <TableRow key={product.id}>
                             <TableCell>

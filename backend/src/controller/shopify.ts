@@ -1,108 +1,11 @@
 import { Request, Response } from "express";
 import { client } from "../services/shopify";
-
-export const getAvailableRates = async (req: Request, res: Response) => {
-    const query = `query CarrierServiceList {
-    carrierServices(first: 10, query: "active:true") {
-      edges {
-        node {
-          id
-          name
-          callbackUrl
-          active
-          supportsServiceDiscovery
-        }
-      }
-    }
-  }`;
-
-    const { data, errors } = await client.request(query);
-
-    if (errors) {
-        console.error(errors);
-        res.status(500).send(errors).end();
-    }
-
-    res.send(data);
-};
-/*
-const queryString = `{
-  products (first: 3) {
-    edges {
-      node {
-        id
-        title
-      }
-    }
-  }
-}`;
-export const getProducts = async (req: Request, res: Response) => {
-    const { data, errors, extensions } = await client.request(queryString);
-
-    res.send(data);
-};
-
-const productsDormQuery = `
-query GetProductsByMetafield($query: String!) {
-  products(first: 10, query: $query) {
-    edges {
-      node {
-        id
-        title
-        featuredImage {
-          url
-        }
-        tags
-        onlineStoreUrl
-        variants(first: 1) {
-          edges {
-            node {
-              id
-              price
-            }
-          }
-        }
-        metafields(first: 10) {
-          edges {
-            node {
-              key
-              value
-              namespace
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-`;
-export const getProductsByDorm = async (req: Request, res: Response) => {
-    const dorm = req.params.dorm; // gets the dorm
-
-    const { data, errors, extensions } = await client.request(
-        productsDormQuery,
-        {
-            variables: {
-                query: `metafield:residence.dorm="${dorm}"`,
-            },
-        }
-    );
-
-    if (errors) {
-        console.error(errors);
-        res.status(500).send(errors);
-    }
-
-    res.send(data);
-};
-
-*/
+import { calculateDraftOrder, createDraftOrder } from "../utils/shopify";
 
 const orderMutation = `
 mutation {
   orderCreate(order: {
-    currency: CAD,
+    currey: CAD,
     financialStatus: PAID
     lineItems: [
       {
@@ -128,4 +31,22 @@ export const createOrder = async (req: Request, res: Response) => {
 
     console.error(errors);
     res.send(data);
+};
+
+export const draftOrder = async (req: Request, res: Response) => {
+    const payload = req.body;
+    const data = await createDraftOrder(payload);
+    if (!data) {
+        res.status(500).json({ error: "Failed to create draft order" }).end;
+    }
+    res.status(200).json(data);
+};
+
+export const calculateOrder = async (req: Request, res: Response) => {
+    const payload = req.body;
+    const data = await calculateDraftOrder(payload);
+    if (!data) {
+        res.status(500).json({ error: "Failed to calculate draft order" }).end;
+    }
+    res.status(200).json(data.draftOrderCalculate.calculatedDraftOrder);
 };

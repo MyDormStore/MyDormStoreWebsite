@@ -17,7 +17,8 @@ mutation CreateOrder($order: OrderCreateOrderInput!) {
 `;
 
 export const createOrder = async (payload: Payload) => {
-    const { lineItems, customer, deliveryDetails } = payload;
+    const { lineItems, customer, deliveryDetails, taxLines, shipping } =
+        payload;
 
     const {
         shippingAddress,
@@ -50,19 +51,21 @@ export const createOrder = async (payload: Payload) => {
         test: true,
         shippingLines: [
             {
-                title: "Purolator Ground®",
+                title: shipping.service,
                 priceSet: {
                     shopMoney: {
-                        amount: 10.0,
+                        amount: shipping.cost,
                         currencyCode: "CAD",
                     },
                 },
             },
         ],
+        taxLines: [{ ...taxLines[0], title: "HST" }],
+        billingAddress: undefined,
     };
 
     if (toggleSecondaryDetails && secondaryDetails) {
-        order.billingAddress = {
+        order["billingAddress"] = {
             firstName: secondaryDetails.firstName,
             lastName: secondaryDetails.lastName,
             address1: secondaryDetails.billingAddress.street,
@@ -87,4 +90,169 @@ export const createOrder = async (payload: Payload) => {
     }
 
     return data.orderCreate.order.id;
+};
+
+const draftOrderMutation = `
+mutation CreateDraftOrder($input: DraftOrderInput!) {
+  draftOrderCreate(input: $input) {
+    draftOrder {
+      id
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+export const createDraftOrder = async (payload: Payload) => {
+    const { lineItems, customer, deliveryDetails } = payload;
+
+    const {
+        shippingAddress,
+        secondaryDetails,
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        toggleSecondaryDetails,
+    } = deliveryDetails;
+
+    let draftOrder: any = {
+        lineItems: lineItems.map((item) => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+        })),
+        email: email,
+        phone: phoneNumber,
+        shippingAddress: {
+            firstName,
+            lastName,
+            address1: shippingAddress.street,
+            city: shippingAddress.city,
+            countryCode: shippingAddress.country,
+            zip: shippingAddress.postalCode,
+            provinceCode: shippingAddress.state,
+        },
+        useCustomerDefaultAddress: false,
+    };
+
+    if (toggleSecondaryDetails && secondaryDetails) {
+        draftOrder.billingAddress = {
+            firstName: secondaryDetails.firstName,
+            lastName: secondaryDetails.lastName,
+            address1: secondaryDetails.billingAddress.street,
+            city: secondaryDetails.billingAddress.city,
+            countryCode: secondaryDetails.billingAddress.country,
+            zip: secondaryDetails.billingAddress.postalCode,
+            provinceCode: secondaryDetails.billingAddress.state,
+        };
+    }
+
+    const { data, errors } = await client.request(draftOrderMutation, {
+        variables: { input: draftOrder },
+    });
+
+    if (errors) {
+        console.error(errors);
+        return;
+    }
+
+    return data.draftOrderCreate.draftOrder;
+};
+
+const draftOrderCalculateMutation = `
+mutation CalculateDraftOrder($input: DraftOrderInput!) {
+    draftOrderCalculate(input: $input) {
+        calculatedDraftOrder {
+            availableShippingRates {
+                title
+                price {
+                    amount
+                    currencyCode    
+                }
+            }
+            taxLines {
+                rate
+                priceSet {
+                    shopMoney {
+                        amount
+                        currencyCode    
+                    }
+                }
+            }
+            currencyCode
+            lineItems {
+                title
+                quantity
+                requiresShipping
+            }
+            totalPriceSet {
+                shopMoney {
+                    amount
+                    currencyCode
+                }
+            }
+        }
+    }
+}
+`;
+
+export const calculateDraftOrder = async (payload: Payload) => {
+    const { lineItems, customer, deliveryDetails } = payload;
+
+    const {
+        shippingAddress,
+        secondaryDetails,
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        toggleSecondaryDetails,
+    } = deliveryDetails;
+
+    let draftOrder: any = {
+        lineItems: lineItems.map((item) => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+        })),
+        email: email,
+        phone: phoneNumber,
+        shippingAddress: {
+            firstName,
+            lastName,
+            address1: shippingAddress.street,
+            city: shippingAddress.city,
+            countryCode: shippingAddress.country,
+            zip: shippingAddress.postalCode,
+            provinceCode: shippingAddress.state,
+        },
+        useCustomerDefaultAddress: false,
+    };
+
+    if (toggleSecondaryDetails && secondaryDetails) {
+        draftOrder.billingAddress = {
+            firstName: secondaryDetails.firstName,
+            lastName: secondaryDetails.lastName,
+            address1: secondaryDetails.billingAddress.street,
+            city: secondaryDetails.billingAddress.city,
+            countryCode: secondaryDetails.billingAddress.country,
+            zip: secondaryDetails.billingAddress.postalCode,
+            provinceCode: secondaryDetails.billingAddress.state,
+        };
+    }
+
+    console.log(JSON.stringify(draftOrder, null, 2));
+
+    const { data, errors } = await client.request(draftOrderCalculateMutation, {
+        variables: { input: draftOrder },
+    });
+
+    if (errors) {
+        console.error(errors);
+        return;
+    }
+
+    return data;
 };

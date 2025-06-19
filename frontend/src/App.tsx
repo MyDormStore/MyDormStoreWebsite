@@ -27,6 +27,8 @@ export default function App() {
 
     const [dorm, setDorm] = useState("");
     const [shippingCost, setShippingCost] = useState(0);
+    const [taxLines, setTaxLines] = useState<any[]>([]);
+
     const [products, setProducts] = useState<
         ShopifyProductsData["products"]["edges"]
     >([]);
@@ -58,7 +60,9 @@ export default function App() {
 
     return (
         <CartContextProvider value={{ cart, setCart }}>
-            <ShippingContextProvider value={{ shippingCost, setShippingCost }}>
+            <ShippingContextProvider
+                value={{ shippingCost, setShippingCost, taxLines, setTaxLines }}
+            >
                 <div className="w-dvw h-dvh overflow-y-scroll">
                     <NavBar />
                     <CheckoutLayout>
@@ -78,7 +82,7 @@ export default function App() {
                             <ProductTable dorm={dorm} products={products} />
                             <div className="grid gap-8 lg:gap-8 md:grid-cols-2">
                                 <div className="flex flex-col gap-4">
-                                    <DiscountInput />
+                                    {/* <DiscountInput /> */}
                                 </div>
                                 <div className="md:w-3/4 md:ml-auto">
                                     <TotalDetails />

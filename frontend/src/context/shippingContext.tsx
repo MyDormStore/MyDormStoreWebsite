@@ -4,6 +4,8 @@ import { createContext, useContext, type ReactNode } from "react";
 interface ShippingContextProps {
     shippingCost: number;
     setShippingCost: React.Dispatch<React.SetStateAction<number>>;
+    taxLines: any;
+    setTaxLines: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export const ShippingContext = createContext<ShippingContextProps>(
@@ -16,7 +18,7 @@ export const useShippingContext = () => {
 
     if (cost === undefined) {
         throw new Error(
-            "useShippingContext must be used to with a pageContext"
+            "useShippingContext must be used to with a shippingContext provider"
         );
     }
 

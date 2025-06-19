@@ -7,8 +7,26 @@ export type Payload = {
     customer: string;
     lineItems: LineItems[];
     deliveryDetails: DeliveryForm;
+    taxLines: TaxLines;
+    shipping: {
+        service: string;
+        cost: number;
+        transitTime?: number | undefined;
+    };
 };
 
+type TaxLines = [
+    {
+        rate: number;
+        priceSet: {
+            shopMoney: {
+                amount: string;
+                currencyCode: string;
+            };
+        };
+        title?: string;
+    }
+];
 type DeliveryForm = {
     email: string;
     firstName: string;
@@ -56,6 +74,7 @@ export type Order = {
             };
         };
     }[];
+    taxLines?: TaxLines;
 };
 
 type AddressType = {

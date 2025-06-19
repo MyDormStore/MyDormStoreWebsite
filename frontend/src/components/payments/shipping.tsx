@@ -7,6 +7,8 @@ import {
     CardTitle,
 } from "../ui/card";
 
+import { useCartContext } from "@/context/cartContext";
+import { useShippingContext } from "@/context/shippingContext";
 import { useFormStore } from "@/core/form";
 import { cn } from "@/lib/utils";
 import {
@@ -14,9 +16,11 @@ import {
     type ShippingFormSchemaType,
 } from "@/schema/shipping-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Form } from "../ui/form";
+import { Skeleton } from "../ui/skeleton";
 import {
     Table,
     TableBody,
@@ -25,7 +29,6 @@ import {
     TableHeader,
     TableRow,
 } from "../ui/table";
-import { useShippingContext } from "@/context/shippingContext";
 
 // rates form for checkout
 
@@ -41,23 +44,25 @@ interface Rates {
     transitTime: number;
 }
 
-const rates: Rates[] = [
-    {
-        service: "UPS Express",
-        cost: 20.19,
-        transitTime: 2,
-    },
-    {
-        service: "FedEx Priority Overnight",
-        cost: 24.19,
-        transitTime: 1,
-    },
-];
+// const rates: Rates[] = [
+//     {
+//         service: "UPS Express",
+//         cost: 20.19,
+//         transitTime: 2,
+//     },
+//     {
+//         service: "FedEx Priority Overnight",
+//         cost: 24.19,
+//         transitTime: 1,
+//     },
+// ];
 
 export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
     const shipping = useFormStore((state) => state.shipping);
     const addShipping = useFormStore((state) => state.addShipping);
+    const delivery = useFormStore((state) => state.delivery);
 
+    const [rates, setRates] = useState<Rates[] | null>([]);
     const [selectedRate, setSelectedRate] = useState(shipping.service ?? "");
 
     const form = useForm<ShippingFormSchemaType>({
@@ -65,7 +70,60 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
         defaultValues: shipping,
     });
 
-    const { setShippingCost } = useShippingContext();
+    const { cart } = useCartContext();
+    const { setShippingCost, setTaxLines } = useShippingContext();
+
+    useEffect(() => {
+        const fetchRates = async () => {
+            // Simulating an API call to fetch shipping rates
+            if (cart) {
+                const lineItems = cart.lines.nodes; // contains cart items
+                const payload = {
+                    customer: "customer ID", // TODO: get the ID from shopify
+                    lineItems: lineItems.map((cartItem) => {
+                        return {
+                            variantId: cartItem.merchandise.id,
+                            quantity: cartItem.quantity,
+                        };
+                    }),
+                    deliveryDetails: delivery,
+                };
+
+                const response = await axios.post(
+                    `http://localhost:3000/Shopify/calculate`,
+                    payload
+                );
+
+                console.log(response.data);
+
+                if (response.data.availableShippingRates.length === 0) {
+                    setRates(null);
+                }
+
+                setTaxLines(response.data.taxLines);
+
+                setRates(
+                    response.data.availableShippingRates.map((rate: any) => {
+                        let transitTime = 5; // default transit time
+                        if (
+                            rate.title.includes("Express") ||
+                            rate.title.includes("Expedited") ||
+                            rate.title.includes("Priority")
+                        ) {
+                            transitTime = 3; // express services usually have a transit time of 1 day\
+                        }
+
+                        return {
+                            service: rate.title,
+                            cost: Number(rate.price.amount),
+                            transitTime: transitTime,
+                        } as Rates;
+                    })
+                );
+            }
+        };
+        fetchRates();
+    }, [cart]);
 
     const addRate = (rate: Rates) => {
         const { service, cost, transitTime } = rate;
@@ -111,29 +169,57 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {rates.map((rate) => {
-                                    const { service, cost, transitTime } = rate;
-                                    return (
-                                        <TableRow
-                                            key={service}
-                                            onClick={() => addRate(rate)}
-                                            className={cn(
-                                                "hover:cursor-pointer",
-                                                selectedRate === service
-                                                    ? "font-semibold"
-                                                    : ""
-                                            )}
-                                        >
-                                            <TableCell>{service}</TableCell>
-                                            <TableCell>{cost}</TableCell>
-                                            <TableCell>
-                                                {transitTime === 1
-                                                    ? "Next day delivery"
-                                                    : `Ships within the ${transitTime} days`}
+                                {rates ? (
+                                    rates.length > 0 ? (
+                                        rates.map((rate) => {
+                                            const {
+                                                service,
+                                                cost,
+                                                transitTime,
+                                            } = rate;
+                                            return (
+                                                <TableRow
+                                                    key={service}
+                                                    onClick={() =>
+                                                        addRate(rate)
+                                                    }
+                                                    className={cn(
+                                                        "hover:cursor-pointer",
+                                                        selectedRate === service
+                                                            ? "font-semibold"
+                                                            : ""
+                                                    )}
+                                                >
+                                                    <TableCell>
+                                                        {service}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {cost}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {transitTime === 1
+                                                            ? "Next day delivery"
+                                                            : `Ships within the ${transitTime} days`}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3}>
+                                                <Skeleton className="h-8 w-full" />
                                             </TableCell>
                                         </TableRow>
-                                    );
-                                })}
+                                    )
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={3}>
+                                            Rates not available. Try changing
+                                            the delivery address or the items in
+                                            your cart.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                         <p
@@ -149,7 +235,6 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
                         className="flex-auto"
                         type="button"
                         onClick={() => {
-                            // TODO: store in zustand
                             addShipping(form.getValues());
                             prevTab();
                         }}

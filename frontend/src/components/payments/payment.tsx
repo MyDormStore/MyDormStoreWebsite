@@ -24,6 +24,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { useCartContext } from "@/context/cartContext";
+import { useShippingContext } from "@/context/shippingContext";
 
 // payment form for checkout
 
@@ -33,7 +34,9 @@ interface PaymentFormProps {
 
 export default function PaymentForm({ prevTab }: PaymentFormProps) {
     const { cart } = useCartContext();
+    const { shippingCost, taxLines } = useShippingContext();
     const delivery = useFormStore((state) => state.delivery);
+    const shipping = useFormStore((state) => state.shipping);
 
     const [clientSecret, setClientSecret] = useState("");
 
@@ -50,15 +53,22 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                         };
                     }),
                     deliveryDetails: delivery,
+                    taxLines: taxLines,
+                    shipping: shipping,
                 };
 
-                const amount = lineItems.reduce((sum, curr) => {
-                    return (
-                        parseFloat(curr.cost.amountPerQuantity.amount) *
-                            curr.quantity +
-                        sum
-                    );
-                }, 0);
+                console.log(taxLines, shippingCost, shipping);
+
+                const amount =
+                    lineItems.reduce((sum, curr) => {
+                        return (
+                            parseFloat(curr.cost.amountPerQuantity.amount) *
+                                curr.quantity +
+                            sum
+                        );
+                    }, 0) +
+                    shippingCost +
+                    parseFloat(taxLines[0].priceSet.shopMoney.amount);
 
                 const response = await axios.post(
                     `http://localhost:3000/Stripe/create-payment-intent/${

@@ -8,7 +8,7 @@ import { Skeleton } from "./ui/skeleton";
 export function TotalDetails() {
     const { cart } = useCartContext();
 
-    const { shippingCost } = useShippingContext();
+    const { shippingCost, taxLines } = useShippingContext();
 
     const [totalPrice, setTotalPrice] = useState(0);
 
@@ -30,12 +30,24 @@ export function TotalDetails() {
         <div className="grid gap-2">
             <CostDetails title="Subtotal:" value={totalPrice} />
             <CostDetails title="Shipping" value={shippingCost} />
-            <CostDetails title="Estimated Tax:" value={totalPrice * 0.13} />
+            <CostDetails
+                title="Estimated Tax:"
+                value={
+                    taxLines[0] &&
+                    parseFloat(taxLines[0].priceSet.shopMoney.amount)
+                }
+            />
             <Separator />
             <CostDetails
                 title="Total:"
                 className="font-bold"
-                value={totalPrice + totalPrice * 0.13}
+                value={
+                    totalPrice +
+                    shippingCost +
+                    (taxLines[0]
+                        ? parseFloat(taxLines[0].priceSet.shopMoney.amount)
+                        : 0)
+                }
             />
         </div>
     );
@@ -51,7 +63,7 @@ function CostDetails({ title, value, className = "" }: CostDetailsProps) {
     return (
         <div className="grid gap-2 grid-cols-[1fr_0.3fr]">
             <h1 className={`text-sm ${className}`}>{title}</h1>
-            {value !== 0 ? (
+            {value && value !== 0 ? (
                 <span className="text-right">${value.toFixed(2)}</span>
             ) : (
                 <Skeleton />

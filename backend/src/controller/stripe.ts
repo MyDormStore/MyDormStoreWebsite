@@ -50,6 +50,8 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
             customer: payload.customer,
             lineItems: JSON.stringify(payload.lineItems),
             deliveryDetails: JSON.stringify(payload.deliveryDetails),
+            taxLines: JSON.stringify(payload.taxLines),
+            shipping: JSON.stringify(payload.shipping),
         },
     });
 
@@ -87,6 +89,8 @@ export const webhook = async (req: Request, res: Response) => {
                 customer: metadata.customer,
                 lineItems: JSON.parse(metadata.lineItems),
                 deliveryDetails: JSON.parse(metadata.deliveryDetails),
+                taxLines: JSON.parse(metadata.taxLines),
+                shipping: JSON.parse(metadata.shipping),
             };
             console.log(payload);
             await createOrder(payload);
