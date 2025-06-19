@@ -21,8 +21,8 @@ export const dormSelectList: { key: dorm; label: string }[] = [
 
 export const campusOneAddress: AddressSchemaType = {
     street: "253 College St",
-    country: "Canada",
+    country: "CA",
     city: "Toronto",
-    state: "Ontario",
+    state: "ON",
     postalCode: "M5T 1R5",
 };

@@ -77,8 +77,12 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         }
     }, [dorm]);
 
-    const [isSeperateBilling, setIsSeperateBilling] = useState(
-        delivery.billingAddress.street !== undefined ? true : false
+    const [toggleSecondaryDetails, setToggleSecondaryDetails] = useState(
+        delivery.secondaryDetails
+            ? delivery.secondaryDetails !== undefined
+                ? true
+                : false
+            : false
     );
 
     return (
@@ -99,7 +103,9 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>
+                                        Student's School Email
+                                    </FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
@@ -116,7 +122,9 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                                     name="firstName"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>First Name</FormLabel>
+                                            <FormLabel>
+                                                Student's First Name
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
                                             </FormControl>
@@ -130,7 +138,9 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                                     name="lastName"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Last Name</FormLabel>
+                                            <FormLabel>
+                                                Student's Last Name
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
                                             </FormControl>
@@ -145,7 +155,9 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                                 name="phoneNumber"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Phone Number</FormLabel>
+                                        <FormLabel>
+                                            Student's Phone Number
+                                        </FormLabel>
                                         <FormControl>
                                             <Input {...field} />
                                         </FormControl>
@@ -178,27 +190,103 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                             />
                             <div className="flex gap-2">
                                 <Checkbox
-                                    checked={isSeperateBilling}
+                                    checked={toggleSecondaryDetails}
                                     onCheckedChange={() => {
-                                        setIsSeperateBilling(
-                                            !isSeperateBilling
+                                        setToggleSecondaryDetails(
+                                            !toggleSecondaryDetails
                                         );
-                                        if (isSeperateBilling) {
-                                            form.setValue("billingAddress", {});
+                                        if (toggleSecondaryDetails) {
+                                            form.setValue(
+                                                "secondaryDetails",
+                                                undefined
+                                            );
                                         }
                                     }}
-                                    name="isSeperateBilling"
-                                    id="isSeperateBilling"
+                                    name="toggleSecondaryDetails"
+                                    id="toggleSecondaryDetails"
                                 />
-                                <Label htmlFor="isSeperateBilling">
-                                    Use a seperate billing address
+                                <Label htmlFor="toggleSecondaryDetails">
+                                    Use a secondary address
                                 </Label>
                             </div>
-                            {isSeperateBilling && (
-                                <AddressForm
-                                    control={form.control}
-                                    type="billingAddress"
-                                />
+                            {toggleSecondaryDetails && (
+                                <>
+                                    <Separator />
+                                    <FormField
+                                        control={form.control}
+                                        name="secondaryDetails.email"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Personal Email
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <div className="grid gap-2 grid-cols-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="secondaryDetails.firstName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        First Name
+                                                        (Parents/Others)
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} />
+                                                    </FormControl>
+
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="secondaryDetails.lastName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        Last Name
+                                                        (Parents/Others)
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} />
+                                                    </FormControl>
+
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <FormField
+                                        control={form.control}
+                                        name="secondaryDetails.phoneNumber"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Phone Number
+                                                    (Parents/Others)
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <AddressForm
+                                        control={form.control}
+                                        type="secondaryDetails.billingAddress"
+                                    />
+                                </>
                             )}
                         </div>
                     </CardContent>
@@ -213,7 +301,7 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
 
 interface AddressFormProps {
     control: Control<DeliveryFormSchemaType>;
-    type: "shippingAddress" | "billingAddress";
+    type: "shippingAddress" | "secondaryDetails.billingAddress";
 }
 
 const AddressForm = ({ control, type }: AddressFormProps) => {
@@ -224,7 +312,11 @@ const AddressForm = ({ control, type }: AddressFormProps) => {
                 name={`${type}.street`}
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Residence Address</FormLabel>
+                        <FormLabel>
+                            {type === "secondaryDetails.billingAddress"
+                                ? "Billing Address"
+                                : "Residence Address"}
+                        </FormLabel>
                         <FormControl>
                             <Input {...field} />
                         </FormControl>

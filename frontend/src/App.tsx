@@ -27,37 +27,34 @@ export default function App() {
 
     const [dorm, setDorm] = useState("");
     const [shippingCost, setShippingCost] = useState(0);
-    const [product, setProduct] = useState<
+    const [products, setProducts] = useState<
         ShopifyProductsData["products"]["edges"]
     >([]);
+
+    const [productRecommendations, setProductRecommendations] = useState<
+        ShopifyProductsData["products"]["edges"]
+    >([]);
+
+    /* 
+        The website should get the cart and the products on page load
+        with the products loaded, the dorm state should filter the list by the metafields of the variants/products
+
+        * Only one API call -> filter the array and make shadow copy
+    
+    */
     useEffect(() => {
         const fetchAPI = async () => {
-            // await getShop();
-            // await getProduct();
-
             setCart(
                 await getCart(
                     "gid://shopify/Cart/Z2NwLXVzLWNlbnRyYWwxOjAxSlhEWDIyTlQ2WkVNQkZQTTREUEQ3NjZY?key=2649bf3eca523015f392cd2b5747bb55"
                 )
             );
+            const productsResponse = await getProducts();
+
+            productsResponse && setProducts(productsResponse);
         };
         fetchAPI();
     }, []);
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            console.log(dorm);
-            const products =
-                dorm !== ""
-                    ? await getProductsByDorm(dorm)
-                    : await getProducts();
-            if (products) {
-                setProduct(products);
-            }
-        };
-
-        fetchProducts();
-    }, [dorm]);
 
     return (
         <CartContextProvider value={{ cart, setCart }}>
@@ -78,7 +75,7 @@ export default function App() {
 
                             <SelectDorm dorm={dorm} setDorm={setDorm} />
 
-                            <ProductTable dorm={dorm} />
+                            <ProductTable dorm={dorm} products={products} />
                             <div className="grid gap-8 lg:gap-8 md:grid-cols-2">
                                 <div className="flex flex-col gap-4">
                                     <DiscountInput />
@@ -96,28 +93,82 @@ export default function App() {
                                     )?.label ?? "Your Residence"}
                                 </h1>
                                 <RecommendedProducts>
-                                    {product.length > 0 &&
-                                        product.map((value) => {
-                                            const data =
-                                                value.node as ShopifyProductsType;
-                                            return (
-                                                <ProductDetailsCard
-                                                    id={
-                                                        data.variants.edges[0]
-                                                            .node.id
+                                    {products.length > 0 &&
+                                        products
+                                            .filter((product) => {
+                                                // TODO: remove the product metafield and assign to just variants?
+                                                // ? filter the products that are assigned and then filter the variants
+                                                if (dorm) {
+                                                    if (
+                                                        product.node
+                                                            .metafields &&
+                                                        product.node
+                                                            .metafields[1] !==
+                                                            null
+                                                    ) {
+                                                        console.log(product);
+                                                        return product.node.metafields[1].value.includes(
+                                                            dorm
+                                                        );
                                                     }
-                                                    name={data.title}
-                                                    image={
-                                                        data.featuredImage.url
-                                                    }
-                                                    cost={Number(
-                                                        data.variants.edges[0]
-                                                            .node.price.amount
-                                                    )}
-                                                    key={data["title"]}
-                                                />
-                                            );
-                                        })}
+                                                } else {
+                                                    return true;
+                                                }
+                                            })
+                                            .map((value) => {
+                                                const data =
+                                                    value.node as ShopifyProductsType;
+
+                                                return data.variants.edges
+                                                    .filter((product) => {
+                                                        if (dorm) {
+                                                            if (
+                                                                product.node
+                                                                    .metafields &&
+                                                                product.node
+                                                                    .metafields[1] !==
+                                                                    null
+                                                            ) {
+                                                                return product.node.metafields[1].value.includes(
+                                                                    dorm
+                                                                );
+                                                            } else {
+                                                                return true;
+                                                            }
+                                                        } else {
+                                                            return true;
+                                                        }
+                                                    })
+                                                    .map((variant) => {
+                                                        return (
+                                                            <ProductDetailsCard
+                                                                id={
+                                                                    variant.node
+                                                                        .id
+                                                                }
+                                                                name={
+                                                                    data.title
+                                                                }
+                                                                image={
+                                                                    data.featuredImage &&
+                                                                    data
+                                                                        .featuredImage
+                                                                        .url
+                                                                }
+                                                                cost={Number(
+                                                                    variant.node
+                                                                        .price
+                                                                        .amount
+                                                                )}
+                                                                key={
+                                                                    variant.node
+                                                                        .id
+                                                                }
+                                                            />
+                                                        );
+                                                    });
+                                                // console.log(data);
+                                            })}
                                 </RecommendedProducts>
                             </div>
                         </div>

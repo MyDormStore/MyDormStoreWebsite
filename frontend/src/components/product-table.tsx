@@ -8,7 +8,7 @@ import {
 } from "./ui/table";
 // import { cart } from "@/data/cart";
 import { Button } from "./ui/button";
-import { CircleAlert, Minus, Plus, X } from "lucide-react";
+import { CircleAlert, Loader2, Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useCartContext } from "@/context/cartContext";
 import type { CartDetailsType } from "@/types/types";
@@ -22,13 +22,24 @@ import {
 } from "./ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { removeProductToCart, updateProductQuantity } from "@/api/cart";
+import {
+    addProductToCart,
+    removeProductToCart,
+    updateProductQuantity,
+} from "@/api/cart";
+import { ShopifyProductsData } from "@/types/shopify";
 
-export function ProductTable({ dorm }: { dorm: string }) {
+export function ProductTable({
+    dorm,
+    products,
+}: {
+    dorm: string;
+    products: ShopifyProductsData["products"]["edges"];
+}) {
     const { cart, setCart } = useCartContext();
     const isMobile = useIsMobile();
-
     const [loading, setLoading] = useState(false);
+
     if (!cart) {
         return;
     }
@@ -202,6 +213,10 @@ export function ProductTable({ dorm }: { dorm: string }) {
             </TableHeader>
             <TableBody>
                 {cart.lines.nodes.map((product, index) => {
+                    console.log(
+                        product.merchandise.metafields[2]?.value.includes(dorm)
+                    );
+
                     return (
                         <TableRow key={product.id}>
                             <TableCell>
@@ -210,9 +225,10 @@ export function ProductTable({ dorm }: { dorm: string }) {
                                         src={product.merchandise.image.url}
                                         className="h-16 w-16 rounded object-fill"
                                     />
-                                    {/* {product.name === "Basic Bedding Package" &&
-                                        dorm !== "parkside" &&
-                                        dorm !== "" && (
+                                    {dorm !== "" &&
+                                        product.merchandise.metafields[2]?.value.includes(
+                                            dorm
+                                        ) && (
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger>
@@ -220,80 +236,79 @@ export function ProductTable({ dorm }: { dorm: string }) {
                                                     </TooltipTrigger>
                                                     <TooltipContent
                                                         className="flex flex-col gap-1"
-                                                        side="right">
+                                                        side="right"
+                                                    >
                                                         <h1 className="text-center w-full font-bold">
                                                             Recommended Instead
                                                         </h1>
                                                         <ProductDetails
-                                                            {...products[1]}
+                                                            id={
+                                                                products[0].node
+                                                                    .id
+                                                            }
+                                                            name={
+                                                                products[0].node
+                                                                    .title
+                                                            }
+                                                            image={
+                                                                products[0].node
+                                                                    .featuredImage &&
+                                                                products[0].node
+                                                                    .featuredImage
+                                                                    .url
+                                                            }
+                                                            cost={Number(
+                                                                products[0].node
+                                                                    .variants
+                                                                    .edges[0]
+                                                                    .node.price
+                                                                    .amount
+                                                            )}
+                                                            key={
+                                                                products[0].node
+                                                                    .variants
+                                                                    .edges[0]
+                                                                    .node.id
+                                                            }
                                                         />
                                                         <Button
                                                             variant={
                                                                 "secondary"
                                                             }
-                                                            onClick={() => {
-                                                                const newCart =
-                                                                    [...cart];
-
-                                                                newCart[index] =
-                                                                    {
-                                                                        ...products[1],
-                                                                        quantity:
-                                                                            product.quantity,
-                                                                    };
-
-                                                                setCart(
-                                                                    newCart
+                                                            disabled={loading}
+                                                            onClick={async () => {
+                                                                setLoading(
+                                                                    true
                                                                 );
-                                                            }}>
-                                                            Add to Cart
+                                                                await addProductToCart(
+                                                                    products[0]
+                                                                        .node
+                                                                        .id,
+                                                                    cart.id
+                                                                );
+                                                                const cartRes =
+                                                                    await removeProductToCart(
+                                                                        product.id,
+                                                                        cart.id
+                                                                    );
+                                                                setCart(
+                                                                    cartRes
+                                                                );
+                                                                setLoading(
+                                                                    false
+                                                                );
+                                                            }}
+                                                        >
+                                                            {loading ? (
+                                                                <Loader2 className="animate-spin" />
+                                                            ) : (
+                                                                "Add to Cart"
+                                                            )}
                                                         </Button>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         )}
-                                    {product.name ===
-                                        "Organization Essentials" &&
-                                        dorm === "chestnut" && (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger>
-                                                        <CircleAlert className="w-4 h-4 text-orange-500" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent
-                                                        className="flex flex-col gap-1"
-                                                        side="right">
-                                                        <h1 className="text-center w-full font-bold">
-                                                            Recommended Instead
-                                                        </h1>
-                                                        <ProductDetails
-                                                            {...products[9]}
-                                                        />
-                                                        <Button
-                                                            variant={
-                                                                "secondary"
-                                                            }
-                                                            onClick={() => {
-                                                                const newCart =
-                                                                    [...cart];
-
-                                                                newCart[index] =
-                                                                    {
-                                                                        ...products[9],
-                                                                        quantity:
-                                                                            product.quantity,
-                                                                    };
-
-                                                                setCart(
-                                                                    newCart
-                                                                );
-                                                            }}>
-                                                            Add to Cart
-                                                        </Button>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        )} */}
                                 </div>
                             </TableCell>
                             <TableCell>

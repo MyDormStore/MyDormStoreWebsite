@@ -4,30 +4,46 @@ import { client } from "./client";
 
 const productsQuery = `
 {
-  products(first: 10) {
+  products(first: 250) {
     edges {
       node {
-    id
-    title
-    featuredImage {
-      id
-      url
-    }
-    onlineStoreUrl
-		variants(first: 1){
-      edges{
-        node{
         id
-          price{
-            amount
+        title
+        tags
+        onlineStoreUrl
+        featuredImage {
+          id
+          url
+        }
+        variants(first: 250) {
+          edges {
+            node {
+              id
+              price {
+                amount
+              }
+                metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}]) {
+          id
+          namespace
+          key
+          value
+          type
+        }
+            }
           }
+        }
+        metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}]) {
+          id
+          namespace
+          key
+          value
+          type
         }
       }
     }
   }
-    }
-  }
 }
+
 `;
 
 export const getProducts = async () => {

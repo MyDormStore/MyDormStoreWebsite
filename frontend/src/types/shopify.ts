@@ -8,6 +8,7 @@ type ProductVariant = {
     price: {
         amount: string;
     };
+    metafields: Metafields;
 };
 
 export interface ShopifyProductsType {
@@ -20,6 +21,7 @@ export interface ShopifyProductsType {
             node: ProductVariant;
         }[];
     };
+    metafields: Metafields;
 }
 
 export interface ShopifyProductsData {
@@ -46,6 +48,7 @@ export type CartLine = {
         image: {
             url?: string; // Assuming the image object contains a URL
         };
+        metafields: Metafields;
     };
     quantity: number;
     cost: {
@@ -54,3 +57,27 @@ export type CartLine = {
         };
     };
 };
+
+export type Metafields = [
+    {
+        id: string;
+        namespace: "dorm";
+        key: "required";
+        value: string;
+        type: "list.single_line_text_field";
+    } | null,
+    {
+        id: string;
+        namespace: "dorm";
+        key: "recommended";
+        value: string;
+        type: "list.single_line_text_field";
+    } | null,
+    {
+        id: string;
+        namespace: "dorm";
+        key: "not-allowed";
+        value: string;
+        type: "list.single_line_text_field";
+    } | null
+];

@@ -46,13 +46,15 @@ const CountryDropdown = ({ disabled }: CountryDropdownProps) => {
     return (
         <Popover
             open={openCountryDropdown}
-            onOpenChange={setOpenCountryDropdown}>
+            onOpenChange={setOpenCountryDropdown}
+        >
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={openCountryDropdown}
-                    disabled={disabled}>
+                    disabled={disabled}
+                >
                     <span>
                         {countryValue ? (
                             <div className="flex items-end gap-2">
@@ -60,7 +62,7 @@ const CountryDropdown = ({ disabled }: CountryDropdownProps) => {
                                     {
                                         countries.find(
                                             (country) =>
-                                                country.name === countryValue
+                                                country.iso2 === countryValue
                                         )?.emoji
                                     }
                                 </span>
@@ -68,7 +70,7 @@ const CountryDropdown = ({ disabled }: CountryDropdownProps) => {
                                     {
                                         countries.find(
                                             (country) =>
-                                                country.name === countryValue
+                                                country.iso2 === countryValue
                                         )?.name
                                     }
                                 </span>
@@ -90,16 +92,17 @@ const CountryDropdown = ({ disabled }: CountryDropdownProps) => {
                                 {C.map((country) => (
                                     <CommandItem
                                         key={country.id}
-                                        value={country.name}
+                                        value={country.iso2}
                                         onSelect={(currentValue) => {
                                             setCountryValue(
-                                                currentValue === country.name
+                                                currentValue === country.iso2
                                                     ? currentValue
                                                     : ""
                                             );
                                             setOpenCountryDropdown(false);
                                         }}
-                                        className="flex cursor-pointer items-center justify-between text-xs hover:!bg-[#27272a] hover:!text-white">
+                                        className="flex cursor-pointer items-center justify-between text-xs hover:!bg-[#27272a] hover:!text-white"
+                                    >
                                         <div className="flex items-end gap-2">
                                             <span>{country.emoji}</span>
                                             <span className="">
@@ -109,7 +112,7 @@ const CountryDropdown = ({ disabled }: CountryDropdownProps) => {
                                         <Check
                                             className={cn(
                                                 "mr-2 h-4 w-4",
-                                                countryValue === country.name
+                                                countryValue === country.iso2
                                                     ? "opacity-100"
                                                     : "opacity-0"
                                             )}

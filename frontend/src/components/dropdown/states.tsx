@@ -39,9 +39,7 @@ const StateDropdown = () => {
     } = useDropdownStore();
 
     const SD = states as StateProps[];
-    const S = SD.filter(
-        (state) => state.country_name === sentenceCase(countryValue)
-    );
+    const S = SD.filter((state) => state.country_code === countryValue);
 
     return (
         <Popover open={openStateDropdown} onOpenChange={setOpenStateDropdown}>
@@ -50,13 +48,16 @@ const StateDropdown = () => {
                     variant="outline"
                     role="combobox"
                     aria-expanded={openStateDropdown}
-                    disabled={!countryValue || S.length === 0}>
+                    disabled={!countryValue || S.length === 0}
+                >
                     {stateValue ? (
                         <div className="flex items-end gap-2">
                             <span>
                                 {
-                                    S.find((state) => state.name === stateValue)
-                                        ?.name
+                                    S.find(
+                                        (state) =>
+                                            state.state_code === stateValue
+                                    )?.name
                                 }
                             </span>
                         </div>
@@ -75,23 +76,24 @@ const StateDropdown = () => {
                             {S.map((state) => (
                                 <CommandItem
                                     key={state.id}
-                                    value={state.name}
+                                    value={state.state_code}
                                     onSelect={(currentValue) => {
                                         setStateValue(
-                                            currentValue === state.name
+                                            currentValue === state.state_code
                                                 ? currentValue
                                                 : ""
                                         );
                                         setOpenStateDropdown(false);
                                     }}
-                                    className="flex cursor-pointer items-center justify-between text-xs">
+                                    className="flex cursor-pointer items-center justify-between text-xs"
+                                >
                                     <div className="flex items-end gap-2">
                                         <span className="">{state.name}</span>
                                     </div>
                                     <Check
                                         className={cn(
                                             "mr-2 h-4 w-4",
-                                            stateValue == state.name
+                                            stateValue == state.state_code
                                                 ? "opacity-100"
                                                 : "opacity-0"
                                         )}

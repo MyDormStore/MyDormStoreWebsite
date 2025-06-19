@@ -38,12 +38,18 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     const payload: Payload = req.body;
     console.log(payload);
 
+    const amount = req.params.amount;
+    if (!amount) {
+        res.status(400).send("Missing amount");
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
-        amount: 1000, // price changes
+        amount: parseInt(amount), // price changes
         currency: "cad",
         metadata: {
             customer: payload.customer,
             lineItems: JSON.stringify(payload.lineItems),
+            deliveryDetails: JSON.stringify(payload.deliveryDetails),
         },
     });
 
@@ -80,9 +86,10 @@ export const webhook = async (req: Request, res: Response) => {
             const payload: Payload = {
                 customer: metadata.customer,
                 lineItems: JSON.parse(metadata.lineItems),
+                deliveryDetails: JSON.parse(metadata.deliveryDetails),
             };
             console.log(payload);
-            await createOrder(payload.lineItems);
+            await createOrder(payload);
             console.log(
                 `PaymentIntent for ${paymentIntent.amount} was successful!`
             );

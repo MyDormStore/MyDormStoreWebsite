@@ -14,9 +14,18 @@ export const deliveryFormSchema = z.object({
     firstName: z.string(),
     lastName: z.string(),
     shippingAddress: addressSchema,
-    billingAddress: addressSchema.partial(),
     phoneNumber: z.string(),
     moveInDate: z.string().optional(),
+    toggleSecondaryDetails: z.boolean().optional(),
+    secondaryDetails: z
+        .object({
+            email: z.string().email(),
+            firstName: z.string(),
+            lastName: z.string(),
+            billingAddress: addressSchema,
+            phoneNumber: z.string(),
+        })
+        .optional(),
 });
 
 export type DeliveryFormSchemaType = z.infer<typeof deliveryFormSchema>;

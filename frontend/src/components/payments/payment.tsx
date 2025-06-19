@@ -33,20 +33,13 @@ interface PaymentFormProps {
 
 export default function PaymentForm({ prevTab }: PaymentFormProps) {
     const { cart } = useCartContext();
-
-    const payment = useFormStore((state) => state.payment);
-    const addPayment = useFormStore((state) => state.addPayment);
-
-    const form = useForm<PaymentFormSchemaType>({
-        resolver: zodResolver(paymentFormSchema),
-        defaultValues: payment,
-    });
+    const delivery = useFormStore((state) => state.delivery);
 
     const [clientSecret, setClientSecret] = useState("");
 
     useEffect(() => {
         const fetchData = async () => {
-            if (cart) {
+            if (cart && clientSecret === "") {
                 const lineItems = cart.lines.nodes; // contains cart items
                 const payload = {
                     customer: "customer ID", // TODO: get the ID from shopify
@@ -56,9 +49,21 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                             quantity: cartItem.quantity,
                         };
                     }),
+                    deliveryDetails: delivery,
                 };
+
+                const amount = lineItems.reduce((sum, curr) => {
+                    return (
+                        parseFloat(curr.cost.amountPerQuantity.amount) *
+                            curr.quantity +
+                        sum
+                    );
+                }, 0);
+
                 const response = await axios.post(
-                    "http://localhost:3000/Stripe/create-payment-intent",
+                    `http://localhost:3000/Stripe/create-payment-intent/${
+                        amount * 100
+                    }`,
                     payload
                 );
                 setClientSecret(response.data.clientSecret);
@@ -68,7 +73,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     }, [cart]);
 
     return (
-        <>
+        <div className="flex flex-col gap-4">
             <Card>
                 <CardHeader>
                     <CardTitle>Shipping Service</CardTitle>
@@ -98,7 +103,6 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     className="flex-auto"
                     type="button"
                     onClick={() => {
-                        addPayment(form.getValues());
                         prevTab();
                     }}
                 >
@@ -106,7 +110,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     Previous{" "}
                 </Button>
             </div>
-        </>
+        </div>
     );
 }
 
