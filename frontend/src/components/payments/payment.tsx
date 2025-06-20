@@ -1,4 +1,3 @@
-import { useForm } from "react-hook-form";
 import {
     Card,
     CardContent,
@@ -8,12 +7,9 @@ import {
 } from "../ui/card";
 
 import { stripe } from "@/api/stripe";
+import { useCartContext } from "@/context/cartContext";
+import { useShippingContext } from "@/context/shippingContext";
 import { useFormStore } from "@/core/form";
-import {
-    paymentFormSchema,
-    type PaymentFormSchemaType,
-} from "@/schema/payment-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Elements,
     PaymentElement,
@@ -23,8 +19,7 @@ import {
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
-import { useCartContext } from "@/context/cartContext";
-import { useShippingContext } from "@/context/shippingContext";
+import { useLocation } from "react-router";
 
 // payment form for checkout
 
@@ -70,6 +65,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     shippingCost +
                     parseFloat(taxLines[0].priceSet.shopMoney.amount);
 
+                console.log(amount);
                 const response = await axios.post(
                     `http://localhost:3000/Stripe/create-payment-intent/${
                         amount * 100
@@ -132,12 +128,12 @@ const CheckoutForm = () => {
         e.preventDefault();
 
         if (stripe && elements) {
-            const { error, paymentIntent } = await stripe.confirmPayment({
+            const { error } = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
-                    return_url: "http://localhost:3000/success",
+                    return_url: `${window.location}/success`, // not needed because we are going to handle the payment on the frontend
                 },
-                redirect: "if_required",
+                // redirect: "if_required",
             });
 
             if (error) {

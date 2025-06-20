@@ -93,9 +93,9 @@ export const webhook = async (req: Request, res: Response) => {
                 shipping: JSON.parse(metadata.shipping),
             };
             console.log(payload);
-            await createOrder(payload);
+            const ID = await createOrder(payload, paymentIntent.amount / 100);
             console.log(
-                `PaymentIntent for ${paymentIntent.amount} was successful!`
+                `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`
             );
             break;
         default:

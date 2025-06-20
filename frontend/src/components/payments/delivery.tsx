@@ -1,4 +1,4 @@
-import { Control, useForm, UseFormReturn } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import {
     Card,
     CardContent,
@@ -7,7 +7,9 @@ import {
     CardTitle,
 } from "../ui/card";
 
-import { useDropdownStore } from "@/lib/store/dropdown";
+import { useFormStore } from "@/core/form";
+import { dorm } from "@/data/residence";
+import { getAddress } from "@/lib/address";
 import {
     deliveryFormSchema,
     type DeliveryFormSchemaType,
@@ -17,6 +19,7 @@ import { useEffect, useState } from "react";
 import CountryDropdown from "../dropdown/countries";
 import StateDropdown from "../dropdown/states";
 import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
 import {
     Form,
     FormControl,
@@ -26,14 +29,8 @@ import {
     FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { useFormStore } from "@/core/form";
-import { Separator } from "../ui/separator";
-import { getAddress } from "@/lib/address";
-import { dorm } from "@/data/residence";
-import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
-import { useCartContext } from "@/context/cartContext";
-import axios from "axios";
+import { Separator } from "../ui/separator";
 
 // delivery form for checkout
 
@@ -55,17 +52,6 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         addDelivery(data);
         nextTab();
     };
-
-    //  TODO: APPLY DORM ADDRESS TO THE FORM
-    // useEffect(() => {
-    //     console.log(dorm);
-    //     const address = getAddress(dorm as dorm);
-    //     if (address) {
-    //         form.setValue("shippingAddress", address);
-    //         setCountryValue(address.country);
-    //         setStateValue(address.state);
-    //     }
-    // }, [dorm]);
 
     const [toggleSecondaryDetails, setToggleSecondaryDetails] = useState(
         delivery.secondaryDetails
@@ -156,25 +142,13 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                                     </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={form.control}
-                                name="moveInDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Move-in Date (Optional)
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
 
                             <Separator />
-                            <AddressForm form={form} type="shippingAddress" />
+                            <AddressForm
+                                form={form}
+                                type="shippingAddress"
+                                dorm={dorm}
+                            />
                             <div className="flex gap-2">
                                 <Checkbox
                                     checked={toggleSecondaryDetails}
@@ -289,9 +263,10 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
 interface AddressFormProps {
     form: UseFormReturn<DeliveryFormSchemaType>;
     type: "shippingAddress" | "secondaryDetails.billingAddress";
+    dorm?: string;
 }
 
-const AddressForm = ({ form, type }: AddressFormProps) => {
+const AddressForm = ({ form, type, dorm }: AddressFormProps) => {
     const { control } = form;
 
     const [countryValue, setCountryValue] = useState(
@@ -313,6 +288,18 @@ const AddressForm = ({ form, type }: AddressFormProps) => {
         form.setValue(`${type}.state`, stateValue);
         form.clearErrors(`${type}.state`);
     }, [stateValue]);
+
+    useEffect(() => {
+        if (dorm && type === "shippingAddress") {
+            console.log(dorm);
+            const address = getAddress(dorm as dorm);
+            if (address) {
+                form.setValue("shippingAddress", address);
+                setCountryValue(address.country);
+                setStateValue(address.state);
+            }
+        }
+    }, [dorm]);
 
     return (
         <>

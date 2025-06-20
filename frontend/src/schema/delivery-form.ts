@@ -15,7 +15,6 @@ export const deliveryFormSchema = z.object({
     lastName: z.string(),
     shippingAddress: addressSchema,
     phoneNumber: z.string(),
-    moveInDate: z.string().optional(),
     toggleSecondaryDetails: z.boolean().optional(),
     secondaryDetails: z
         .object({

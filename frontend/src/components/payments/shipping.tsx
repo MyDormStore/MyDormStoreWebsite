@@ -194,7 +194,11 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
                                                         {service}
                                                     </TableCell>
                                                     <TableCell>
-                                                        {cost}
+                                                        {cost === 0
+                                                            ? "Free"
+                                                            : `$${cost.toFixed(
+                                                                  2
+                                                              )}`}
                                                     </TableCell>
                                                     <TableCell>
                                                         {transitTime === 1

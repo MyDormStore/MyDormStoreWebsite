@@ -23,6 +23,7 @@ export function ProductDetails(product: ProductsType) {
 
 export function ProductDetailsCard(product: ProductsType) {
     const { cart, setCart } = useCartContext();
+
     const addProduct = async () => {
         setLoading(true);
         const cartRes = await addProductToCart(product.id, cart?.id as string);

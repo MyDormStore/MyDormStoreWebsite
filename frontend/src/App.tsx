@@ -21,6 +21,7 @@ import {
     ShopifyProductsData,
     ShopifyProductsType,
 } from "./types/shopify";
+import { useParams, useSearchParams } from "react-router";
 
 export default function App() {
     const [cart, setCart] = useState<Cart | null>(null);
@@ -33,9 +34,22 @@ export default function App() {
         ShopifyProductsData["products"]["edges"]
     >([]);
 
-    const [productRecommendations, setProductRecommendations] = useState<
-        ShopifyProductsData["products"]["edges"]
-    >([]);
+    /* 
+        The website would load the cart and products on page load
+        and then filter the products by the dorm selected
+        The cart would be used to display the products in the cart
+        The dorm would be used to filter the products by the metafields of the variants/products
+        The shipping cost and tax lines would be used to display the total cost of the cart
+        The products would be used to display the recommended products based on the dorm selected
+
+
+        to get the cartID, we can use the URL params
+        and then use the cartID to get the cart from the API
+    
+    */
+
+    const { cartID } = useParams();
+    const [searchParams] = useSearchParams();
 
     /* 
         The website should get the cart and the products on page load
@@ -46,18 +60,20 @@ export default function App() {
     */
     useEffect(() => {
         const fetchAPI = async () => {
-            setCart(
-                await getCart(
-                    "gid://shopify/Cart/Z2NwLXVzLWNlbnRyYWwxOjAxSlhEWDIyTlQ2WkVNQkZQTTREUEQ3NjZY?key=2649bf3eca523015f392cd2b5747bb55"
-                )
-            );
-            const productsResponse = await getProducts();
+            if (cartID) {
+                const key = searchParams.get("key");
+                setCart(
+                    await getCart(`gid://shopify/Cart/${cartID}?key=${key}`)
+                );
+                const productsResponse = await getProducts();
 
-            productsResponse && setProducts(productsResponse);
+                productsResponse && setProducts(productsResponse);
+            }
         };
         fetchAPI();
-    }, []);
+    }, [cartID]);
 
+    if (!cartID) return;
     return (
         <CartContextProvider value={{ cart, setCart }}>
             <ShippingContextProvider
@@ -100,18 +116,17 @@ export default function App() {
                                     {products.length > 0 &&
                                         products
                                             .filter((product) => {
-                                                // TODO: remove the product metafield and assign to just variants?
-                                                // ? filter the products that are assigned and then filter the variants
+                                                // filter the products that are assigned and then filter the variants
                                                 if (dorm) {
                                                     if (
                                                         product.node
                                                             .metafields &&
                                                         product.node
-                                                            .metafields[1] !==
+                                                            .metafields[0] !==
                                                             null
                                                     ) {
                                                         console.log(product);
-                                                        return product.node.metafields[1].value.includes(
+                                                        return product.node.metafields[0].value.includes(
                                                             dorm
                                                         );
                                                     }
@@ -130,10 +145,10 @@ export default function App() {
                                                                 product.node
                                                                     .metafields &&
                                                                 product.node
-                                                                    .metafields[1] !==
+                                                                    .metafields[0] !==
                                                                     null
                                                             ) {
-                                                                return product.node.metafields[1].value.includes(
+                                                                return product.node.metafields[0].value.includes(
                                                                     dorm
                                                                 );
                                                             } else {

@@ -44,6 +44,8 @@ export function ProductTable({
         return;
     }
 
+    console.log("cart", cart);
+
     const updateQuantity = async (id: string, quantity: number) => {
         setLoading(true);
         const cartRes = await updateProductQuantity(id, quantity, cart.id);
@@ -56,7 +58,6 @@ export function ProductTable({
         const cartRes = await removeProductToCart(id, cart.id);
         setCart(cartRes);
         setLoading(false);
-        // setCart(cart.filter((item) => item !== product));
     };
 
     if (isMobile) {
@@ -276,11 +277,19 @@ export function ProductTable({
                                                                 setLoading(
                                                                     true
                                                                 );
+
+                                                                console.log(
+                                                                    cart.id
+                                                                );
+                                                                // const cartRes =
                                                                 await addProductToCart(
                                                                     products[0]
                                                                         .node
+                                                                        .variants
+                                                                        .edges[0]
+                                                                        .node
                                                                         .id,
-                                                                    cart.id
+                                                                    cart?.id as string
                                                                 );
                                                                 const cartRes =
                                                                     await removeProductToCart(

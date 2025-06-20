@@ -75,6 +75,14 @@ export type Order = {
         };
     }[];
     taxLines?: TaxLines;
+    transactions: {
+        amountSet: {
+            shopMoney: {
+                amount: number;
+                currencyCode: string;
+            };
+        };
+    };
 };
 
 type AddressType = {

@@ -16,9 +16,8 @@ mutation CreateOrder($order: OrderCreateOrderInput!) {
 
 `;
 
-export const createOrder = async (payload: Payload) => {
-    const { lineItems, customer, deliveryDetails, taxLines, shipping } =
-        payload;
+export const createOrder = async (payload: Payload, amount: number) => {
+    const { lineItems, deliveryDetails, taxLines, shipping } = payload;
 
     const {
         shippingAddress,
@@ -62,9 +61,20 @@ export const createOrder = async (payload: Payload) => {
         ],
         taxLines: [{ ...taxLines[0], title: "HST" }],
         billingAddress: undefined,
+        transactions: {
+            amountSet: {
+                shopMoney: {
+                    amount: amount,
+                    currencyCode: "CAD",
+                },
+            },
+        },
     };
 
+    console.log(toggleSecondaryDetails, secondaryDetails);
+
     if (toggleSecondaryDetails && secondaryDetails) {
+        console.log(secondaryDetails);
         order["billingAddress"] = {
             firstName: secondaryDetails.firstName,
             lastName: secondaryDetails.lastName,
