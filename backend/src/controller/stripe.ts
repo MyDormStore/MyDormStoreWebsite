@@ -60,47 +60,47 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     });
 };
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+// const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-export const webhook = async (req: Request, res: Response) => {
-    let event: Stripe.Event = req.body;
+// export const webhook = async (req: Request, res: Response) => {
+//     let event: Stripe.Event = req.body;
 
-    if (endpointSecret) {
-        const signature = req.headers["stripe-signature"];
-        if (signature) {
-            try {
-                event = stripe.webhooks.constructEvent(
-                    req.body,
-                    signature,
-                    endpointSecret
-                );
-            } catch (err) {
-                console.error(`Webhook signature verification failed.`, err);
-                res.sendStatus(400);
-            }
-        }
-    }
+//     if (endpointSecret) {
+//         const signature = req.headers["stripe-signature"];
+//         if (signature) {
+//             try {
+//                 event = stripe.webhooks.constructEvent(
+//                     req.body,
+//                     signature,
+//                     endpointSecret
+//                 );
+//             } catch (err) {
+//                 console.error(`Webhook signature verification failed.`, err);
+//                 res.sendStatus(400);
+//             }
+//         }
+//     }
 
-    switch (event.type) {
-        case "payment_intent.succeeded":
-            const paymentIntent = event.data.object;
-            const metadata = paymentIntent.metadata;
-            const payload: Payload = {
-                customer: metadata.customer,
-                lineItems: JSON.parse(metadata.lineItems),
-                deliveryDetails: JSON.parse(metadata.deliveryDetails),
-                taxLines: JSON.parse(metadata.taxLines),
-                shipping: JSON.parse(metadata.shipping),
-            };
-            console.log(payload);
-            const ID = await createOrder(payload, paymentIntent.amount / 100);
-            console.log(
-                `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`
-            );
-            break;
-        default:
-            console.log(`unhandled event type ${event.type}`);
-    }
+//     switch (event.type) {
+//         case "payment_intent.succeeded":
+//             const paymentIntent = event.data.object;
+//             const metadata = paymentIntent.metadata;
+//             const payload: Payload = {
+//                 customer: metadata.customer,
+//                 lineItems: JSON.parse(metadata.lineItems),
+//                 deliveryDetails: JSON.parse(metadata.deliveryDetails),
+//                 taxLines: JSON.parse(metadata.taxLines),
+//                 shipping: JSON.parse(metadata.shipping),
+//             };
+//             console.log(payload);
+//             const ID = await createOrder(payload, paymentIntent.amount / 100);
+//             console.log(
+//                 `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`
+//             );
+//             break;
+//         default:
+//             console.log(`unhandled event type ${event.type}`);
+//     }
 
-    res.status(200).send();
-};
+//     res.status(200).send();
+// };

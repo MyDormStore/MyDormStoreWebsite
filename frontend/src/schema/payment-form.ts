@@ -1,4 +1,15 @@
 import { z } from "zod";
+import { addressSchema } from "./delivery-form";
+
+export const secondaryAddressSchema = z.object({
+    toggleSecondaryDetails: z.boolean().optional(),
+    email: z.string().email().optional(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    billingAddress: addressSchema.optional(),
+    phoneNumber: z.string().optional(),
+});
+export type SecondaryAddressSchemaType = z.infer<typeof secondaryAddressSchema>;
 
 export const paymentFormSchema = z.object({
     cardNumber: z.string(),

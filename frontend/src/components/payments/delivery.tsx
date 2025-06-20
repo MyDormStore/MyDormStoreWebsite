@@ -31,6 +31,7 @@ import {
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Separator } from "../ui/separator";
+import { SecondaryAddressSchemaType } from "@/schema/payment-form";
 
 // delivery form for checkout
 
@@ -53,13 +54,36 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         nextTab();
     };
 
-    const [toggleSecondaryDetails, setToggleSecondaryDetails] = useState(
-        delivery.secondaryDetails
-            ? delivery.secondaryDetails !== undefined
-                ? true
-                : false
-            : false
+    const [countryValue, setCountryValue] = useState(
+        form.getValues(`shippingAddress.country`) || ""
     );
+    const [stateValue, setStateValue] = useState(
+        form.getValues(`shippingAddress.state`) || ""
+    );
+
+    const [openCountryDropdown, setOpenCountryDropdown] = useState(false);
+    const [openStateDropdown, setOpenStateDropdown] = useState(false);
+
+    useEffect(() => {
+        form.setValue(`shippingAddress.country`, countryValue);
+        form.clearErrors(`shippingAddress.country`);
+    }, [countryValue]);
+
+    useEffect(() => {
+        form.setValue(`shippingAddress.state`, stateValue);
+        form.clearErrors(`shippingAddress.state`);
+    }, [stateValue]);
+
+    useEffect(() => {
+        if (dorm) {
+            const address = getAddress(dorm as dorm);
+            if (address) {
+                form.setValue("shippingAddress", address);
+                setCountryValue(address.country);
+                setStateValue(address.state);
+            }
+        }
+    }, [dorm]);
 
     return (
         <Form {...form}>
@@ -144,111 +168,99 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                             />
 
                             <Separator />
-                            <AddressForm
-                                form={form}
-                                type="shippingAddress"
-                                dorm={dorm}
+                            <FormField
+                                control={form.control}
+                                name={`shippingAddress.street`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Residence Address</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                            <div className="flex gap-2">
-                                <Checkbox
-                                    checked={toggleSecondaryDetails}
-                                    onCheckedChange={() => {
-                                        setToggleSecondaryDetails(
-                                            !toggleSecondaryDetails
+                            <FormField
+                                control={form.control}
+                                name={`shippingAddress.city`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>City</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid gap-2 2xl:grid-cols-3">
+                                <FormField
+                                    control={form.control}
+                                    name={`shippingAddress.country`}
+                                    render={() => {
+                                        return (
+                                            <FormItem>
+                                                <FormLabel>Country</FormLabel>
+                                                <CountryDropdown
+                                                    countryValue={countryValue}
+                                                    setCountryValue={
+                                                        setCountryValue
+                                                    }
+                                                    openCountryDropdown={
+                                                        openCountryDropdown
+                                                    }
+                                                    setOpenCountryDropdown={
+                                                        setOpenCountryDropdown
+                                                    }
+                                                />
+                                                <FormMessage />
+                                            </FormItem>
                                         );
-                                        if (toggleSecondaryDetails) {
-                                            form.setValue(
-                                                "secondaryDetails",
-                                                undefined
-                                            );
-                                        }
                                     }}
-                                    name="toggleSecondaryDetails"
-                                    id="toggleSecondaryDetails"
                                 />
-                                <Label htmlFor="toggleSecondaryDetails">
-                                    Use a secondary address
-                                </Label>
+                                <FormField
+                                    control={form.control}
+                                    name={`shippingAddress.state`}
+                                    render={() => {
+                                        return (
+                                            <FormItem>
+                                                <FormLabel>State</FormLabel>
+                                                <StateDropdown
+                                                    countryValue={countryValue}
+                                                    stateValue={stateValue}
+                                                    setStateValue={
+                                                        setStateValue
+                                                    }
+                                                    openStateDropdown={
+                                                        openStateDropdown
+                                                    }
+                                                    setOpenStateDropdown={
+                                                        setOpenStateDropdown
+                                                    }
+                                                />
+                                                <FormMessage />
+                                            </FormItem>
+                                        );
+                                    }}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`shippingAddress.postalCode`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Postal Code</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
-                            {toggleSecondaryDetails && (
-                                <>
-                                    <Separator />
-                                    <FormField
-                                        control={form.control}
-                                        name="secondaryDetails.email"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>
-                                                    Personal Email
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <div className="grid gap-2 grid-cols-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="secondaryDetails.firstName"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        First Name
-                                                        (Parents/Others)
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} />
-                                                    </FormControl>
-
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="secondaryDetails.lastName"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        Last Name
-                                                        (Parents/Others)
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} />
-                                                    </FormControl>
-
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <FormField
-                                        control={form.control}
-                                        name="secondaryDetails.phoneNumber"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>
-                                                    Phone Number
-                                                    (Parents/Others)
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <AddressForm
-                                        form={form}
-                                        type="secondaryDetails.billingAddress"
-                                    />
-                                </>
-                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -259,137 +271,3 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         </Form>
     );
 }
-
-interface AddressFormProps {
-    form: UseFormReturn<DeliveryFormSchemaType>;
-    type: "shippingAddress" | "secondaryDetails.billingAddress";
-    dorm?: string;
-}
-
-const AddressForm = ({ form, type, dorm }: AddressFormProps) => {
-    const { control } = form;
-
-    const [countryValue, setCountryValue] = useState(
-        form.getValues(`${type}.country`) || ""
-    );
-    const [stateValue, setStateValue] = useState(
-        form.getValues(`${type}.state`) || ""
-    );
-
-    const [openCountryDropdown, setOpenCountryDropdown] = useState(false);
-    const [openStateDropdown, setOpenStateDropdown] = useState(false);
-
-    useEffect(() => {
-        form.setValue(`${type}.country`, countryValue);
-        form.clearErrors(`${type}.country`);
-    }, [countryValue]);
-
-    useEffect(() => {
-        form.setValue(`${type}.state`, stateValue);
-        form.clearErrors(`${type}.state`);
-    }, [stateValue]);
-
-    useEffect(() => {
-        if (dorm && type === "shippingAddress") {
-            console.log(dorm);
-            const address = getAddress(dorm as dorm);
-            if (address) {
-                form.setValue("shippingAddress", address);
-                setCountryValue(address.country);
-                setStateValue(address.state);
-            }
-        }
-    }, [dorm]);
-
-    return (
-        <>
-            <FormField
-                control={control}
-                name={`${type}.street`}
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>
-                            {type === "secondaryDetails.billingAddress"
-                                ? "Billing Address"
-                                : "Residence Address"}
-                        </FormLabel>
-                        <FormControl>
-                            <Input {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={control}
-                name={`${type}.city`}
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                            <Input {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <div className="grid gap-2 2xl:grid-cols-3">
-                <FormField
-                    control={control}
-                    name={`${type}.country`}
-                    render={() => {
-                        return (
-                            <FormItem>
-                                <FormLabel>Country</FormLabel>
-                                <CountryDropdown
-                                    countryValue={countryValue}
-                                    setCountryValue={setCountryValue}
-                                    openCountryDropdown={openCountryDropdown}
-                                    setOpenCountryDropdown={
-                                        setOpenCountryDropdown
-                                    }
-                                />
-                                <FormMessage />
-                            </FormItem>
-                        );
-                    }}
-                />
-                <FormField
-                    control={control}
-                    name={`${type}.state`}
-                    render={() => {
-                        return (
-                            <FormItem>
-                                <FormLabel>State</FormLabel>
-                                <StateDropdown
-                                    countryValue={countryValue}
-                                    stateValue={stateValue}
-                                    setStateValue={setStateValue}
-                                    openStateDropdown={openStateDropdown}
-                                    setOpenStateDropdown={setOpenStateDropdown}
-                                />
-                                <FormMessage />
-                            </FormItem>
-                        );
-                    }}
-                />
-                <FormField
-                    control={control}
-                    name={`${type}.postalCode`}
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Postal Code</FormLabel>
-                            <FormControl>
-                                <Input {...field} />
-                            </FormControl>
-
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-        </>
-    );
-};

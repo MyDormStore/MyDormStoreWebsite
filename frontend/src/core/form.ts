@@ -1,5 +1,8 @@
 import type { DeliveryFormSchemaType } from "@/schema/delivery-form";
-import type { PaymentFormSchemaType } from "@/schema/payment-form";
+import type {
+    PaymentFormSchemaType,
+    SecondaryAddressSchemaType,
+} from "@/schema/payment-form";
 import type { ShippingFormSchemaType } from "@/schema/shipping-form";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -7,10 +10,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 interface FormState {
     delivery: DeliveryFormSchemaType;
     shipping: ShippingFormSchemaType;
-    payment: PaymentFormSchemaType;
+    payment: SecondaryAddressSchemaType;
     addDelivery: (data: DeliveryFormSchemaType) => void;
     addShipping: (data: ShippingFormSchemaType) => void;
-    addPayment: (data: PaymentFormSchemaType) => void;
+    addPayment: (data: SecondaryAddressSchemaType) => void;
 }
 
 export const useFormStore = create<FormState>()(

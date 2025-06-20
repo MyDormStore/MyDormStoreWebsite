@@ -166,6 +166,8 @@ export default function App() {
                                                                         .id
                                                                 }
                                                                 name={
+                                                                    variant.node
+                                                                        .title ??
                                                                     data.title
                                                                 }
                                                                 image={

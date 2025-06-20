@@ -10,7 +10,7 @@ createRoot(document.getElementById("root")!).render(
         <BrowserRouter>
             <Routes>
                 <Route path="/:cartID" element={<App />} />
-                <Route path="/:cartID/success" element=<SuccessPage /> />
+                <Route path="success" element=<SuccessPage /> />
             </Routes>
         </BrowserRouter>
     </StrictMode>

@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { calculateOrder, createOrder, draftOrder } from "../controller/shopify";
+import {
+    calculateOrder,
+    orderCreation,
+    draftOrder,
+} from "../controller/shopify";
 
 const router = Router();
 
-router.post("/order", createOrder);
+router.post("/order", orderCreation);
 router.post("/draft", draftOrder);
 router.post("/calculate", calculateOrder);
 

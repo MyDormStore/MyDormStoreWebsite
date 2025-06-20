@@ -5,6 +5,7 @@ type ProductImage = {
 
 type ProductVariant = {
     id: string;
+    title: string;
     price: {
         amount: string;
     };

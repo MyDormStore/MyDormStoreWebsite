@@ -13,6 +13,16 @@ export type Payload = {
         cost: number;
         transitTime?: number | undefined;
     };
+    amount: number;
+    secondaryDetails?: {
+        toggleSecondaryDetails?: boolean;
+        email: string;
+        firstName: string;
+        lastName: string;
+        billingAddress: AddressSchemaType;
+        phoneNumber: string;
+        moveInDate?: string;
+    };
 };
 
 type TaxLines = [
@@ -34,14 +44,6 @@ type DeliveryForm = {
     shippingAddress: AddressSchemaType;
     phoneNumber: string;
     moveInDate?: string;
-    toggleSecondaryDetails?: boolean;
-    secondaryDetails?: {
-        email: string;
-        firstName: string;
-        lastName: string;
-        billingAddress: AddressSchemaType;
-        phoneNumber: string;
-    };
 };
 
 type AddressSchemaType = {

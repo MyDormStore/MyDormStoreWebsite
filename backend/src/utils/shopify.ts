@@ -16,18 +16,18 @@ mutation CreateOrder($order: OrderCreateOrderInput!) {
 
 `;
 
-export const createOrder = async (payload: Payload, amount: number) => {
-    const { lineItems, deliveryDetails, taxLines, shipping } = payload;
-
+export const createOrder = async (payload: Payload) => {
     const {
-        shippingAddress,
+        lineItems,
+        deliveryDetails,
+        taxLines,
+        shipping,
+        amount,
         secondaryDetails,
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        toggleSecondaryDetails,
-    } = deliveryDetails;
+    } = payload;
+
+    const { shippingAddress, firstName, lastName, email, phoneNumber } =
+        deliveryDetails;
 
     let order: Order = {
         currency: "CAD",
@@ -71,9 +71,7 @@ export const createOrder = async (payload: Payload, amount: number) => {
         },
     };
 
-    console.log(toggleSecondaryDetails, secondaryDetails);
-
-    if (toggleSecondaryDetails && secondaryDetails) {
+    if (secondaryDetails && secondaryDetails.toggleSecondaryDetails) {
         console.log(secondaryDetails);
         order["billingAddress"] = {
             firstName: secondaryDetails.firstName,
@@ -85,8 +83,6 @@ export const createOrder = async (payload: Payload, amount: number) => {
             provinceCode: secondaryDetails.billingAddress.state,
         };
     }
-
-    console.log(order);
 
     const { data, errors } = await client.request(orderMutation, {
         variables: {
@@ -119,57 +115,57 @@ mutation CreateDraftOrder($input: DraftOrderInput!) {
 export const createDraftOrder = async (payload: Payload) => {
     const { lineItems, customer, deliveryDetails } = payload;
 
-    const {
-        shippingAddress,
-        secondaryDetails,
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        toggleSecondaryDetails,
-    } = deliveryDetails;
+    // const {
+    //     shippingAddress,
+    //     secondaryDetails,
+    //     firstName,
+    //     lastName,
+    //     email,
+    //     phoneNumber,
+    //     toggleSecondaryDetails,
+    // } = deliveryDetails;
 
-    let draftOrder: any = {
-        lineItems: lineItems.map((item) => ({
-            variantId: item.variantId,
-            quantity: item.quantity,
-        })),
-        email: email,
-        phone: phoneNumber,
-        shippingAddress: {
-            firstName,
-            lastName,
-            address1: shippingAddress.street,
-            city: shippingAddress.city,
-            countryCode: shippingAddress.country,
-            zip: shippingAddress.postalCode,
-            provinceCode: shippingAddress.state,
-        },
-        useCustomerDefaultAddress: false,
-    };
+    // let draftOrder: any = {
+    //     lineItems: lineItems.map((item) => ({
+    //         variantId: item.variantId,
+    //         quantity: item.quantity,
+    //     })),
+    //     email: email,
+    //     phone: phoneNumber,
+    //     shippingAddress: {
+    //         firstName,
+    //         lastName,
+    //         address1: shippingAddress.street,
+    //         city: shippingAddress.city,
+    //         countryCode: shippingAddress.country,
+    //         zip: shippingAddress.postalCode,
+    //         provinceCode: shippingAddress.state,
+    //     },
+    //     useCustomerDefaultAddress: false,
+    // };
 
-    if (toggleSecondaryDetails && secondaryDetails) {
-        draftOrder.billingAddress = {
-            firstName: secondaryDetails.firstName,
-            lastName: secondaryDetails.lastName,
-            address1: secondaryDetails.billingAddress.street,
-            city: secondaryDetails.billingAddress.city,
-            countryCode: secondaryDetails.billingAddress.country,
-            zip: secondaryDetails.billingAddress.postalCode,
-            provinceCode: secondaryDetails.billingAddress.state,
-        };
-    }
+    // if (toggleSecondaryDetails && secondaryDetails) {
+    //     draftOrder.billingAddress = {
+    //         firstName: secondaryDetails.firstName,
+    //         lastName: secondaryDetails.lastName,
+    //         address1: secondaryDetails.billingAddress.street,
+    //         city: secondaryDetails.billingAddress.city,
+    //         countryCode: secondaryDetails.billingAddress.country,
+    //         zip: secondaryDetails.billingAddress.postalCode,
+    //         provinceCode: secondaryDetails.billingAddress.state,
+    //     };
+    // }
 
-    const { data, errors } = await client.request(draftOrderMutation, {
-        variables: { input: draftOrder },
-    });
+    // const { data, errors } = await client.request(draftOrderMutation, {
+    //     variables: { input: draftOrder },
+    // });
 
-    if (errors) {
-        console.error(errors);
-        return;
-    }
+    // if (errors) {
+    //     console.error(errors);
+    //     return;
+    // }
 
-    return data.draftOrderCreate.draftOrder;
+    // return data.draftOrderCreate.draftOrder;
 };
 
 const draftOrderCalculateMutation = `
@@ -212,15 +208,8 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
 export const calculateDraftOrder = async (payload: Payload) => {
     const { lineItems, customer, deliveryDetails } = payload;
 
-    const {
-        shippingAddress,
-        secondaryDetails,
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        toggleSecondaryDetails,
-    } = deliveryDetails;
+    const { shippingAddress, firstName, lastName, email, phoneNumber } =
+        deliveryDetails;
 
     let draftOrder: any = {
         lineItems: lineItems.map((item) => ({
@@ -240,20 +229,6 @@ export const calculateDraftOrder = async (payload: Payload) => {
         },
         useCustomerDefaultAddress: false,
     };
-
-    if (toggleSecondaryDetails && secondaryDetails) {
-        draftOrder.billingAddress = {
-            firstName: secondaryDetails.firstName,
-            lastName: secondaryDetails.lastName,
-            address1: secondaryDetails.billingAddress.street,
-            city: secondaryDetails.billingAddress.city,
-            countryCode: secondaryDetails.billingAddress.country,
-            zip: secondaryDetails.billingAddress.postalCode,
-            provinceCode: secondaryDetails.billingAddress.state,
-        };
-    }
-
-    console.log(JSON.stringify(draftOrder, null, 2));
 
     const { data, errors } = await client.request(draftOrderCalculateMutation, {
         variables: { input: draftOrder },

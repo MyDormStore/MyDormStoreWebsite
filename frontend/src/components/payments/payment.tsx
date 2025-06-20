@@ -18,8 +18,28 @@ import {
 } from "@stripe/react-stripe-js";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "../ui/button";
-import { useLocation } from "react-router";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "../ui/form";
+import {
+    secondaryAddressSchema,
+    SecondaryAddressSchemaType,
+} from "@/schema/payment-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Checkbox } from "../ui/checkbox";
+import { Label } from "../ui/label";
+import { Separator } from "../ui/separator";
+import { Input } from "../ui/input";
+import CountryDropdown from "../dropdown/countries";
+import StateDropdown from "../dropdown/states";
+import { useNavigate } from "react-router";
 
 // payment form for checkout
 
@@ -34,25 +54,12 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     const shipping = useFormStore((state) => state.shipping);
 
     const [clientSecret, setClientSecret] = useState("");
+    const [payload, setPayload] = useState<any>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             if (cart && clientSecret === "") {
                 const lineItems = cart.lines.nodes; // contains cart items
-                const payload = {
-                    customer: "customer ID", // TODO: get the ID from shopify
-                    lineItems: lineItems.map((cartItem) => {
-                        return {
-                            variantId: cartItem.merchandise.id,
-                            quantity: cartItem.quantity,
-                        };
-                    }),
-                    deliveryDetails: delivery,
-                    taxLines: taxLines,
-                    shipping: shipping,
-                };
-
-                console.log(taxLines, shippingCost, shipping);
 
                 const amount =
                     lineItems.reduce((sum, curr) => {
@@ -66,12 +73,30 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     parseFloat(taxLines[0].priceSet.shopMoney.amount);
 
                 console.log(amount);
+
+                const payload = {
+                    customer: "customer ID", // TODO: get the ID from shopify
+                    lineItems: lineItems.map((cartItem) => {
+                        return {
+                            variantId: cartItem.merchandise.id,
+                            quantity: cartItem.quantity,
+                        };
+                    }),
+                    deliveryDetails: delivery,
+                    taxLines: taxLines,
+                    shipping: shipping,
+                    amount: amount,
+                };
+
+                setPayload(payload);
+
                 const response = await axios.post(
                     `http://localhost:3000/Stripe/create-payment-intent/${
                         amount * 100
                     }`,
                     payload
                 );
+
                 setClientSecret(response.data.clientSecret);
             }
         };
@@ -99,7 +124,10 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                             }}
                             stripe={stripe}
                         >
-                            <CheckoutForm />
+                            <CheckoutForm
+                                payload={payload}
+                                setPayload={setPayload}
+                            />
                         </Elements>
                     )}
                 </CardContent>
@@ -120,39 +148,288 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     );
 }
 
-const CheckoutForm = () => {
+const CheckoutForm = ({
+    payload,
+    setPayload,
+}: {
+    payload: any;
+    setPayload: React.Dispatch<any>;
+}) => {
     const elements = useElements();
     const stripe = useStripe();
 
-    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const payment = useFormStore((state) => state.payment);
+    const addPayment = useFormStore((state) => state.addPayment);
+
+    const form = useForm<SecondaryAddressSchemaType>({
+        resolver: zodResolver(secondaryAddressSchema),
+        defaultValues: payment,
+    });
+
+    console.log(payment);
+
+    const navigate = useNavigate();
+    const onSubmit = async (data: SecondaryAddressSchemaType) => {
+        console.log("Form Data:", data);
+
+        addPayment(data);
+
+        const newPayload = {
+            ...payload,
+            secondaryDetails: data,
+        };
+        setPayload(newPayload);
+        console.log("Payload:", newPayload);
+
+        const response = await axios.post(
+            `http://localhost:3000/Shopify/order/`,
+            newPayload
+        );
+        console.log("Response:", response.data);
 
         if (stripe && elements) {
+            console.log("Submitting payment...");
             const { error } = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
                     return_url: `${window.location}/success`, // not needed because we are going to handle the payment on the frontend
                 },
-                // redirect: "if_required",
+                redirect: "if_required",
             });
 
             if (error) {
                 console.error(error);
+            } else {
+                console.log("Payment successful!");
+                // Redirect to success page or show success message
+                navigate("/success");
             }
         }
     };
 
+    const [toggleSecondaryDetails, setToggleSecondaryDetails] = useState(
+        payment.toggleSecondaryDetails ? true : false
+    );
+
+    const [countryValue, setCountryValue] = useState(
+        form.getValues(`billingAddress.country`) || ""
+    );
+    const [stateValue, setStateValue] = useState(
+        form.getValues(`billingAddress.state`) || ""
+    );
+
+    const [openCountryDropdown, setOpenCountryDropdown] = useState(false);
+    const [openStateDropdown, setOpenStateDropdown] = useState(false);
+
+    useEffect(() => {
+        form.setValue(`billingAddress.country`, countryValue);
+        form.clearErrors(`billingAddress.country`);
+    }, [countryValue]);
+
+    useEffect(() => {
+        form.setValue(`billingAddress.state`, stateValue);
+        form.clearErrors(`billingAddress.state`);
+    }, [stateValue]);
+
     return (
-        <form
-            onSubmit={handleSubmit}
-            id="payment-form"
-            className="flex flex-col gap-2"
-        >
-            <PaymentElement options={{ layout: "auto" }} id="payment-element" />
-            <Button className="flex-auto" type="submit">
-                {" "}
-                Pay Now{" "}
-            </Button>
-        </form>
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                id="payment-form"
+                className="flex flex-col gap-4"
+            >
+                <div className="flex gap-2">
+                    <Checkbox
+                        checked={toggleSecondaryDetails}
+                        onCheckedChange={() => {
+                            setToggleSecondaryDetails(!toggleSecondaryDetails);
+                            form.setValue(
+                                "toggleSecondaryDetails",
+                                !toggleSecondaryDetails
+                            );
+                            form.clearErrors("toggleSecondaryDetails");
+                        }}
+                        name="toggleSecondaryDetails"
+                        id="toggleSecondaryDetails"
+                    />
+                    <Label htmlFor="toggleSecondaryDetails">
+                        Use a secondary address
+                    </Label>
+                </div>
+                {toggleSecondaryDetails && (
+                    <>
+                        <Separator />
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Personal Email</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="grid gap-2 grid-cols-2">
+                            <FormField
+                                control={form.control}
+                                name="firstName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            First Name (Parents/Others)
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="lastName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            Last Name (Parents/Others)
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="phoneNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Phone Number (Parents/Others)
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name={`billingAddress.street`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Billing/Personal Address
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name={`billingAddress.city`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>City</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="grid gap-2 2xl:grid-cols-3">
+                            <FormField
+                                control={form.control}
+                                name={`billingAddress.country`}
+                                render={() => {
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>Country</FormLabel>
+                                            <CountryDropdown
+                                                countryValue={countryValue}
+                                                setCountryValue={
+                                                    setCountryValue
+                                                }
+                                                openCountryDropdown={
+                                                    openCountryDropdown
+                                                }
+                                                setOpenCountryDropdown={
+                                                    setOpenCountryDropdown
+                                                }
+                                            />
+                                            <FormMessage />
+                                        </FormItem>
+                                    );
+                                }}
+                            />
+                            <FormField
+                                control={form.control}
+                                name={`billingAddress.state`}
+                                render={() => {
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>State</FormLabel>
+                                            <StateDropdown
+                                                countryValue={countryValue}
+                                                stateValue={stateValue}
+                                                setStateValue={setStateValue}
+                                                openStateDropdown={
+                                                    openStateDropdown
+                                                }
+                                                setOpenStateDropdown={
+                                                    setOpenStateDropdown
+                                                }
+                                            />
+                                            <FormMessage />
+                                        </FormItem>
+                                    );
+                                }}
+                            />
+                            <FormField
+                                control={form.control}
+                                name={`billingAddress.postalCode`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Postal Code</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </>
+                )}
+                <Separator />
+
+                <PaymentElement
+                    options={{ layout: "auto" }}
+                    id="payment-element"
+                />
+                <Button className="flex-auto" type="submit">
+                    {" "}
+                    Pay Now{" "}
+                </Button>
+            </form>
+        </Form>
     );
 };
