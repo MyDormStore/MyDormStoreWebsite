@@ -40,6 +40,7 @@ import { Input } from "../ui/input";
 import CountryDropdown from "../dropdown/countries";
 import StateDropdown from "../dropdown/states";
 import { useNavigate } from "react-router";
+import { Loader2 } from "lucide-react";
 
 // payment form for checkout
 
@@ -166,12 +167,11 @@ const CheckoutForm = ({
         defaultValues: payment,
     });
 
-    console.log(payment);
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
     const onSubmit = async (data: SecondaryAddressSchemaType) => {
-        console.log("Form Data:", data);
-
+        setLoading(true);
         addPayment(data);
 
         const newPayload = {
@@ -179,7 +179,6 @@ const CheckoutForm = ({
             secondaryDetails: data,
         };
         setPayload(newPayload);
-        console.log("Payload:", newPayload);
 
         const response = await axios.post(
             `http://localhost:3000/Shopify/order/`,
@@ -197,6 +196,7 @@ const CheckoutForm = ({
                 redirect: "if_required",
             });
 
+            setLoading(false);
             if (error) {
                 console.error(error);
             } else {
@@ -425,9 +425,13 @@ const CheckoutForm = ({
                     options={{ layout: "auto" }}
                     id="payment-element"
                 />
-                <Button className="flex-auto" type="submit">
-                    {" "}
-                    Pay Now{" "}
+                <Button
+                    className="flex-auto"
+                    type="submit"
+                    disabled={!stripe || !elements || loading}
+                    variant={loading ? "secondary" : "default"}
+                >
+                    {loading ? <Loader2 className="animate-spin" /> : "Pay Now"}
                 </Button>
             </form>
         </Form>

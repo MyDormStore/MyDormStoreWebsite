@@ -48,7 +48,10 @@ export default function PaymentLayout({ dorm }: { dorm: string }) {
                     >
                         2. Shipping
                     </TabsTrigger>
-                    <TabsTrigger value={"Payment"} disabled={!payment.name}>
+                    <TabsTrigger
+                        value={"Payment"}
+                        disabled={!payment.toggleSecondaryDetails}
+                    >
                         3. Payment
                     </TabsTrigger>
                 </TabsList>
