@@ -24,6 +24,7 @@ export const createOrder = async (payload: Payload) => {
         shipping,
         amount,
         secondaryDetails,
+        notInCart,
     } = payload;
 
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
@@ -69,16 +70,22 @@ export const createOrder = async (payload: Payload) => {
                 },
             },
         },
+        customAttributes: [],
     };
 
-    // if (shipping.moveInDate) {
-    //     order.customAttributes = [
-    //         {
-    //             moveInDate: shipping.moveInDate,
-    //         },
-    //     ];
-    // }
+    if (shipping.moveInDate) {
+        order.customAttributes?.push({
+            key: "Move In Date",
+            value: new Date(shipping.moveInDate).toDateString(),
+        });
+    }
 
+    if (notInCart && notInCart.length > 0) {
+        order.customAttributes?.push({
+            key: "Not In Cart",
+            value: notInCart.join(", "),
+        });
+    }
     if (secondaryDetails && secondaryDetails.toggleSecondaryDetails) {
         order["billingAddress"] = {
             firstName: secondaryDetails.firstName,

@@ -24,6 +24,7 @@ export type Payload = {
         phoneNumber: string;
         moveInDate?: string;
     };
+    notInCart?: string[];
 };
 
 type TaxLines = [

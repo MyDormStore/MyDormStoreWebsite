@@ -11,9 +11,11 @@ interface FormState {
     delivery: DeliveryFormSchemaType;
     shipping: ShippingFormSchemaType;
     payment: SecondaryAddressSchemaType;
+    notInCart: string[];
     addDelivery: (data: DeliveryFormSchemaType) => void;
     addShipping: (data: ShippingFormSchemaType) => void;
     addPayment: (data: SecondaryAddressSchemaType) => void;
+    addNotInCart: (data: string[]) => void;
 }
 
 export const useFormStore = create<FormState>()(
@@ -22,6 +24,7 @@ export const useFormStore = create<FormState>()(
             delivery: {} as DeliveryFormSchemaType,
             shipping: {} as ShippingFormSchemaType,
             payment: {} as PaymentFormSchemaType,
+            notInCart: [],
             addDelivery(data) {
                 set({ delivery: data });
             },
@@ -30,6 +33,9 @@ export const useFormStore = create<FormState>()(
             },
             addPayment(data) {
                 set({ payment: data });
+            },
+            addNotInCart(data) {
+                set({ notInCart: data });
             },
         }),
         {

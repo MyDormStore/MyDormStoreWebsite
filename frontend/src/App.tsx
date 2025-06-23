@@ -22,6 +22,8 @@ import {
     ShopifyProductsType,
 } from "./types/shopify";
 import { useParams, useSearchParams } from "react-router";
+import { MissingProducts } from "./components/missing-products";
+import { useFormStore } from "./core/form";
 
 export default function App() {
     const [cart, setCart] = useState<Cart | null>(null);
@@ -73,6 +75,70 @@ export default function App() {
         fetchAPI();
     }, [cartID]);
 
+    /* 
+        For the required products, we can filter the products by the dorm selected
+        and then filter the variants by the metafields of the variants/products
+
+        Using the filtered list, we can display the list of products that are required that are missing from the cart by checking the cart lines
+        variants and the metafields of the variants/products from the recommended products
+    
+    
+    */
+
+    const recommendedProducts = products.filter((product) => {
+        // filter the products that are assigned and then filter the variants
+        if (dorm) {
+            if (
+                product.node.metafields &&
+                product.node.metafields[0] !== null
+            ) {
+                return product.node.metafields[0].value.includes(dorm);
+            }
+        } else {
+            return true;
+        }
+    });
+
+    // const [notInCart, setNotInCart] = useState<string[]>([]);
+
+    const notInCart = useFormStore((state) => state.notInCart);
+    const addNotInCart = useFormStore((state) => state.addNotInCart);
+
+    useEffect(() => {
+        const missingProducts: string[] = [];
+
+        if (cart && recommendedProducts.length > 0 && dorm) {
+            console.log("Recommended Products: ", recommendedProducts);
+            console.log("Cart: ", cart);
+
+            recommendedProducts.forEach((product) => {
+                const productVariants = product.node.variants.edges;
+
+                const isInCart = productVariants.some((variant) => {
+                    const variantId = variant.node.id;
+                    const hasDorm =
+                        variant.node.metafields &&
+                        variant.node.metafields[0] !== null &&
+                        variant.node.metafields[0].value.includes(dorm);
+
+                    if (!hasDorm) return false;
+
+                    return cart.lines.nodes.some(
+                        (line) => line.merchandise.id === variantId
+                    );
+                });
+
+                if (!isInCart) {
+                    const disclaimer = product.node.title;
+                    console.log(disclaimer);
+                    missingProducts.push(disclaimer);
+                }
+            });
+        }
+        console.log("Missing Products: ", missingProducts);
+        addNotInCart(missingProducts);
+    }, [cart, dorm]);
+
     if (!cartID) return;
     return (
         <CartContextProvider value={{ cart, setCart }}>
@@ -93,8 +159,13 @@ export default function App() {
                                 </h1>
                             </div>
 
-                            <SelectDorm dorm={dorm} setDorm={setDorm} />
+                            <div className="grid gap-4">
+                                <SelectDorm dorm={dorm} setDorm={setDorm} />
 
+                                {notInCart.length > 0 && (
+                                    <MissingProducts products={notInCart} />
+                                )}
+                            </div>
                             <ProductTable dorm={dorm} products={products} />
                             <div className="grid gap-8 lg:gap-8 md:grid-cols-2">
                                 <div className="flex flex-col gap-4">
@@ -113,82 +184,59 @@ export default function App() {
                                     )?.label ?? "Your Residence"}
                                 </h1>
                                 <RecommendedProducts>
-                                    {products.length > 0 &&
-                                        products
-                                            .filter((product) => {
-                                                // filter the products that are assigned and then filter the variants
-                                                if (dorm) {
-                                                    if (
-                                                        product.node
-                                                            .metafields &&
-                                                        product.node
-                                                            .metafields[0] !==
-                                                            null
-                                                    ) {
-                                                        return product.node.metafields[0].value.includes(
-                                                            dorm
-                                                        );
-                                                    }
-                                                } else {
-                                                    return true;
-                                                }
-                                            })
-                                            .map((value) => {
-                                                const data =
-                                                    value.node as ShopifyProductsType;
+                                    {recommendedProducts.length > 0 &&
+                                        recommendedProducts.map((value) => {
+                                            const data =
+                                                value.node as ShopifyProductsType;
 
-                                                return data.variants.edges
-                                                    .filter((product) => {
-                                                        if (dorm) {
-                                                            if (
-                                                                product.node
-                                                                    .metafields &&
-                                                                product.node
-                                                                    .metafields[0] !==
-                                                                    null
-                                                            ) {
-                                                                return product.node.metafields[0].value.includes(
-                                                                    dorm
-                                                                );
-                                                            } else {
-                                                                return true;
-                                                            }
+                                            return data.variants.edges
+                                                .filter((product) => {
+                                                    if (dorm) {
+                                                        if (
+                                                            product.node
+                                                                .metafields &&
+                                                            product.node
+                                                                .metafields[0] !==
+                                                                null
+                                                        ) {
+                                                            return product.node.metafields[0].value.includes(
+                                                                dorm
+                                                            );
                                                         } else {
                                                             return true;
                                                         }
-                                                    })
-                                                    .map((variant) => {
-                                                        return (
-                                                            <ProductDetailsCard
-                                                                id={
-                                                                    variant.node
-                                                                        .id
-                                                                }
-                                                                name={
-                                                                    variant.node
-                                                                        .title ??
-                                                                    data.title
-                                                                }
-                                                                image={
-                                                                    data.featuredImage &&
-                                                                    data
-                                                                        .featuredImage
-                                                                        .url
-                                                                }
-                                                                cost={Number(
-                                                                    variant.node
-                                                                        .price
-                                                                        .amount
-                                                                )}
-                                                                key={
-                                                                    variant.node
-                                                                        .id
-                                                                }
-                                                            />
-                                                        );
-                                                    });
-                                                // console.log(data);
-                                            })}
+                                                    } else {
+                                                        return true;
+                                                    }
+                                                })
+                                                .map((variant) => {
+                                                    return (
+                                                        <ProductDetailsCard
+                                                            id={variant.node.id}
+                                                            name={
+                                                                variant.node
+                                                                    .title ??
+                                                                data.title
+                                                            }
+                                                            image={
+                                                                data.featuredImage &&
+                                                                data
+                                                                    .featuredImage
+                                                                    .url
+                                                            }
+                                                            cost={Number(
+                                                                variant.node
+                                                                    .price
+                                                                    .amount
+                                                            )}
+                                                            key={
+                                                                variant.node.id
+                                                            }
+                                                        />
+                                                    );
+                                                });
+                                            // console.log(data);
+                                        })}
                                 </RecommendedProducts>
                             </div>
                         </div>

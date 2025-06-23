@@ -42,18 +42,8 @@ export default function PaymentLayout({ dorm }: { dorm: string }) {
             >
                 <TabsList className="w-full">
                     <TabsTrigger value={"Delivery"}>1. Delivery</TabsTrigger>
-                    <TabsTrigger
-                        value={"Shipping"}
-                        disabled={!shipping.service}
-                    >
-                        2. Shipping
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value={"Payment"}
-                        disabled={!payment.toggleSecondaryDetails}
-                    >
-                        3. Payment
-                    </TabsTrigger>
+                    <TabsTrigger value={"Shipping"}>2. Shipping</TabsTrigger>
+                    <TabsTrigger value={"Payment"}>3. Payment</TabsTrigger>
                 </TabsList>
                 <TabsContent value="Delivery">
                     <DeliveryForm nextTab={nextTab} dorm={dorm} />
@@ -72,25 +62,3 @@ export default function PaymentLayout({ dorm }: { dorm: string }) {
         </div>
     );
 }
-
-/*
-
-<div className={"flex gap-2"}>
-                {currentTab !== "Delivery" && (
-                    <Button className="flex-auto" onClick={prevTab}>
-                        {" "}
-                        Previous{" "}
-                    </Button>
-                )}
-                {currentTab !== "Payment" && (
-                    <Button className="flex-auto" onClick={nextTab}>
-                        {" "}
-                        Next{" "}
-                    </Button>
-                )}
-                {currentTab === "Payment" && (
-                    <Button className="flex-auto"> Pay now </Button>
-                )}
-            </div>
-
-*/

@@ -68,7 +68,7 @@ export default function ShippingForm({
     const delivery = useFormStore((state) => state.delivery);
 
     const [rates, setRates] = useState<Rates[] | null>([]);
-    const [selectedRate, setSelectedRate] = useState(shipping.service ?? "");
+    const [selectedRate, setSelectedRate] = useState("");
 
     const form = useForm<ShippingFormSchemaType>({
         resolver: zodResolver(shippingFormSchema),

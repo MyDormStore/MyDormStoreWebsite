@@ -53,6 +53,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     const { shippingCost, taxLines } = useShippingContext();
     const delivery = useFormStore((state) => state.delivery);
     const shipping = useFormStore((state) => state.shipping);
+    const notInCart = useFormStore((state) => state.notInCart);
 
     const [clientSecret, setClientSecret] = useState("");
     const [payload, setPayload] = useState<any>(null);
@@ -85,6 +86,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     taxLines: taxLines,
                     shipping: shipping,
                     amount: amount,
+                    notInCart: notInCart,
                 };
 
                 setPayload(payload);
@@ -168,6 +170,8 @@ const CheckoutForm = ({
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
+
+    console.log(payload);
     const onSubmit = async (data: SecondaryAddressSchemaType) => {
         setLoading(true);
         addPayment(data);
