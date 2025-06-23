@@ -12,6 +12,7 @@ export type Payload = {
         service: string;
         cost: number;
         transitTime?: number | undefined;
+        moveInDate?: string;
     };
     amount: number;
     secondaryDetails?: {
@@ -85,6 +86,9 @@ export type Order = {
             };
         };
     };
+    customAttributes?: {
+        [key: string]: string;
+    }[];
 };
 
 type AddressType = {

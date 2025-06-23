@@ -71,8 +71,15 @@ export const createOrder = async (payload: Payload) => {
         },
     };
 
+    // if (shipping.moveInDate) {
+    //     order.customAttributes = [
+    //         {
+    //             moveInDate: shipping.moveInDate,
+    //         },
+    //     ];
+    // }
+
     if (secondaryDetails && secondaryDetails.toggleSecondaryDetails) {
-        console.log(secondaryDetails);
         order["billingAddress"] = {
             firstName: secondaryDetails.firstName,
             lastName: secondaryDetails.lastName,
@@ -92,7 +99,7 @@ export const createOrder = async (payload: Payload) => {
 
     if (errors) {
         console.error(errors);
-        return;
+        return errors;
     }
 
     return data.orderCreate.order.id;

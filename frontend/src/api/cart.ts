@@ -27,6 +27,31 @@ id
                 value
                 type
             }
+            product {
+                id
+                title
+                featuredImage {
+          id
+          url
+        }
+                variants(first: 250) {
+                edges {
+                  node {
+                    id
+                    price {
+                      amount
+                    }
+                      metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}]) {
+                        id
+                        namespace
+                        key
+                        value
+                        type
+                      }
+                  }
+                }
+              }
+            }
           }
         }
       }

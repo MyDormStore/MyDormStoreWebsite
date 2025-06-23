@@ -125,7 +125,6 @@ export default function App() {
                                                             .metafields[0] !==
                                                             null
                                                     ) {
-                                                        console.log(product);
                                                         return product.node.metafields[0].value.includes(
                                                             dorm
                                                         );

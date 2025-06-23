@@ -50,6 +50,7 @@ export type CartLine = {
             url?: string; // Assuming the image object contains a URL
         };
         metafields: Metafields;
+        product: ShopifyProductsType;
     };
     quantity: number;
     cost: {

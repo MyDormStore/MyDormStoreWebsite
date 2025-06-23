@@ -73,8 +73,6 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     shippingCost +
                     parseFloat(taxLines[0].priceSet.shopMoney.amount);
 
-                console.log(amount);
-
                 const payload = {
                     customer: "customer ID", // TODO: get the ID from shopify
                     lineItems: lineItems.map((cartItem) => {
@@ -185,9 +183,9 @@ const CheckoutForm = ({
             newPayload
         );
         console.log("Response:", response.data);
+        setLoading(false);
 
         if (stripe && elements) {
-            console.log("Submitting payment...");
             const { error } = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
@@ -196,14 +194,12 @@ const CheckoutForm = ({
                 redirect: "if_required",
             });
 
-            setLoading(false);
-            if (error) {
-                console.error(error);
-            } else {
-                console.log("Payment successful!");
-                // Redirect to success page or show success message
-                navigate("/success");
-            }
+            // if (error) {
+            //     console.error(error);
+            // } else {
+            //     // Redirect to success page or show success message
+            //     navigate("/success");
+            // }
         }
     };
 
@@ -264,7 +260,9 @@ const CheckoutForm = ({
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Personal Email</FormLabel>
+                                    <FormLabel>
+                                        Email (Parents/Others)
+                                    </FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>

@@ -59,7 +59,11 @@ export default function PaymentLayout({ dorm }: { dorm: string }) {
                     <DeliveryForm nextTab={nextTab} dorm={dorm} />
                 </TabsContent>
                 <TabsContent value="Shipping">
-                    <ShippingForm prevTab={prevTab} nextTab={nextTab} />
+                    <ShippingForm
+                        prevTab={prevTab}
+                        nextTab={nextTab}
+                        dorm={dorm}
+                    />
                 </TabsContent>
                 <TabsContent value="Payment">
                     <PaymentForm prevTab={prevTab} />

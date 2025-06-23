@@ -7,27 +7,25 @@ import {
     TableRow,
 } from "./ui/table";
 // import { cart } from "@/data/cart";
-import { Button } from "./ui/button";
+import {
+    addProductToCart,
+    removeProductToCart,
+    updateProductQuantity,
+} from "@/api/cart";
+import { useCartContext } from "@/context/cartContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { ShopifyProductsData, ShopifyProductsType } from "@/types/shopify";
 import { CircleAlert, Loader2, Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
-import { useCartContext } from "@/context/cartContext";
-import type { CartDetailsType } from "@/types/types";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { ProductDetails, ProductDetailsCard } from "./product-details";
+import { ProductDetails } from "./product-details";
+import { Button } from "./ui/button";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "./ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
-import {
-    addProductToCart,
-    removeProductToCart,
-    updateProductQuantity,
-} from "@/api/cart";
-import { ShopifyProductsData } from "@/types/shopify";
 
 export function ProductTable({
     dorm,
@@ -43,8 +41,6 @@ export function ProductTable({
     if (!cart) {
         return;
     }
-
-    console.log("cart", cart);
 
     const updateQuantity = async (id: string, quantity: number) => {
         setLoading(true);
@@ -214,6 +210,30 @@ export function ProductTable({
             </TableHeader>
             <TableBody>
                 {cart.lines.nodes.map((product, index) => {
+                    let recommendedProductVariants: ShopifyProductsType["variants"]["edges"][number][] =
+                        [];
+
+                    let recommendedProduct: ShopifyProductsType | null = null;
+                    if (
+                        dorm !== "" &&
+                        product.merchandise.metafields[2]?.value.includes(dorm)
+                    ) {
+                        const allProductVariants =
+                            product.merchandise.product.variants.edges;
+
+                        allProductVariants.forEach((product) => {
+                            if (
+                                product.node.metafields[1]?.value.includes(dorm)
+                            ) {
+                                recommendedProductVariants.push(product);
+                            }
+                        });
+
+                        if (recommendedProductVariants.length > 0) {
+                            recommendedProduct = product.merchandise.product;
+                        }
+                    }
+
                     return (
                         <TableRow key={product.id}>
                             <TableCell>
@@ -223,9 +243,9 @@ export function ProductTable({
                                         className="h-16 w-16 rounded object-fill"
                                     />
                                     {dorm !== "" &&
-                                        product.merchandise.metafields[2]?.value.includes(
-                                            dorm
-                                        ) && (
+                                        recommendedProduct !== null &&
+                                        recommendedProductVariants.length >
+                                            0 && (
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger>
@@ -238,78 +258,79 @@ export function ProductTable({
                                                         <h1 className="text-center w-full font-bold">
                                                             Recommended Instead
                                                         </h1>
-                                                        <ProductDetails
-                                                            id={
-                                                                products[0].node
-                                                                    .id
-                                                            }
-                                                            name={
-                                                                products[0].node
-                                                                    .title
-                                                            }
-                                                            image={
-                                                                products[0].node
-                                                                    .featuredImage &&
-                                                                products[0].node
-                                                                    .featuredImage
-                                                                    .url
-                                                            }
-                                                            cost={Number(
-                                                                products[0].node
-                                                                    .variants
-                                                                    .edges[0]
-                                                                    .node.price
-                                                                    .amount
-                                                            )}
-                                                            key={
-                                                                products[0].node
-                                                                    .variants
-                                                                    .edges[0]
-                                                                    .node.id
-                                                            }
-                                                        />
-                                                        <Button
-                                                            variant={
-                                                                "secondary"
-                                                            }
-                                                            disabled={loading}
-                                                            onClick={async () => {
-                                                                setLoading(
-                                                                    true
-                                                                );
+                                                        {recommendedProductVariants.map(
+                                                            (
+                                                                recommendedProductVariant
+                                                            ) => {
+                                                                return (
+                                                                    <>
+                                                                        <ProductDetails
+                                                                            id={
+                                                                                recommendedProduct.id
+                                                                            }
+                                                                            name={
+                                                                                recommendedProduct.title
+                                                                            }
+                                                                            image={
+                                                                                recommendedProduct.featuredImage &&
+                                                                                recommendedProduct
+                                                                                    .featuredImage
+                                                                                    .url
+                                                                            }
+                                                                            cost={Number(
+                                                                                recommendedProductVariant
+                                                                                    .node
+                                                                                    .price
+                                                                                    .amount
+                                                                            )}
+                                                                            key={
+                                                                                recommendedProductVariant
+                                                                                    .node
+                                                                                    .id
+                                                                            }
+                                                                        />
+                                                                        <Button
+                                                                            variant={
+                                                                                "secondary"
+                                                                            }
+                                                                            disabled={
+                                                                                loading
+                                                                            }
+                                                                            onClick={async () => {
+                                                                                setLoading(
+                                                                                    true
+                                                                                );
 
-                                                                console.log(
-                                                                    cart.id
+                                                                                // const cartRes =
+                                                                                await addProductToCart(
+                                                                                    recommendedProductVariant
+                                                                                        .node
+                                                                                        .id,
+                                                                                    cart?.id as string
+                                                                                );
+                                                                                const cartRes =
+                                                                                    await removeProductToCart(
+                                                                                        product.id,
+                                                                                        cart.id
+                                                                                    );
+                                                                                setCart(
+                                                                                    cartRes
+                                                                                );
+                                                                                setLoading(
+                                                                                    false
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            {loading ? (
+                                                                                <Loader2 className="animate-spin" />
+                                                                            ) : (
+                                                                                "Add to Cart"
+                                                                            )}
+                                                                        </Button>
+                                                                    </>
                                                                 );
-                                                                // const cartRes =
-                                                                await addProductToCart(
-                                                                    products[0]
-                                                                        .node
-                                                                        .variants
-                                                                        .edges[0]
-                                                                        .node
-                                                                        .id,
-                                                                    cart?.id as string
-                                                                );
-                                                                const cartRes =
-                                                                    await removeProductToCart(
-                                                                        product.id,
-                                                                        cart.id
-                                                                    );
-                                                                setCart(
-                                                                    cartRes
-                                                                );
-                                                                setLoading(
-                                                                    false
-                                                                );
-                                                            }}
-                                                        >
-                                                            {loading ? (
-                                                                <Loader2 className="animate-spin" />
-                                                            ) : (
-                                                                "Add to Cart"
-                                                            )}
-                                                        </Button>
+                                                            }
+                                                        )}
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>

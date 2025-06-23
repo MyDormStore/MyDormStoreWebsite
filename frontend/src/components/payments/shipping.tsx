@@ -48,6 +48,7 @@ import { el } from "date-fns/locale";
 interface ShippingFormProps {
     prevTab: () => void;
     nextTab: () => void;
+    dorm: string;
 }
 
 interface Rates {
@@ -57,7 +58,11 @@ interface Rates {
     transitTime: number;
 }
 
-export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
+export default function ShippingForm({
+    prevTab,
+    nextTab,
+    dorm,
+}: ShippingFormProps) {
     const shipping = useFormStore((state) => state.shipping);
     const addShipping = useFormStore((state) => state.addShipping);
     const delivery = useFormStore((state) => state.delivery);
@@ -125,7 +130,7 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
         // Watch for changes in the form and update the shipping context
 
         const subscription = form.watch((data) => {
-            if (data.moveInDate && rates) {
+            if (data.moveInDate && rates && dorm) {
                 const moveInDate = new Date(data.moveInDate);
                 if (
                     (moveInDate.getMonth() === 7 &&
@@ -145,12 +150,7 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
                         return [
                             ...prevRates,
                             {
-                                service: "Flat Rate - $5",
-                                cost: 5,
-                                transitTime: 1,
-                            },
-                            {
-                                service: "Flat Rate - $10",
+                                service: "Flat Rate",
                                 cost: 10,
                                 transitTime: 2,
                             },
@@ -163,7 +163,7 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
             }
         });
         return () => subscription.unsubscribe();
-    }, [form]);
+    }, [form, dorm]);
 
     useEffect(() => {
         fetchRates();
@@ -181,7 +181,6 @@ export default function ShippingForm({ prevTab, nextTab }: ShippingFormProps) {
     };
 
     const onSubmit = (data: ShippingFormSchemaType) => {
-        console.log(data);
         addShipping(data);
         nextTab();
     };

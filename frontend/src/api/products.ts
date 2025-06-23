@@ -23,12 +23,12 @@ const productsQuery = `
                 amount
               }
                 metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}]) {
-          id
-          namespace
-          key
-          value
-          type
-        }
+                  id
+                  namespace
+                  key
+                  value
+                  type
+                }
             }
           }
         }
