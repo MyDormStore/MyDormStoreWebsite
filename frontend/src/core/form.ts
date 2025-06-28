@@ -19,28 +19,28 @@ interface FormState {
 }
 
 export const useFormStore = create<FormState>()(
-    persist(
-        (set, get) => ({
-            delivery: {} as DeliveryFormSchemaType,
-            shipping: {} as ShippingFormSchemaType,
-            payment: {} as PaymentFormSchemaType,
-            notInCart: [],
-            addDelivery(data) {
-                set({ delivery: data });
-            },
-            addShipping(data) {
-                set({ shipping: data });
-            },
-            addPayment(data) {
-                set({ payment: data });
-            },
-            addNotInCart(data) {
-                set({ notInCart: data });
-            },
-        }),
-        {
-            name: "form-storage",
-            storage: createJSONStorage(() => localStorage),
-        }
-    )
+    // persist(
+    (set, get) => ({
+        delivery: {} as DeliveryFormSchemaType,
+        shipping: {} as ShippingFormSchemaType,
+        payment: {} as PaymentFormSchemaType,
+        notInCart: [],
+        addDelivery(data) {
+            set({ delivery: data });
+        },
+        addShipping(data) {
+            set({ shipping: data });
+        },
+        addPayment(data) {
+            set({ payment: data });
+        },
+        addNotInCart(data) {
+            set({ notInCart: data });
+        },
+    })
+    //     {
+    //         name: "form-storage",
+    //         storage: createJSONStorage(() => localStorage),
+    //     }
+    // )
 );

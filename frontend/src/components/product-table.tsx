@@ -9,7 +9,7 @@ import {
 // import { cart } from "@/data/cart";
 import {
     addProductToCart,
-    removeProductToCart,
+    removeProductFromCart,
     updateProductQuantity,
 } from "@/api/cart";
 import { useCartContext } from "@/context/cartContext";
@@ -51,7 +51,7 @@ export function ProductTable({
 
     const handleRemove = async (id: string) => {
         setLoading(true);
-        const cartRes = await removeProductToCart(id, cart.id);
+        const cartRes = await removeProductFromCart([id], cart.id);
         setCart(cartRes);
         setLoading(false);
     };
@@ -309,8 +309,10 @@ export function ProductTable({
                                                                                     cart?.id as string
                                                                                 );
                                                                                 const cartRes =
-                                                                                    await removeProductToCart(
-                                                                                        product.id,
+                                                                                    await removeProductFromCart(
+                                                                                        [
+                                                                                            product.id,
+                                                                                        ],
                                                                                         cart.id
                                                                                     );
                                                                                 setCart(

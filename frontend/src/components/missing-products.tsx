@@ -15,8 +15,7 @@ export function MissingProducts({ products }: { products: string[] }) {
                     <ul className="list-disc pl-5">
                         {products.map((product, index) => (
                             <li key={index} className="text-orange-700">
-                                Recommended product "{product}" is not in the
-                                cart.
+                                Required product "{product}" is not in the cart.
                             </li>
                         ))}
                     </ul>

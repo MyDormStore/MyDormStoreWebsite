@@ -39,7 +39,7 @@ import { Separator } from "../ui/separator";
 import { Input } from "../ui/input";
 import CountryDropdown from "../dropdown/countries";
 import StateDropdown from "../dropdown/states";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 
 // payment form for checkout
@@ -169,9 +169,19 @@ const CheckoutForm = ({
 
     const [loading, setLoading] = useState(false);
 
+    const { cartID } = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    console.log(payload);
+    const [URL, setURL] = useState("");
+
+    useEffect(() => {
+        if (cartID) {
+            const key = searchParams.get("key");
+            setURL(`/${cartID}/success?key=${key}`);
+        }
+    }, [cartID]);
+
     const onSubmit = async (data: SecondaryAddressSchemaType) => {
         setLoading(true);
         addPayment(data);
@@ -190,7 +200,7 @@ const CheckoutForm = ({
         setLoading(false);
 
         if (stripe && elements) {
-            const { error } = await stripe.confirmPayment({
+            const { error, paymentIntent } = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
                     return_url: `${window.location}/success`, // not needed because we are going to handle the payment on the frontend
@@ -198,12 +208,16 @@ const CheckoutForm = ({
                 redirect: "if_required",
             });
 
-            // if (error) {
-            //     console.error(error);
-            // } else {
-            //     // Redirect to success page or show success message
-            //     navigate("/success");
-            // }
+            if (error) {
+                console.error(error);
+            } else {
+                // Redirect to success page or show success message
+
+                if (paymentIntent.id) {
+                    // console.log(URL + `?payment=${paymentIntent.id}`);
+                    navigate(URL + `&payment=${paymentIntent.id}`);
+                }
+            }
         }
     };
 
@@ -253,7 +267,7 @@ const CheckoutForm = ({
                         id="toggleSecondaryDetails"
                     />
                     <Label htmlFor="toggleSecondaryDetails">
-                        Use a secondary address
+                        Use a home/billing address
                     </Label>
                 </div>
                 {toggleSecondaryDetails && (

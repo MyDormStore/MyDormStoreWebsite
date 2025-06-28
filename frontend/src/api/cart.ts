@@ -171,12 +171,12 @@ mutation removeCartLines($cartId: ID!, $lineIds: [ID!]!) {
 }
 `;
 
-export const removeProductToCart = async (id: string, cartId: string) => {
+export const removeProductFromCart = async (id: string[], cartId: string) => {
     try {
         const { data, errors } = await client.request(removeProductQuery, {
             variables: {
                 cartId: cartId,
-                lineIds: [id],
+                lineIds: id,
             },
         });
 

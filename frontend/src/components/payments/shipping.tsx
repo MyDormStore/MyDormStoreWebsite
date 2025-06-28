@@ -97,8 +97,6 @@ export default function ShippingForm({
                 payload
             );
 
-            console.log(response.data);
-
             if (response.data.availableShippingRates.length === 0) {
                 setRates(null);
             }
@@ -148,7 +146,7 @@ export default function ShippingForm({
                         if (hasFlatRate) return prevRates;
 
                         return [
-                            ...prevRates,
+                            // ...prevRates,
                             {
                                 service: "Flat Rate",
                                 cost: 10,
