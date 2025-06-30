@@ -25,6 +25,7 @@ export const createOrder = async (payload: Payload) => {
         amount,
         secondaryDetails,
         notInCart,
+        rp_id,
     } = payload;
 
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
@@ -48,7 +49,6 @@ export const createOrder = async (payload: Payload) => {
             zip: shippingAddress.postalCode,
             provinceCode: shippingAddress.state,
         },
-        test: true,
         shippingLines: [
             {
                 title: shipping.service,
@@ -86,6 +86,14 @@ export const createOrder = async (payload: Payload) => {
             value: notInCart.join(", "),
         });
     }
+
+    if (rp_id) {
+        order.customAttributes?.push({
+            key: "rp_id",
+            value: rp_id,
+        });
+    }
+
     if (secondaryDetails && secondaryDetails.toggleSecondaryDetails) {
         order["billingAddress"] = {
             firstName: secondaryDetails.firstName,

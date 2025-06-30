@@ -57,6 +57,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
 
     const [clientSecret, setClientSecret] = useState("");
     const [payload, setPayload] = useState<any>(null);
+    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -74,6 +75,8 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     shippingCost +
                     parseFloat(taxLines[0].priceSet.shopMoney.amount);
 
+                const rp_id = searchParams.get("rp_id");
+
                 const payload = {
                     customer: "customer ID", // TODO: get the ID from shopify
                     lineItems: lineItems.map((cartItem) => {
@@ -87,14 +90,15 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     shipping: shipping,
                     amount: amount,
                     notInCart: notInCart,
+                    rp_id: rp_id ? rp_id : undefined,
                 };
 
                 setPayload(payload);
 
                 const response = await axios.post(
-                    `http://localhost:3000/Stripe/create-payment-intent/${
-                        amount * 100
-                    }`,
+                    `${
+                        import.meta.env.VITE_BACKEND_URL
+                    }/Stripe/create-payment-intent/${amount * 100}`,
                     payload
                 );
 
@@ -193,7 +197,7 @@ const CheckoutForm = ({
         setPayload(newPayload);
 
         const response = await axios.post(
-            `http://localhost:3000/Shopify/order/`,
+            `${import.meta.env}/Shopify/order/`,
             newPayload
         );
         console.log("Response:", response.data);

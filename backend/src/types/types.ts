@@ -25,6 +25,7 @@ export type Payload = {
         moveInDate?: string;
     };
     notInCart?: string[];
+    rp_id?: string | undefined;
 };
 
 type TaxLines = [

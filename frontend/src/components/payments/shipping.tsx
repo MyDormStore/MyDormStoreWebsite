@@ -17,8 +17,11 @@ import {
 } from "@/schema/shipping-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
+import { format } from "date-fns";
+import { CalendarIcon, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
+import { Calendar } from "../ui/calendar";
 import {
     Form,
     FormControl,
@@ -28,6 +31,7 @@ import {
     FormLabel,
     FormMessage,
 } from "../ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Skeleton } from "../ui/skeleton";
 import {
     Table,
@@ -37,11 +41,6 @@ import {
     TableHeader,
     TableRow,
 } from "../ui/table";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CalendarIcon, X } from "lucide-react";
-import { Calendar } from "../ui/calendar";
-import { format, sub } from "date-fns";
-import { el } from "date-fns/locale";
 
 // rates form for checkout
 
@@ -93,7 +92,7 @@ export default function ShippingForm({
             };
 
             const response = await axios.post(
-                `http://localhost:3000/Shopify/calculate`,
+                `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
 
