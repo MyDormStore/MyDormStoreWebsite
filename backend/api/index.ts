@@ -10,11 +10,7 @@ const port = 3000;
 
 // setting up middlewares
 app.use(cors({ origin: true }));
-
-// app.post("/Stripe/webhook", express.raw({ type: "*/*" }), webhook);
-
 app.use(express.json());
-// app.use(express.raw({ type: "*/*" }));
 
 app.use("/Stripe", StripeRouter);
 app.use("/Shopify", ShopifyRouter);

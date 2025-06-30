@@ -12,7 +12,7 @@
         "noEmit": true,
 
         "outDir": "./dist",
-        "rootDir": "./src",
+        "rootDir": "./api",
         "strict": true
     }
 }
