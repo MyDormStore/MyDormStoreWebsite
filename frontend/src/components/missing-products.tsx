@@ -14,7 +14,7 @@ export function MissingProducts({ products }: { products: string[] }) {
                 {products.length > 0 && (
                     <ul className="list-disc pl-5">
                         {products.map((product, index) => (
-                            <li key={index} className="text-orange-700">
+                            <li key={index} className="text-error">
                                 Required product "{product}" is not in the cart.
                             </li>
                         ))}

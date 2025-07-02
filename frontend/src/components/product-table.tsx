@@ -400,7 +400,7 @@ export function ProductTable({
                                     ).toFixed(2)}
                                 </span>
                             </TableCell>
-                            <TableCell className="grid w-full h-full place-items-center">
+                            <TableCell className="">
                                 <X
                                     className="w-4 h-4"
                                     onClick={() => {

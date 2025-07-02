@@ -68,7 +68,7 @@ export default function App() {
                     await getCart(`gid://shopify/Cart/${cartID}?key=${key}`)
                 );
                 const productsResponse = await getProducts();
-
+                console.log(productsResponse);
                 productsResponse && setProducts(productsResponse);
             }
         };
@@ -107,9 +107,10 @@ export default function App() {
     useEffect(() => {
         const missingProducts: string[] = [];
 
-        if (cart && recommendedProducts.length > 0 && dorm) {
-            console.log("Recommended Products: ", recommendedProducts);
-            console.log("Cart: ", cart);
+        if (cart && dorm) {
+            console.log(cart);
+            // console.log("Recommended Products: ", recommendedProducts);
+            // console.log("Cart: ", cart);
 
             recommendedProducts.forEach((product) => {
                 const productVariants = product.node.variants.edges;
@@ -121,6 +122,7 @@ export default function App() {
                         variant.node.metafields[0] !== null &&
                         variant.node.metafields[0].value.includes(dorm);
 
+                    console.log(hasDorm);
                     if (!hasDorm) return false;
 
                     return cart.lines.nodes.some(
@@ -135,7 +137,7 @@ export default function App() {
                 }
             });
         }
-        console.log("Missing Products: ", missingProducts);
+        // console.log("Missing Products: ", missingProducts);
         addNotInCart(missingProducts);
     }, [cart, dorm]);
 
@@ -175,17 +177,16 @@ export default function App() {
                                     <TotalDetails />
                                 </div>
                             </div>
-
-                            <div className="w-full gap-4">
-                                <h1 className="md:text-lg font-semibold">
-                                    Recommended Product For{" "}
-                                    {dormSelectList.find(
-                                        (select) => select.key === dorm
-                                    )?.label ?? "Your Residence"}
-                                </h1>
-                                <RecommendedProducts>
-                                    {recommendedProducts.length > 0 &&
-                                        recommendedProducts.map((value) => {
+                            {recommendedProducts.length > 0 && (
+                                <div className="w-full gap-4">
+                                    <h1 className="md:text-lg font-semibold">
+                                        Recommended Product For{" "}
+                                        {dormSelectList.find(
+                                            (select) => select.key === dorm
+                                        )?.label ?? "Your Residence"}
+                                    </h1>
+                                    <RecommendedProducts>
+                                        {recommendedProducts.map((value) => {
                                             const data =
                                                 value.node as ShopifyProductsType;
 
@@ -194,14 +195,27 @@ export default function App() {
                                                     if (dorm) {
                                                         if (
                                                             product.node
-                                                                .metafields &&
-                                                            product.node
-                                                                .metafields[0] !==
-                                                                null
+                                                                .metafields
                                                         ) {
-                                                            return product.node.metafields[0].value.includes(
-                                                                dorm
-                                                            );
+                                                            if (
+                                                                product.node
+                                                                    .metafields[0] !==
+                                                                null
+                                                            ) {
+                                                                return product.node.metafields[0].value.includes(
+                                                                    dorm
+                                                                );
+                                                            } else if (
+                                                                product.node
+                                                                    .metafields[1] !==
+                                                                null
+                                                            ) {
+                                                                return product.node.metafields[1].value.includes(
+                                                                    dorm
+                                                                );
+                                                            } else {
+                                                                return true;
+                                                            }
                                                         } else {
                                                             return true;
                                                         }
@@ -237,8 +251,9 @@ export default function App() {
                                                 });
                                             // console.log(data);
                                         })}
-                                </RecommendedProducts>
-                            </div>
+                                    </RecommendedProducts>
+                                </div>
+                            )}
                         </div>
                         <div className="p-4 lg:pl-8 lg:mt-24 w-full">
                             <PaymentLayout dorm={dorm} />

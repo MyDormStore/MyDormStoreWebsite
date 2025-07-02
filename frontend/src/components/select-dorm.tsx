@@ -23,7 +23,7 @@ export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
     return (
         <div className="flex gap-4 flex-col">
             <div className="grid gap-2">
-                <Label>What school are you attending?</Label>
+                <Label>What school are you attending? (Optional)</Label>
                 <Select onValueChange={setSchool} value={school}>
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose Dorm..." />
@@ -40,7 +40,7 @@ export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
                 </Select>
             </div>
             <div className="grid gap-2">
-                <Label>What residence are you staying in?</Label>
+                <Label>What residence are you staying in? (Optional)</Label>
                 <Select onValueChange={setDorm} value={dorm} disabled={!school}>
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose Dorm..." />
