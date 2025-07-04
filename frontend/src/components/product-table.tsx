@@ -92,7 +92,7 @@ export function ProductTable({
                                                         Recommended Instead
                                                     </h1>
                                                     <ProductDetails
-                                                        {...products[1]}
+                                                        {...products[2]}
                                                     />
                                                     <Button
                                                         variant={"secondary"}
@@ -101,7 +101,7 @@ export function ProductTable({
                                                                 ...cart,
                                                             ];
                                                             newCart[index] = {
-                                                                ...products[1],
+                                                                ...products[2],
                                                                 quantity:
                                                                     product.quantity,
                                                             };
@@ -127,7 +127,7 @@ export function ProductTable({
                                                         Recommended Instead
                                                     </h1>
                                                     <ProductDetails
-                                                        {...products[1]}
+                                                        {...products[2]}
                                                     />
                                                     <Button
                                                         variant={"secondary"}
@@ -136,7 +136,7 @@ export function ProductTable({
                                                                 ...cart,
                                                             ];
                                                             newCart[index] = {
-                                                                ...products[1],
+                                                                ...products[2],
                                                                 quantity:
                                                                     product.quantity,
                                                             };
@@ -235,13 +235,13 @@ export function ProductTable({
                         allProductVariants.forEach((product) => {
                             if (
                                 checkGroupFromDorm(
-                                    product.node.metafields[1]?.value
+                                    product.node.metafields[3]?.value
                                         .replace(/^\[|\]$/g, "")
                                         .replace(/^\"|\"$/g, "")
                                         .split(",") as DormGroups[],
                                     dorm
                                 ) ||
-                                product.node.metafields[1]?.value.includes(dorm)
+                                product.node.metafields[3]?.value.includes(dorm)
                             ) {
                                 recommendedProductVariants.push(product);
                             }

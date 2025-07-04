@@ -81,5 +81,12 @@ export type Metafields = [
         key: "not-allowed";
         value: string;
         type: "list.single_line_text_field";
+    } | null,
+    {
+        id: string;
+        namespace: "dorm";
+        key: "alternative";
+        value: string;
+        type: "list.single_line_text_field";
     } | null
 ];
