@@ -26,6 +26,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "./ui/tooltip";
+import { DormGroups } from "@/data/residence";
+import { checkGroupFromDorm } from "@/lib/dorm-details";
 
 export function ProductTable({
     dorm,
@@ -216,13 +218,29 @@ export function ProductTable({
                     let recommendedProduct: ShopifyProductsType | null = null;
                     if (
                         dorm !== "" &&
-                        product.merchandise.metafields[2]?.value.includes(dorm)
+                        (checkGroupFromDorm(
+                            product.merchandise.metafields[2]?.value
+                                .replace(/^\[|\]$/g, "")
+                                .replace(/^\"|\"$/g, "")
+                                .split(",") as DormGroups[],
+                            dorm
+                        ) ||
+                            product.merchandise.metafields[2]?.value.includes(
+                                dorm
+                            ))
                     ) {
                         const allProductVariants =
                             product.merchandise.product.variants.edges;
 
                         allProductVariants.forEach((product) => {
                             if (
+                                checkGroupFromDorm(
+                                    product.node.metafields[1]?.value
+                                        .replace(/^\[|\]$/g, "")
+                                        .replace(/^\"|\"$/g, "")
+                                        .split(",") as DormGroups[],
+                                    dorm
+                                ) ||
                                 product.node.metafields[1]?.value.includes(dorm)
                             ) {
                                 recommendedProductVariants.push(product);

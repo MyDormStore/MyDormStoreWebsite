@@ -55,7 +55,10 @@ export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
                             })
                             .map((dorm) => {
                                 return (
-                                    <SelectItem key={dorm.key} value={dorm.key}>
+                                    <SelectItem
+                                        key={dorm.key + dorm.school}
+                                        value={dorm.key}
+                                    >
                                         {dorm.label}
                                     </SelectItem>
                                 );
