@@ -196,32 +196,37 @@ const CheckoutForm = ({
         };
         setPayload(newPayload);
 
-        const response = await axios.post(
-            `${import.meta.env}/Shopify/order/`,
-            newPayload
-        );
-        console.log("Response:", response.data);
-        setLoading(false);
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_BACKEND_URL}/Shopify/order/`,
+                newPayload
+            );
+            console.log("Response:", response.data);
 
-        if (stripe && elements) {
-            const { error, paymentIntent } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {
-                    return_url: `${window.location}/success`, // not needed because we are going to handle the payment on the frontend
-                },
-                redirect: "if_required",
-            });
+            if (stripe && elements) {
+                const { error, paymentIntent } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {
+                        return_url: `${window.location}/success`, // not needed because we are going to handle the payment on the frontend
+                    },
+                    redirect: "if_required",
+                });
 
-            if (error) {
-                console.error(error);
-            } else {
-                // Redirect to success page or show success message
+                if (error) {
+                    throw error;
+                } else {
+                    // Redirect to success page or show success message
 
-                if (paymentIntent.id) {
-                    // console.log(URL + `?payment=${paymentIntent.id}`);
-                    navigate(URL + `&payment=${paymentIntent.id}`);
+                    if (paymentIntent.id) {
+                        // console.log(URL + `?payment=${paymentIntent.id}`);
+                        navigate(URL + `&payment=${paymentIntent.id}`);
+                    }
                 }
             }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 

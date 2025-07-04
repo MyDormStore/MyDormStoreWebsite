@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const addressSchema = z.object({
-    postalCode: z.string().min(1, "Postal Code is required").toUpperCase(),
-    country: z.string().min(1, "Country Code is required").toUpperCase(),
+    postalCode: z.string().toUpperCase(),
+    country: z.string().toUpperCase(),
     city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required").toUpperCase(),
+    state: z.string().toUpperCase(),
     street: z.string().min(1, "Street is required"),
     residential: z.boolean().optional(),
 });

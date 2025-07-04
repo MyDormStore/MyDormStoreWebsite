@@ -6,7 +6,7 @@ export const secondaryAddressSchema = z.object({
     email: z.string().email().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
-    billingAddress: addressSchema.optional(),
+    billingAddress: addressSchema.partial().optional(),
     phoneNumber: z.string().optional(),
 });
 export type SecondaryAddressSchemaType = z.infer<typeof secondaryAddressSchema>;

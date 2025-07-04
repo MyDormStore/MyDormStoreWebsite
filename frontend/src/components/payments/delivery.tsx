@@ -9,7 +9,7 @@ import {
 
 import { useFormStore } from "@/core/form";
 import { dorm } from "@/data/residence";
-import { getAddress } from "@/lib/address";
+import { getAddress } from "@/lib/dorm-details";
 import {
     deliveryFormSchema,
     type DeliveryFormSchemaType,

@@ -98,6 +98,7 @@ export default function ShippingForm({
 
             if (response.data.availableShippingRates.length === 0) {
                 setRates(null);
+                return;
             }
 
             setTaxLines(response.data.taxLines);
@@ -286,7 +287,7 @@ export default function ShippingForm({
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {rates ? (
+                                        {rates !== null ? (
                                             rates.length > 0 ? (
                                                 rates
                                                     .sort((a, b) =>

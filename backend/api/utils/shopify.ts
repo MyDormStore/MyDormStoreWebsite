@@ -261,5 +261,6 @@ export const calculateDraftOrder = async (payload: Payload) => {
         return;
     }
 
+    console.log(data);
     return data;
 };

@@ -53,7 +53,7 @@ export function SuccessPage() {
                 <NavBar />
             </div>
 
-            <div className="grid place-content-center grow">
+            <div className="flex flex-col items-center h-full justify-center w-full">
                 <CheckoutLayout>
                     <Table className="h-fit overflow-scroll">
                         <TableHeader>
@@ -127,24 +127,24 @@ export function SuccessPage() {
                                 })}
                         </TableBody>
                     </Table>
-                    <div className="flex flex-col items-center justify-center h-full">
+                    <div className="flex flex-col items-center justify-center h-full text-center w-full">
                         <h1 className="text-3xl font-bold mb-4">
                             Payment Successful!
                         </h1>
-                        <p className="text-lg mb-2">
+                        <p className="text-lg font-bold mb-2">
                             Thank you for your purchase.
                         </p>
-                        <p className="text-md text-gray-600">
+                        <p className="text-md">
                             Your order has been processed successfully.
                         </p>
-                        <p className="text-md text-gray-600">
+                        <p className="text-md">
                             You will receive a confirmation email shortly.
                         </p>
-                        <p className="text-md text-gray-600">
+                        <p className="text-md">
                             If you have any questions, please contact our
                             support team.
                         </p>
-                        <p className="text-md text-gray-600">
+                        <p className="text-md">
                             Thank you for choosing our service!
                         </p>{" "}
                     </div>
