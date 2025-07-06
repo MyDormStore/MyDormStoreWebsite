@@ -20,7 +20,7 @@ id
             image {
               url
             }
-            metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}]) {
+              metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}, {namespace: "dorm", key: "alternative"}]) {
                 id
                 namespace
                 key
@@ -41,7 +41,7 @@ id
                     price {
                       amount
                     }
-                      metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}]) {
+                    metafields(identifiers: [{namespace: "dorm", key: "required"}, {namespace: "dorm", key: "recommended"}, {namespace: "dorm", key: "not-allowed"}, {namespace: "dorm", key: "alternative"}]) {
                         id
                         namespace
                         key
