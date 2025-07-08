@@ -264,8 +264,8 @@ export default function ShippingForm({
                                             </Button>
                                         </div>
                                         <FormDescription>
-                                            Your date of birth is used to
-                                            calculate your age.
+                                            The move in date is used to
+                                            calculate the rates
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>

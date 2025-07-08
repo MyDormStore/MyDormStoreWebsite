@@ -31,13 +31,14 @@ id
                 id
                 title
                 featuredImage {
-          id
-          url
-        }
+                id
+                url
+              }
                 variants(first: 250) {
                 edges {
                   node {
                     id
+                    title
                     price {
                       amount
                     }

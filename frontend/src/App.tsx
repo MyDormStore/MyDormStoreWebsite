@@ -69,7 +69,6 @@ export default function App() {
                     await getCart(`gid://shopify/Cart/${cartID}?key=${key}`)
                 );
                 const productsResponse = await getProducts();
-                console.log(productsResponse);
                 productsResponse && setProducts(productsResponse);
             }
         };
@@ -117,10 +116,6 @@ export default function App() {
         const missingProducts: string[] = [];
 
         if (cart && dorm) {
-            console.log(cart);
-            // console.log("Recommended Products: ", recommendedProducts);
-            // console.log("Cart: ", cart);
-
             recommendedProducts.forEach((product) => {
                 const productVariants = product.node.variants.edges;
 
@@ -138,7 +133,6 @@ export default function App() {
                         ) ||
                             variant.node.metafields[0].value.includes(dorm));
 
-                    console.log(hasDorm);
                     if (!hasDorm) return false;
 
                     return cart.lines.nodes.some(
@@ -148,12 +142,10 @@ export default function App() {
 
                 if (!isInCart) {
                     const disclaimer = product.node.title;
-                    console.log(disclaimer);
                     missingProducts.push(disclaimer);
                 }
             });
         }
-        // console.log("Missing Products: ", missingProducts);
         addNotInCart(missingProducts);
     }, [cart, dorm]);
 
@@ -299,7 +291,6 @@ export default function App() {
                                                         />
                                                     );
                                                 });
-                                            // console.log(data);
                                         })}
                                     </RecommendedProducts>
                                 </div>

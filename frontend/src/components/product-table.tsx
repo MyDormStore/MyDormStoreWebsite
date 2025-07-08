@@ -233,6 +233,7 @@ export function ProductTable({
                             product.merchandise.product.variants.edges;
 
                         allProductVariants.forEach((product) => {
+                            // console.log(product);
                             if (
                                 checkGroupFromDorm(
                                     product.node.metafields[3]?.value
@@ -274,7 +275,11 @@ export function ProductTable({
                                                         side="right"
                                                     >
                                                         <h1 className="text-center w-full font-bold">
-                                                            Recommended Instead
+                                                            Incorrect bedding
+                                                            size for your
+                                                            residence. Please
+                                                            update to the
+                                                            required size:
                                                         </h1>
                                                         {recommendedProductVariants.map(
                                                             (
@@ -288,6 +293,11 @@ export function ProductTable({
                                                                             }
                                                                             name={
                                                                                 recommendedProduct.title
+                                                                            }
+                                                                            description={
+                                                                                recommendedProductVariant
+                                                                                    .node
+                                                                                    .title
                                                                             }
                                                                             image={
                                                                                 recommendedProduct.featuredImage &&
@@ -360,11 +370,14 @@ export function ProductTable({
                             <TableCell>
                                 <div className="grid gap-1">
                                     <span className="font-semibold">
-                                        {product.merchandise.title}
+                                        {product.merchandise.product.title}
                                     </span>
-                                    {/* <span className="font-light">
-                                        {product.description}
-                                    </span> */}
+                                    {product.merchandise.title !==
+                                        "Default Title" && (
+                                        <span className="font-light">
+                                            {product.merchandise.title}
+                                        </span>
+                                    )}
                                 </div>
                             </TableCell>
                             <TableCell>

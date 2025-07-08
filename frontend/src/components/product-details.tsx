@@ -12,9 +12,11 @@ export function ProductDetails(product: ProductsType) {
     return (
         <div className="flex gap-2 h-fit items-center">
             <img src={product.image} className="object-cover h-16 rounded" />
-            <div className="grid gap-1">
+            <div className="grid gap-2">
                 <span className="font-semibold">{product.name}</span>
-                {/* <span className="font-light">{product.}</span> */}
+                {product.description && (
+                    <span className="font-light">{product.description}</span>
+                )}
             </div>
             <span className="ml-auto">${product.cost.toFixed(2)}</span>
         </div>
