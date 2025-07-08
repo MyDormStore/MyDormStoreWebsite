@@ -98,7 +98,7 @@ const CountryDropdown = ({
                     <CommandList>
                         <CommandEmpty>No country found.</CommandEmpty>
                         <CommandGroup>
-                            <ScrollArea className="max-h-[300px]">
+                            <ScrollArea>
                                 {C.map((country) => (
                                     <CommandItem
                                         key={country.id}

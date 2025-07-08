@@ -1,10 +1,8 @@
 import { AddressSchemaType } from "@/schema/delivery-form";
 
-// export const dormList = ["chestnut", "campusOne", "parkside"] as const;
 export type dorm = (typeof dormSelectList)[number]["key"];
 
-export const schoolList = ["uoft", "tmu", "york"] as const;
-export type school = (typeof schoolList)[number];
+export type school = (typeof schoolSelectList)[number];
 
 interface dormSelectListType {
     key: string;
@@ -562,7 +560,13 @@ export const dormSelectList: dormSelectListType[] = [
         label: "Quad Phase 2 (Toronto)",
         school: "York University",
     },
-] as const;
+].sort((a, b) => {
+    if (a.key < b.key) {
+        return -1;
+    } else {
+        return 1;
+    }
+});
 export const schoolSelectList: dormSelectListType[] = [
     { key: "Algonquin College", label: "Algonquin College" },
     { key: "Brock", label: "Brock" },
@@ -629,7 +633,13 @@ export const schoolSelectList: dormSelectListType[] = [
     { key: "Western University", label: "Western University" },
     { key: "Wilfrid Laurier University", label: "Wilfrid Laurier University" },
     { key: "York University", label: "York University" },
-] as const;
+].sort((a, b) => {
+    if (a.key < b.key) {
+        return -1;
+    } else {
+        return 1;
+    }
+});
 
 export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
     "17Hundred": {

@@ -266,13 +266,19 @@ export default function App() {
                                                     }
                                                 })
                                                 .map((variant) => {
+                                                    console.log(variant);
                                                     return (
                                                         <ProductDetailsCard
                                                             id={variant.node.id}
-                                                            name={
+                                                            name={data.title}
+                                                            description={
                                                                 variant.node
-                                                                    .title ??
-                                                                data.title
+                                                                    .title !==
+                                                                "Default Title"
+                                                                    ? variant
+                                                                          .node
+                                                                          .title
+                                                                    : undefined
                                                             }
                                                             image={
                                                                 data.featuredImage &&

@@ -19,6 +19,7 @@ const productsQuery = `
           edges {
             node {
               id
+              title
               price {
                 amount
               }

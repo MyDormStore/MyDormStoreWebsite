@@ -46,7 +46,11 @@ export function ProductDetailsCard(product: ProductsType) {
                 />
                 <div className="grid gap-2 mt-2">
                     <span className="font-semibold">{product.name}</span>
-                    {/* <span className="font-light">{product.description}</span> */}
+                    {product.description && (
+                        <span className="font-light">
+                            {product.description}
+                        </span>
+                    )}
                 </div>
             </CardContent>
             <CardFooter className="flex gap-2 justify-end">
