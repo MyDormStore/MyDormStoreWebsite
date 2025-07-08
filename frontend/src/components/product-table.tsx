@@ -435,7 +435,7 @@ export function ProductTable({
                             </TableCell>
                             <TableCell className="">
                                 {loading ? (
-                                    <Loader2 className="animate-spin" />
+                                    <Loader2 className="animate-spin w-4 h-4" />
                                 ) : (
                                     <X
                                         className="w-4 h-4 cursor-pointer"
