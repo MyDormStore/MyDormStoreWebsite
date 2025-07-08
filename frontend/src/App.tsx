@@ -241,6 +241,33 @@ export default function App() {
                                                                 );
                                                                 if (
                                                                     product.node
+                                                                        .metafields[2] !==
+                                                                    null
+                                                                ) {
+                                                                    return !(
+                                                                        checkGroupFromDorm(
+                                                                            product.node.metafields[2].value
+                                                                                .replace(
+                                                                                    /^\[|\]$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .replace(
+                                                                                    /^\"|\"$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .split(
+                                                                                    ","
+                                                                                ) as DormGroups[],
+                                                                            dorm
+                                                                        ) ||
+                                                                        product.node.metafields[2].value.includes(
+                                                                            dorm
+                                                                        )
+                                                                    );
+                                                                }
+
+                                                                if (
+                                                                    product.node
                                                                         .metafields[0] !==
                                                                     null
                                                                 ) {
