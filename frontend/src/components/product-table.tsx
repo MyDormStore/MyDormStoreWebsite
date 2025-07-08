@@ -281,7 +281,9 @@ export function ProductTable({
                                                             update to the
                                                             required size:
                                                         </h1>
-                                                        {recommendedProductVariants.map(
+                                                        {[
+                                                            recommendedProductVariants[0],
+                                                        ].map(
                                                             (
                                                                 recommendedProductVariant
                                                             ) => {
@@ -432,12 +434,16 @@ export function ProductTable({
                                 </span>
                             </TableCell>
                             <TableCell className="">
-                                <X
-                                    className="w-4 h-4"
-                                    onClick={() => {
-                                        handleRemove(product.id);
-                                    }}
-                                />
+                                {loading ? (
+                                    <Loader2 className="animate-spin" />
+                                ) : (
+                                    <X
+                                        className="w-4 h-4 cursor-pointer"
+                                        onClick={() => {
+                                            handleRemove(product.id);
+                                        }}
+                                    />
+                                )}
                             </TableCell>
                         </TableRow>
                     );
