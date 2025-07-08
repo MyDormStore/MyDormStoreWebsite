@@ -85,29 +85,51 @@ export default function App() {
     
     */
 
-    const recommendedProducts = products.filter((product) => {
+    const requiredProducts = products.filter((product) => {
         // filter the products that are assigned and then filter the variants
         if (dorm) {
             if (
                 product.node.metafields &&
                 product.node.metafields[0] !== null
             ) {
-                return (
+                const hasDorm =
                     checkGroupFromDorm(
                         product.node.metafields[0].value
                             .replace(/^\[|\]$/g, "")
                             .replace(/^\"|\"$/g, "")
                             .split(",") as DormGroups[],
                         dorm
-                    ) || product.node.metafields[0].value.includes(dorm)
-                );
+                    ) || product.node.metafields[0].value.includes(dorm);
+                console.log(hasDorm);
+                return hasDorm;
             }
         } else {
             return true;
         }
     });
 
-    // const [notInCart, setNotInCart] = useState<string[]>([]);
+    const recommendedProducts = products.filter((product) => {
+        // filter the products that are assigned and then filter the variants
+        if (dorm) {
+            if (
+                product.node.metafields &&
+                product.node.metafields[1] !== null
+            ) {
+                const hasDorm =
+                    checkGroupFromDorm(
+                        product.node.metafields[1].value
+                            .replace(/^\[|\]$/g, "")
+                            .replace(/^\"|\"$/g, "")
+                            .split(",") as DormGroups[],
+                        dorm
+                    ) || product.node.metafields[1].value.includes(dorm);
+                console.log(hasDorm);
+                return hasDorm;
+            }
+        } else {
+            return true;
+        }
+    });
 
     const notInCart = useFormStore((state) => state.notInCart);
     const addNotInCart = useFormStore((state) => state.addNotInCart);
@@ -116,24 +138,29 @@ export default function App() {
         const missingProducts: string[] = [];
 
         if (cart && dorm) {
-            recommendedProducts.forEach((product) => {
+            requiredProducts.forEach((product) => {
                 const productVariants = product.node.variants.edges;
 
                 const isInCart = productVariants.some((variant) => {
                     const variantId = variant.node.id;
-                    const hasDorm =
-                        variant.node.metafields &&
-                        variant.node.metafields[0] !== null &&
-                        (checkGroupFromDorm(
-                            variant.node.metafields[0].value
-                                .replace(/^\[|\]$/g, "")
-                                .replace(/^\"|\"$/g, "")
-                                .split(",") as DormGroups[],
-                            dorm
-                        ) ||
-                            variant.node.metafields[0].value.includes(dorm));
 
-                    if (!hasDorm) return false;
+                    if (variant.node.title !== "Default Title") {
+                        const hasDorm =
+                            variant.node.metafields &&
+                            variant.node.metafields[0] !== null &&
+                            (checkGroupFromDorm(
+                                variant.node.metafields[0].value
+                                    .replace(/^\[|\]$/g, "")
+                                    .replace(/^\"|\"$/g, "")
+                                    .split(",") as DormGroups[],
+                                dorm
+                            ) ||
+                                variant.node.metafields[0].value.includes(
+                                    dorm
+                                ));
+
+                        if (!hasDorm) return false;
+                    }
 
                     return cart.lines.nodes.some(
                         (line) => line.merchandise.id === variantId
@@ -155,7 +182,7 @@ export default function App() {
             <ShippingContextProvider
                 value={{ shippingCost, setShippingCost, taxLines, setTaxLines }}
             >
-                <div className="w-dvw h-dvh overflow-y-scroll">
+                <div className="w-dvw h-dvh overflow-y-scroll text-primary">
                     <NavBar />
                     <CheckoutLayout>
                         <div className="p-4 lg:mt-12 lg:pr-8 flex flex-col gap-16">
@@ -185,7 +212,8 @@ export default function App() {
                                     <TotalDetails />
                                 </div>
                             </div>
-                            {recommendedProducts.length > 0 && (
+                            {requiredProducts.concat(recommendedProducts)
+                                .length > 0 && (
                                 <div className="w-full gap-4">
                                     <h1 className="md:text-lg font-semibold">
                                         Recommended Product For{" "}
@@ -194,110 +222,121 @@ export default function App() {
                                         )?.label ?? "Your Residence"}
                                     </h1>
                                     <RecommendedProducts>
-                                        {recommendedProducts.map((value) => {
-                                            const data =
-                                                value.node as ShopifyProductsType;
+                                        {requiredProducts
+                                            .concat(recommendedProducts)
+                                            .map((value) => {
+                                                const data =
+                                                    value.node as ShopifyProductsType;
 
-                                            return data.variants.edges
-                                                .filter((product) => {
-                                                    if (dorm) {
-                                                        if (
-                                                            product.node
-                                                                .metafields
-                                                        ) {
+                                                return data.variants.edges
+                                                    .filter((product) => {
+                                                        if (dorm) {
                                                             if (
                                                                 product.node
-                                                                    .metafields[0] !==
-                                                                null
+                                                                    .metafields
                                                             ) {
-                                                                return (
-                                                                    checkGroupFromDorm(
-                                                                        product.node.metafields[0].value
-                                                                            .replace(
-                                                                                /^\[|\]$/g,
-                                                                                ""
-                                                                            )
-                                                                            .replace(
-                                                                                /^\"|\"$/g,
-                                                                                ""
-                                                                            )
-                                                                            .split(
-                                                                                ","
-                                                                            ) as DormGroups[],
-                                                                        dorm
-                                                                    ) ||
-                                                                    product.node.metafields[0].value.includes(
-                                                                        dorm
-                                                                    )
+                                                                console.log(
+                                                                    product.node
+                                                                        .metafields
                                                                 );
-                                                            } else if (
-                                                                product.node
-                                                                    .metafields[1] !==
-                                                                null
-                                                            ) {
-                                                                return (
-                                                                    checkGroupFromDorm(
-                                                                        product.node.metafields[1].value
-                                                                            .replace(
-                                                                                /^\[|\]$/g,
-                                                                                ""
-                                                                            )
-                                                                            .replace(
-                                                                                /^\"|\"$/g,
-                                                                                ""
-                                                                            )
-                                                                            .split(
-                                                                                ","
-                                                                            ) as DormGroups[],
-                                                                        dorm
-                                                                    ) ||
-                                                                    product.node.metafields[1].value.includes(
-                                                                        dorm
-                                                                    )
-                                                                );
+                                                                if (
+                                                                    product.node
+                                                                        .metafields[0] !==
+                                                                    null
+                                                                ) {
+                                                                    return (
+                                                                        checkGroupFromDorm(
+                                                                            product.node.metafields[0].value
+                                                                                .replace(
+                                                                                    /^\[|\]$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .replace(
+                                                                                    /^\"|\"$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .split(
+                                                                                    ","
+                                                                                ) as DormGroups[],
+                                                                            dorm
+                                                                        ) ||
+                                                                        product.node.metafields[0].value.includes(
+                                                                            dorm
+                                                                        )
+                                                                    );
+                                                                } else if (
+                                                                    product.node
+                                                                        .metafields[1] !==
+                                                                    null
+                                                                ) {
+                                                                    return (
+                                                                        checkGroupFromDorm(
+                                                                            product.node.metafields[1].value
+                                                                                .replace(
+                                                                                    /^\[|\]$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .replace(
+                                                                                    /^\"|\"$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .split(
+                                                                                    ","
+                                                                                ) as DormGroups[],
+                                                                            dorm
+                                                                        ) ||
+                                                                        product.node.metafields[1].value.includes(
+                                                                            dorm
+                                                                        )
+                                                                    );
+                                                                } else {
+                                                                    return true;
+                                                                }
                                                             } else {
                                                                 return true;
                                                             }
                                                         } else {
                                                             return true;
                                                         }
-                                                    } else {
-                                                        return true;
-                                                    }
-                                                })
-                                                .map((variant) => {
-                                                    console.log(variant);
-                                                    return (
-                                                        <ProductDetailsCard
-                                                            id={variant.node.id}
-                                                            name={data.title}
-                                                            description={
-                                                                variant.node
-                                                                    .title !==
-                                                                "Default Title"
-                                                                    ? variant
-                                                                          .node
-                                                                          .title
-                                                                    : undefined
-                                                            }
-                                                            image={
-                                                                data.featuredImage &&
-                                                                data
-                                                                    .featuredImage
-                                                                    .url
-                                                            }
-                                                            cost={Number(
-                                                                variant.node
-                                                                    .price
-                                                                    .amount
-                                                            )}
-                                                            key={
-                                                                variant.node.id
-                                                            }
-                                                        />
-                                                    );
-                                                });
-                                        })}
+                                                    })
+                                                    .map((variant) => {
+                                                        return (
+                                                            <ProductDetailsCard
+                                                                id={
+                                                                    variant.node
+                                                                        .id
+                                                                }
+                                                                name={
+                                                                    data.title
+                                                                }
+                                                                description={
+                                                                    variant.node
+                                                                        .title !==
+                                                                    "Default Title"
+                                                                        ? variant
+                                                                              .node
+                                                                              .title
+                                                                        : undefined
+                                                                }
+                                                                image={
+                                                                    data.featuredImage &&
+                                                                    data
+                                                                        .featuredImage
+                                                                        .url
+                                                                }
+                                                                cost={Number(
+                                                                    variant.node
+                                                                        .price
+                                                                        .amount
+                                                                )}
+                                                                key={
+                                                                    variant.node
+                                                                        .id
+                                                                }
+                                                            />
+                                                        );
+                                                    });
+                                            })}
                                     </RecommendedProducts>
                                 </div>
                             )}

@@ -17,9 +17,10 @@ export function getAddress(dorm: dorm) {
 export function checkGroupFromDorm(groups: DormGroups[], dorm: dorm) {
     if (groups) {
         return groups.some((group) => {
-            if (dormGroupsList[group])
-                return dormGroupsList[group].includes(dorm);
-            else return false;
+            if (dormGroupsList[group]) {
+                const hasDorm = dormGroupsList[group].includes(dorm);
+                return hasDorm;
+            } else return false;
         });
     } else {
         return false;
