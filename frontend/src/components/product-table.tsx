@@ -28,6 +28,7 @@ import {
 } from "./ui/tooltip";
 import { DormGroups } from "@/data/residence";
 import { checkGroupFromDorm } from "@/lib/dorm-details";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 export function ProductTable({
     dorm,
@@ -124,106 +125,103 @@ export function ProductTable({
                                 {dorm !== "" &&
                                     recommendedProduct !== null &&
                                     recommendedProductVariants.length > 0 && (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger>
-                                                    <CircleAlert className="w-4 h-4 text-orange-500 -mr-4" />
-                                                </TooltipTrigger>
-                                                <TooltipContent
-                                                    className="flex flex-col gap-1"
-                                                    side="bottom"
-                                                >
-                                                    <h1 className="text-center w-full font-bold">
-                                                        Incorrect bedding size
-                                                        for your residence.
-                                                        Please update to the
-                                                        required size:
-                                                    </h1>
-                                                    {[
-                                                        recommendedProductVariants[0],
-                                                    ].map(
-                                                        (
-                                                            recommendedProductVariant
-                                                        ) => {
-                                                            return (
-                                                                <>
-                                                                    <ProductDetails
-                                                                        id={
-                                                                            recommendedProduct.id
-                                                                        }
-                                                                        name={
-                                                                            recommendedProduct.title
-                                                                        }
-                                                                        description={
-                                                                            recommendedProductVariant
-                                                                                .node
-                                                                                .title
-                                                                        }
-                                                                        image={
-                                                                            recommendedProduct.featuredImage &&
-                                                                            recommendedProduct
-                                                                                .featuredImage
-                                                                                .url
-                                                                        }
-                                                                        cost={Number(
-                                                                            recommendedProductVariant
-                                                                                .node
-                                                                                .price
-                                                                                .amount
-                                                                        )}
-                                                                        key={
-                                                                            recommendedProductVariant
-                                                                                .node
-                                                                                .id
-                                                                        }
-                                                                    />
-                                                                    <Button
-                                                                        variant={
-                                                                            "secondary"
-                                                                        }
-                                                                        disabled={
-                                                                            loading
-                                                                        }
-                                                                        onClick={async () => {
-                                                                            setLoading(
-                                                                                true
-                                                                            );
+                                        <Popover>
+                                            <PopoverTrigger>
+                                                <CircleAlert className="w-4 h-4 text-orange-500 -mr-4" />
+                                            </PopoverTrigger>
+                                            <PopoverContent
+                                                className="flex flex-col gap-1"
+                                                side="bottom"
+                                            >
+                                                <h1 className="text-center w-full font-bold">
+                                                    Incorrect bedding size for
+                                                    your residence. Please
+                                                    update to the required size:
+                                                </h1>
+                                                {[
+                                                    recommendedProductVariants[0],
+                                                ].map(
+                                                    (
+                                                        recommendedProductVariant
+                                                    ) => {
+                                                        return (
+                                                            <>
+                                                                <ProductDetails
+                                                                    id={
+                                                                        recommendedProduct.id
+                                                                    }
+                                                                    name={
+                                                                        recommendedProduct.title
+                                                                    }
+                                                                    description={
+                                                                        recommendedProductVariant
+                                                                            .node
+                                                                            .title
+                                                                    }
+                                                                    image={
+                                                                        recommendedProduct.featuredImage &&
+                                                                        recommendedProduct
+                                                                            .featuredImage
+                                                                            .url
+                                                                    }
+                                                                    cost={Number(
+                                                                        recommendedProductVariant
+                                                                            .node
+                                                                            .price
+                                                                            .amount
+                                                                    )}
+                                                                    key={
+                                                                        recommendedProductVariant
+                                                                            .node
+                                                                            .id
+                                                                    }
+                                                                />
+                                                                <Button
+                                                                    variant={
+                                                                        "secondary"
+                                                                    }
+                                                                    disabled={
+                                                                        loading
+                                                                    }
+                                                                    onClick={async () => {
+                                                                        setLoading(
+                                                                            true
+                                                                        );
 
-                                                                            // const cartRes =
-                                                                            await addProductToCart(
-                                                                                recommendedProductVariant
-                                                                                    .node
-                                                                                    .id,
-                                                                                cart?.id as string
+                                                                        // const cartRes =
+                                                                        await addProductToCart(
+                                                                            recommendedProductVariant
+                                                                                .node
+                                                                                .id,
+                                                                            cart?.id as string
+                                                                        );
+                                                                        const cartRes =
+                                                                            await removeProductFromCart(
+                                                                                [
+                                                                                    product.id,
+                                                                                ],
+                                                                                cart.id
                                                                             );
-                                                                            const cartRes =
-                                                                                await removeProductFromCart(
-                                                                                    [
-                                                                                        product.id,
-                                                                                    ],
-                                                                                    cart.id
-                                                                                );
-                                                                            setCart(
-                                                                                cartRes
-                                                                            );
-                                                                            setLoading(
-                                                                                false
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        {loading ? (
-                                                                            <Loader2 className="animate-spin" />
-                                                                        ) : (
-                                                                            "Add to Cart"
-                                                                        )}
-                                                                    </Button>
-                                                                </>
-                                                            );
-                                                        }
-                                                    )}
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
+                                                                        setCart(
+                                                                            cartRes
+                                                                        );
+                                                                        setLoading(
+                                                                            false
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    {loading ? (
+                                                                        <Loader2 className="animate-spin" />
+                                                                    ) : (
+                                                                        "Add to Cart"
+                                                                    )}
+                                                                </Button>
+                                                            </>
+                                                        );
+                                                    }
+                                                )}
+                                            </PopoverContent>
+                                        </Popover>
                                     )}
 
                                 <div
@@ -345,107 +343,104 @@ export function ProductTable({
                                         recommendedProduct !== null &&
                                         recommendedProductVariants.length >
                                             0 && (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger>
-                                                        <CircleAlert className="w-4 h-4 text-orange-500" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent
-                                                        className="flex flex-col gap-1"
-                                                        side="right"
-                                                    >
-                                                        <h1 className="text-center w-full font-bold">
-                                                            Incorrect bedding
-                                                            size for your
-                                                            residence. Please
-                                                            update to the
-                                                            required size:
-                                                        </h1>
-                                                        {[
-                                                            recommendedProductVariants[0],
-                                                        ].map(
-                                                            (
-                                                                recommendedProductVariant
-                                                            ) => {
-                                                                return (
-                                                                    <>
-                                                                        <ProductDetails
-                                                                            id={
-                                                                                recommendedProduct.id
-                                                                            }
-                                                                            name={
-                                                                                recommendedProduct.title
-                                                                            }
-                                                                            description={
-                                                                                recommendedProductVariant
-                                                                                    .node
-                                                                                    .title
-                                                                            }
-                                                                            image={
-                                                                                recommendedProduct.featuredImage &&
-                                                                                recommendedProduct
-                                                                                    .featuredImage
-                                                                                    .url
-                                                                            }
-                                                                            cost={Number(
-                                                                                recommendedProductVariant
-                                                                                    .node
-                                                                                    .price
-                                                                                    .amount
-                                                                            )}
-                                                                            key={
-                                                                                recommendedProductVariant
-                                                                                    .node
-                                                                                    .id
-                                                                            }
-                                                                        />
-                                                                        <Button
-                                                                            variant={
-                                                                                "secondary"
-                                                                            }
-                                                                            disabled={
-                                                                                loading
-                                                                            }
-                                                                            onClick={async () => {
-                                                                                setLoading(
-                                                                                    true
-                                                                                );
+                                            <Popover>
+                                                <PopoverTrigger>
+                                                    <CircleAlert className="w-4 h-4 text-orange-500" />
+                                                </PopoverTrigger>
+                                                <PopoverContent
+                                                    className="flex flex-col gap-1 w-full"
+                                                    side="right"
+                                                >
+                                                    <h1 className="text-center w-full font-bold">
+                                                        Incorrect bedding size
+                                                        for your residence.
+                                                        Please update to the
+                                                        required size:
+                                                    </h1>
+                                                    {[
+                                                        recommendedProductVariants[0],
+                                                    ].map(
+                                                        (
+                                                            recommendedProductVariant
+                                                        ) => {
+                                                            return (
+                                                                <>
+                                                                    <ProductDetails
+                                                                        id={
+                                                                            recommendedProduct.id
+                                                                        }
+                                                                        name={
+                                                                            recommendedProduct.title
+                                                                        }
+                                                                        description={
+                                                                            recommendedProductVariant
+                                                                                .node
+                                                                                .title
+                                                                        }
+                                                                        image={
+                                                                            recommendedProduct.featuredImage &&
+                                                                            recommendedProduct
+                                                                                .featuredImage
+                                                                                .url
+                                                                        }
+                                                                        cost={Number(
+                                                                            recommendedProductVariant
+                                                                                .node
+                                                                                .price
+                                                                                .amount
+                                                                        )}
+                                                                        key={
+                                                                            recommendedProductVariant
+                                                                                .node
+                                                                                .id
+                                                                        }
+                                                                    />
+                                                                    <Button
+                                                                        variant={
+                                                                            "secondary"
+                                                                        }
+                                                                        disabled={
+                                                                            loading
+                                                                        }
+                                                                        onClick={async () => {
+                                                                            setLoading(
+                                                                                true
+                                                                            );
 
-                                                                                // const cartRes =
-                                                                                await addProductToCart(
-                                                                                    recommendedProductVariant
-                                                                                        .node
-                                                                                        .id,
-                                                                                    cart?.id as string
+                                                                            // const cartRes =
+                                                                            await addProductToCart(
+                                                                                recommendedProductVariant
+                                                                                    .node
+                                                                                    .id,
+                                                                                cart?.id as string
+                                                                            );
+                                                                            const cartRes =
+                                                                                await removeProductFromCart(
+                                                                                    [
+                                                                                        product.id,
+                                                                                    ],
+                                                                                    cart.id
                                                                                 );
-                                                                                const cartRes =
-                                                                                    await removeProductFromCart(
-                                                                                        [
-                                                                                            product.id,
-                                                                                        ],
-                                                                                        cart.id
-                                                                                    );
-                                                                                setCart(
-                                                                                    cartRes
-                                                                                );
-                                                                                setLoading(
-                                                                                    false
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            {loading ? (
-                                                                                <Loader2 className="animate-spin" />
-                                                                            ) : (
-                                                                                "Add to Cart"
-                                                                            )}
-                                                                        </Button>
-                                                                    </>
-                                                                );
-                                                            }
-                                                        )}
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
+                                                                            setCart(
+                                                                                cartRes
+                                                                            );
+                                                                            setLoading(
+                                                                                false
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        {loading ? (
+                                                                            <Loader2 className="animate-spin" />
+                                                                        ) : (
+                                                                            "Add to Cart"
+                                                                        )}
+                                                                    </Button>
+                                                                </>
+                                                            );
+                                                        }
+                                                    )}
+                                                </PopoverContent>
+                                            </Popover>
                                         )}
                                 </div>
                             </TableCell>
