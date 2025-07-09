@@ -104,10 +104,7 @@ export function ProductTable({
                     }
 
                     return (
-                        <div
-                            className="grid gap-2 shadow p-2"
-                            key={product.merchandise.title}
-                        >
+                        <div className="grid gap-2 shadow p-2" key={index}>
                             <ProductDetails
                                 id={product.merchandise.id}
                                 name={product.merchandise.product.title}
@@ -263,6 +260,16 @@ export function ProductTable({
                                         <Plus />
                                     </Button>
                                 </div>
+                                {loading ? (
+                                    <Loader2 className="animate-spin w-4 h-4" />
+                                ) : (
+                                    <X
+                                        className="w-4 h-4 cursor-pointer"
+                                        onClick={() => {
+                                            handleRemove(product.id);
+                                        }}
+                                    />
+                                )}
                             </div>
                         </div>
                     );
@@ -327,7 +334,7 @@ export function ProductTable({
                     }
 
                     return (
-                        <TableRow key={product.id}>
+                        <TableRow key={index}>
                             <TableCell>
                                 <div className="flex gap-2 items-center w-24">
                                     <img
