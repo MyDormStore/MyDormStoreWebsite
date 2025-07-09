@@ -333,6 +333,7 @@ export default function App() {
                                                         }
                                                     )[0],
                                                 ].map((variant) => {
+                                                    if (!variant) return;
                                                     return (
                                                         <ProductDetailsCard
                                                             id={variant.node.id}

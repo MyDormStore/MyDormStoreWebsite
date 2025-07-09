@@ -62,6 +62,47 @@ export function ProductTable({
         return (
             <div className="h-fit overflow-scroll grid gap-8 px-2 py-4">
                 {cart.lines.nodes.map((product, index) => {
+                    let recommendedProductVariants: ShopifyProductsType["variants"]["edges"][number][] =
+                        [];
+
+                    let recommendedProduct: ShopifyProductsType | null = null;
+                    if (
+                        dorm !== "" &&
+                        (checkGroupFromDorm(
+                            product.merchandise.metafields[2]?.value
+                                .replace(/^\[|\]$/g, "")
+                                .replace(/^\"|\"$/g, "")
+                                .split(",") as DormGroups[],
+                            dorm
+                        ) ||
+                            product.merchandise.metafields[2]?.value.includes(
+                                dorm
+                            ))
+                    ) {
+                        const allProductVariants =
+                            product.merchandise.product.variants.edges;
+
+                        allProductVariants.forEach((product) => {
+                            // console.log(product);
+                            if (
+                                checkGroupFromDorm(
+                                    product.node.metafields[3]?.value
+                                        .replace(/^\[|\]$/g, "")
+                                        .replace(/^\"|\"$/g, "")
+                                        .split(",") as DormGroups[],
+                                    dorm
+                                ) ||
+                                product.node.metafields[3]?.value.includes(dorm)
+                            ) {
+                                recommendedProductVariants.push(product);
+                            }
+                        });
+
+                        if (recommendedProductVariants.length > 0) {
+                            recommendedProduct = product.merchandise.product;
+                        }
+                    }
+
                     return (
                         <div
                             className="grid gap-2 shadow p-2"
@@ -69,7 +110,13 @@ export function ProductTable({
                         >
                             <ProductDetails
                                 id={product.merchandise.id}
-                                name={product.merchandise.title}
+                                name={product.merchandise.product.title}
+                                description={
+                                    product.merchandise.title !==
+                                    "Default Title"
+                                        ? product.merchandise.title
+                                        : undefined
+                                }
                                 image={product.merchandise.image.url}
                                 cost={Number(
                                     product.cost.amountPerQuantity.amount
@@ -77,89 +124,115 @@ export function ProductTable({
                             />
 
                             <div className="flex justify-between items-center w-full">
-                                {/* {product.name === "Basic Bedding Package" &&
-                                    dorm !== "parkside" &&
-                                    dorm !== "" && (
+                                {dorm !== "" &&
+                                    recommendedProduct !== null &&
+                                    recommendedProductVariants.length > 0 && (
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger>
-                                                    <CircleAlert className="w-4 h-4 text-orange-500" />
+                                                    <CircleAlert className="w-4 h-4 text-orange-500 -mr-4" />
                                                 </TooltipTrigger>
                                                 <TooltipContent
-                                                    className="flex flex-col gap-1 max-w-xs"
-                                                    side="right">
+                                                    className="flex flex-col gap-1"
+                                                    side="bottom"
+                                                >
                                                     <h1 className="text-center w-full font-bold">
-                                                        Recommended Instead
+                                                        Incorrect bedding size
+                                                        for your residence.
+                                                        Please update to the
+                                                        required size:
                                                     </h1>
-                                                    <ProductDetails
-                                                        {...products[2]}
-                                                    />
-                                                    <Button
-                                                        variant={"secondary"}
-                                                        onClick={() => {
-                                                            const newCart = [
-                                                                ...cart,
-                                                            ];
-                                                            newCart[index] = {
-                                                                ...products[2],
-                                                                quantity:
-                                                                    product.quantity,
-                                                            };
-                                                            setCart(newCart);
-                                                        }}>
-                                                        Add to Cart
-                                                    </Button>
+                                                    {[
+                                                        recommendedProductVariants[0],
+                                                    ].map(
+                                                        (
+                                                            recommendedProductVariant
+                                                        ) => {
+                                                            return (
+                                                                <>
+                                                                    <ProductDetails
+                                                                        id={
+                                                                            recommendedProduct.id
+                                                                        }
+                                                                        name={
+                                                                            recommendedProduct.title
+                                                                        }
+                                                                        description={
+                                                                            recommendedProductVariant
+                                                                                .node
+                                                                                .title
+                                                                        }
+                                                                        image={
+                                                                            recommendedProduct.featuredImage &&
+                                                                            recommendedProduct
+                                                                                .featuredImage
+                                                                                .url
+                                                                        }
+                                                                        cost={Number(
+                                                                            recommendedProductVariant
+                                                                                .node
+                                                                                .price
+                                                                                .amount
+                                                                        )}
+                                                                        key={
+                                                                            recommendedProductVariant
+                                                                                .node
+                                                                                .id
+                                                                        }
+                                                                    />
+                                                                    <Button
+                                                                        variant={
+                                                                            "secondary"
+                                                                        }
+                                                                        disabled={
+                                                                            loading
+                                                                        }
+                                                                        onClick={async () => {
+                                                                            setLoading(
+                                                                                true
+                                                                            );
+
+                                                                            // const cartRes =
+                                                                            await addProductToCart(
+                                                                                recommendedProductVariant
+                                                                                    .node
+                                                                                    .id,
+                                                                                cart?.id as string
+                                                                            );
+                                                                            const cartRes =
+                                                                                await removeProductFromCart(
+                                                                                    [
+                                                                                        product.id,
+                                                                                    ],
+                                                                                    cart.id
+                                                                                );
+                                                                            setCart(
+                                                                                cartRes
+                                                                            );
+                                                                            setLoading(
+                                                                                false
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        {loading ? (
+                                                                            <Loader2 className="animate-spin" />
+                                                                        ) : (
+                                                                            "Add to Cart"
+                                                                        )}
+                                                                    </Button>
+                                                                </>
+                                                            );
+                                                        }
+                                                    )}
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     )}
-                                {product.name === "Organization Essentials" &&
-                                    dorm === "chestnut" && (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger>
-                                                    <CircleAlert className="w-4 h-4 text-orange-500" />
-                                                </TooltipTrigger>
-                                                <TooltipContent
-                                                    className="flex flex-col gap-1 max-w-xs"
-                                                    side="right">
-                                                    <h1 className="text-center w-full font-bold">
-                                                        Recommended Instead
-                                                    </h1>
-                                                    <ProductDetails
-                                                        {...products[2]}
-                                                    />
-                                                    <Button
-                                                        variant={"secondary"}
-                                                        onClick={() => {
-                                                            const newCart = [
-                                                                ...cart,
-                                                            ];
-                                                            newCart[index] = {
-                                                                ...products[2],
-                                                                quantity:
-                                                                    product.quantity,
-                                                            };
-                                                            setCart(newCart);
-                                                        }}>
-                                                        Add to Cart
-                                                    </Button>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    )} */}
+
                                 <div
-                                    className={cn(
+                                    className={
                                         "flex gap-2 items-center justify-center mx-auto"
-                                        // (product.name ===
-                                        //     "Basic Bedding Package" &&
-                                        //     dorm !== "parkside") ||
-                                        //     (product.name ===
-                                        //         "Organization Essentials" &&
-                                        //         dorm === "chestnut")
-                                        //     ? "-left-2.5 relative"
-                                        //     : ""
-                                    )}
+                                    }
                                 >
                                     <Button
                                         variant={"outline"}
