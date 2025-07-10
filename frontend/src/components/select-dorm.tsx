@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Input } from "./ui/input";
 
 interface SelectDormProps {
     dorm: string;
@@ -63,17 +64,24 @@ export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
             </div>
             <div className="grid gap-2">
                 <Label>What residence are you staying in? (Optional)</Label>
-                <SearchSelect
-                    dataList={dormSelectList.filter((dorm) => {
-                        if (school) {
-                            return dorm.school === school;
-                        }
-                        return true;
-                    })}
-                    setValue={setDorm}
-                    value={dorm}
-                    disabled={!school}
-                />
+                {school !== "Other" ? (
+                    <SearchSelect
+                        dataList={dormSelectList.filter((dorm) => {
+                            if (school) {
+                                return dorm.school === school;
+                            }
+                            return true;
+                        })}
+                        setValue={setDorm}
+                        value={dorm}
+                        disabled={!school}
+                    />
+                ) : (
+                    <Input
+                        value={dorm}
+                        onChange={(e) => setDorm(e.target.value)}
+                    />
+                )}
                 {/* <Select onValueChange={setDorm} value={dorm} disabled={!school}>
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose Dorm..." />

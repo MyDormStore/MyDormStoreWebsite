@@ -560,6 +560,10 @@ export const dormSelectList: dormSelectListType[] = [
         label: "Quad Phase 2 (Toronto)",
         school: "York University",
     },
+    {
+        key: "Other",
+        label: "Other",
+    },
 ].sort((a, b) => {
     if (a.key < b.key) {
         return -1;
@@ -633,6 +637,7 @@ export const schoolSelectList: dormSelectListType[] = [
     { key: "Western University", label: "Western University" },
     { key: "Wilfrid Laurier University", label: "Wilfrid Laurier University" },
     { key: "York University", label: "York University" },
+    { key: "Other", label: "Other/Not Listed" },
 ].sort((a, b) => {
     if (a.key < b.key) {
         return -1;
