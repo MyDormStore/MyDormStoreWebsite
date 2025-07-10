@@ -111,7 +111,21 @@ export const dormSelectList: dormSelectListType[] = [
         label: "Alma at Montreal",
         school: "McGill University",
     },
+
     { key: "Campus1 MTL", label: "Campus1 MTL", school: "McGill University" },
+    {
+        key: "Alma at Montreal",
+        label: "Alma at Montreal",
+        school: "Dawson College",
+    },
+    { key: "Campus1 MTL", label: "Campus1 MTL", school: "Dawson College" },
+    {
+        key: "Alma at Montreal",
+        label: "Alma at Montreal",
+        school: "Ahuntsic College",
+    },
+    { key: "Campus1 MTL", label: "Campus1 MTL", school: "Ahuntsic College" },
+
     {
         key: "West Village Suites",
         label: "West Village Suites",
@@ -561,6 +575,37 @@ export const dormSelectList: dormSelectListType[] = [
         school: "York University",
     },
     {
+        key: "Campus1 MTL",
+        label: "Campus1 MTL",
+        school: "Concordia University",
+    },
+    {
+        key: "Alma at Montreal",
+        label: "Alma at Montreal",
+        school: "Concordia University",
+    },
+    { key: "Grey Nuns", label: "Grey Nuns", school: "Concordia University" },
+    {
+        key: "Hingston Hall",
+        label: "Hingston Hall",
+        school: "Concordia University",
+    },
+    {
+        key: "Jesuit Residence",
+        label: "Jesuit Residence",
+        school: "Concordia University",
+    },
+    {
+        key: "Alma at Montreal",
+        label: "Alma at Montreal",
+        school: "University of Quebec",
+    },
+    {
+        key: "Campus1 MTL",
+        label: "Campus1 MTL",
+        school: "University of Quebec",
+    },
+    {
         key: "Other",
         label: "Other",
     },
@@ -637,6 +682,10 @@ export const schoolSelectList: dormSelectListType[] = [
     { key: "Western University", label: "Western University" },
     { key: "Wilfrid Laurier University", label: "Wilfrid Laurier University" },
     { key: "York University", label: "York University" },
+    { key: "Concordia University", label: "Concordia University" },
+    { key: "University of Quebec", label: "University of Quebec" },
+    { key: "Ahuntsic College", label: "Ahuntsic College" },
+    { key: "Dawson College", label: "Dawson College" },
     { key: "Other", label: "Other/Not Listed" },
 ].sort((a, b) => {
     if (a.key < b.key) {
@@ -1298,6 +1347,27 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "ON",
         street: "321 Bloor Street West",
     },
+    "Hingston Hall": {
+        postalCode: "H4B 1R6",
+        country: "Canada",
+        city: "Montreal",
+        state: "Quebec",
+        street: "7141 Sherbrooke Street West",
+    },
+    "Jesuit Residence": {
+        postalCode: "H4B 1R6",
+        country: "Canada",
+        city: "Montreal",
+        state: "Quebec",
+        street: "7141 Sherbrooke Street West",
+    },
+    "Grey Nuns": {
+        postalCode: "H3G 1M8",
+        country: "Canada",
+        city: "Montreal",
+        state: "Quebec",
+        street: "1455 De Maisonneuve Blvd. W.",
+    },
 };
 
 export type DormGroups =
@@ -1310,7 +1380,8 @@ export type DormGroups =
     | "MPDouble"
     | "MPBoth"
     | "SCRequired"
-    | "Apartment";
+    | "Apartment"
+    | "Kitchen";
 
 export const dormGroupsList: Record<DormGroups, string[]> = {
     All: [
@@ -1811,4 +1882,5 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
         "Wilfrid Laurier University HawkShop (Waterloo)",
         "Woodroffe Place",
     ],
+    Kitchen: [],
 };
