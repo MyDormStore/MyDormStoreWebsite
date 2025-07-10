@@ -9,7 +9,7 @@ const app = express();
 const port = 3000;
 
 // setting up middlewares
-app.use(cors({ origin: true }));
+app.use(cors());
 app.use(express.json());
 
 app.use("/Stripe", StripeRouter);
