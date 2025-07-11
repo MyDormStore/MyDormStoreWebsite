@@ -311,7 +311,7 @@ export default function ShippingForm({
                                                                     "hover:cursor-pointer",
                                                                     selectedRate ===
                                                                         service
-                                                                        ? "font-semibold"
+                                                                        ? "font-bold bg-secondary"
                                                                         : ""
                                                                 )}
                                                             >

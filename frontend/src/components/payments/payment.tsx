@@ -198,7 +198,7 @@ const CheckoutForm = ({
 
         try {
             const response = await axios.post(
-                `${import.meta.env.VITE_BACKEND_URL}/Shopify/order/`,
+                `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
                 newPayload
             );
             console.log("Response:", response.data);
