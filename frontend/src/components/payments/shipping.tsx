@@ -96,7 +96,10 @@ export default function ShippingForm({
                 payload
             );
 
-            if (response.data.availableShippingRates.length === 0) {
+            if (
+                response.data.availableShippingRates === null ||
+                response.data.availableShippingRates.length === 0
+            ) {
                 setRates(null);
                 return;
             }
