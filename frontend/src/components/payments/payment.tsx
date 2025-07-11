@@ -201,27 +201,23 @@ const CheckoutForm = ({
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
                 newPayload
             );
-            console.log("Response:", response.data);
 
             if (stripe && elements) {
-                const { error, paymentIntent } = await stripe.confirmPayment({
+                const { error } = await stripe.confirmPayment({
                     elements,
                     confirmParams: {
-                        return_url: `${window.location}/success`, // not needed because we are going to handle the payment on the frontend
+                        return_url: `${
+                            window.location.origin
+                        }/${cartID}/success?key=${searchParams.get("key")}`,
                     },
-                    redirect: "if_required",
+                    // No `redirect: "if_required"` here; Klarna requires a redirect
                 });
 
                 if (error) {
-                    throw error;
-                } else {
-                    // Redirect to success page or show success message
-
-                    if (paymentIntent.id) {
-                        // console.log(URL + `?payment=${paymentIntent.id}`);
-                        navigate(URL + `&payment=${paymentIntent.id}`);
-                    }
+                    console.error("Payment error", error);
+                    // optionally show user error
                 }
+                // No navigation here — redirect handled by Stripe
             }
         } catch (err) {
             console.error(err);
