@@ -65,7 +65,7 @@ export const createOrder = async (payload: Payload) => {
         transactions: {
             amountSet: {
                 shopMoney: {
-                    amount: amount,
+                    amount: amount / 100,
                     currencyCode: "CAD",
                 },
             },
