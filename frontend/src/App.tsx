@@ -101,9 +101,11 @@ export default function App() {
                         dorm
                     ) || product.node.metafields[0].value.includes(dorm);
                 return hasDorm;
+            } else {
+                return false;
             }
         } else {
-            return true;
+            return false;
         }
     });
 
@@ -123,9 +125,11 @@ export default function App() {
                         dorm
                     ) || product.node.metafields[1].value.includes(dorm);
                 return hasDorm;
+            } else {
+                return false;
             }
         } else {
-            return true;
+            return false;
         }
     });
 
@@ -236,99 +240,102 @@ export default function App() {
                                                 return [
                                                     data.variants.edges.filter(
                                                         (product) => {
-                                                            if (dorm) {
+                                                            console.log(
+                                                                data.title,
+                                                                product.node
+                                                                    .title,
+                                                                product.node
+                                                                    .metafields
+                                                            );
+                                                            if (
+                                                                product.node
+                                                                    .metafields
+                                                            ) {
                                                                 if (
                                                                     product.node
-                                                                        .metafields
+                                                                        .metafields[2] !==
+                                                                    null
                                                                 ) {
-                                                                    if (
-                                                                        product
-                                                                            .node
-                                                                            .metafields[2] !==
-                                                                        null
-                                                                    ) {
-                                                                        return !(
-                                                                            checkGroupFromDorm(
-                                                                                product.node.metafields[2].value
-                                                                                    .replace(
-                                                                                        /^\[|\]$/g,
-                                                                                        ""
-                                                                                    )
-                                                                                    .replace(
-                                                                                        /^\"|\"$/g,
-                                                                                        ""
-                                                                                    )
-                                                                                    .split(
-                                                                                        ","
-                                                                                    ) as DormGroups[],
-                                                                                dorm
-                                                                            ) ||
-                                                                            product.node.metafields[2].value.includes(
-                                                                                dorm
-                                                                            )
-                                                                        );
-                                                                    }
-
-                                                                    if (
-                                                                        product
-                                                                            .node
-                                                                            .metafields[0] !==
-                                                                        null
-                                                                    ) {
-                                                                        return (
-                                                                            checkGroupFromDorm(
-                                                                                product.node.metafields[0].value
-                                                                                    .replace(
-                                                                                        /^\[|\]$/g,
-                                                                                        ""
-                                                                                    )
-                                                                                    .replace(
-                                                                                        /^\"|\"$/g,
-                                                                                        ""
-                                                                                    )
-                                                                                    .split(
-                                                                                        ","
-                                                                                    ) as DormGroups[],
-                                                                                dorm
-                                                                            ) ||
-                                                                            product.node.metafields[0].value.includes(
-                                                                                dorm
-                                                                            )
-                                                                        );
-                                                                    } else if (
-                                                                        product
-                                                                            .node
-                                                                            .metafields[1] !==
-                                                                        null
-                                                                    ) {
-                                                                        return (
-                                                                            checkGroupFromDorm(
-                                                                                product.node.metafields[1].value
-                                                                                    .replace(
-                                                                                        /^\[|\]$/g,
-                                                                                        ""
-                                                                                    )
-                                                                                    .replace(
-                                                                                        /^\"|\"$/g,
-                                                                                        ""
-                                                                                    )
-                                                                                    .split(
-                                                                                        ","
-                                                                                    ) as DormGroups[],
-                                                                                dorm
-                                                                            ) ||
-                                                                            product.node.metafields[1].value.includes(
-                                                                                dorm
-                                                                            )
-                                                                        );
-                                                                    } else {
-                                                                        return false;
-                                                                    }
-                                                                } else {
-                                                                    return false;
+                                                                    return !(
+                                                                        checkGroupFromDorm(
+                                                                            product.node.metafields[2].value
+                                                                                .replace(
+                                                                                    /^\[|\]$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .replace(
+                                                                                    /^\"|\"$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .split(
+                                                                                    ","
+                                                                                ) as DormGroups[],
+                                                                            dorm
+                                                                        ) ||
+                                                                        product.node.metafields[2].value.includes(
+                                                                            dorm
+                                                                        )
+                                                                    );
                                                                 }
-                                                            } else {
+
+                                                                if (
+                                                                    product.node
+                                                                        .metafields[0] !==
+                                                                    null
+                                                                ) {
+                                                                    return (
+                                                                        checkGroupFromDorm(
+                                                                            product.node.metafields[0].value
+                                                                                .replace(
+                                                                                    /^\[|\]$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .replace(
+                                                                                    /^\"|\"$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .split(
+                                                                                    ","
+                                                                                ) as DormGroups[],
+                                                                            dorm
+                                                                        ) ||
+                                                                        product.node.metafields[0].value.includes(
+                                                                            dorm
+                                                                        )
+                                                                    );
+                                                                }
+                                                                if (
+                                                                    product.node
+                                                                        .metafields[1] !==
+                                                                    null
+                                                                ) {
+                                                                    return (
+                                                                        checkGroupFromDorm(
+                                                                            product.node.metafields[1].value
+                                                                                .replace(
+                                                                                    /^\[|\]$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .replace(
+                                                                                    /^\"|\"$/g,
+                                                                                    ""
+                                                                                )
+                                                                                .split(
+                                                                                    ","
+                                                                                ) as DormGroups[],
+                                                                            dorm
+                                                                        ) ||
+                                                                        product.node.metafields[1].value.includes(
+                                                                            dorm
+                                                                        )
+                                                                    );
+                                                                }
+                                                                console.log(
+                                                                    "test"
+                                                                );
                                                                 return true;
+                                                            } else {
+                                                                return false;
                                                             }
                                                         }
                                                     )[0],
