@@ -185,7 +185,14 @@ export default function App() {
                     <CheckoutLayout>
                         <div className="p-4 lg:mt-12 lg:pr-8 flex flex-col gap-16">
                             <div className="w-fit flex gap-4 items-center">
-                                <Button variant={"outline"} size={"icon"}>
+                                <Button
+                                    variant={"outline"}
+                                    size={"icon"}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        window.history.back();
+                                    }}
+                                >
                                     <ChevronLeft />
                                 </Button>
                                 <ShoppingCart />{" "}
