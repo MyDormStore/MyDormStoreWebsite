@@ -100,7 +100,6 @@ export default function App() {
                             .split(",") as DormGroups[],
                         dorm
                     ) || product.node.metafields[0].value.includes(dorm);
-                console.log(hasDorm);
                 return hasDorm;
             }
         } else {
@@ -123,7 +122,6 @@ export default function App() {
                             .split(",") as DormGroups[],
                         dorm
                     ) || product.node.metafields[1].value.includes(dorm);
-                console.log(hasDorm);
                 return hasDorm;
             }
         } else {
@@ -236,11 +234,6 @@ export default function App() {
                                                                     product.node
                                                                         .metafields
                                                                 ) {
-                                                                    console.log(
-                                                                        product
-                                                                            .node
-                                                                            .metafields
-                                                                    );
                                                                     if (
                                                                         product
                                                                             .node
@@ -322,10 +315,10 @@ export default function App() {
                                                                             )
                                                                         );
                                                                     } else {
-                                                                        return true;
+                                                                        return false;
                                                                     }
                                                                 } else {
-                                                                    return true;
+                                                                    return false;
                                                                 }
                                                             } else {
                                                                 return true;

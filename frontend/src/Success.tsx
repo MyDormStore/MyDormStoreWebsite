@@ -22,7 +22,6 @@ export function SuccessPage() {
         const fetchAPI = async () => {
             if (cartID) {
                 const key = searchParams.get("key");
-                console.log(key);
                 setCart(
                     await getCart(`gid://shopify/Cart/${cartID}?key=${key}`)
                 );
@@ -33,7 +32,6 @@ export function SuccessPage() {
 
     useEffect(() => {
         if (cart) {
-            console.log(cart);
             const IDs = cart.lines.nodes.map((cartLine) => {
                 return cartLine.id;
             });

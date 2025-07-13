@@ -89,8 +89,6 @@ export const getProduct = async () => {
             throw errors;
         }
 
-        console.log(data);
-
         return data;
     } catch (err) {
         console.error(err);
@@ -184,8 +182,6 @@ export const getProductsByDorm = async (tag: string) => {
         if (errors) {
             throw errors;
         }
-
-        console.log(data);
 
         return (data as ShopifyProductsData).products.edges;
     } catch (err) {

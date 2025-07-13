@@ -36,7 +36,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
     const payload: Payload = req.body;
-    console.log(payload);
+    // console.log(payload);
 
     const amount = req.params.amount;
     if (!amount) {

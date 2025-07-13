@@ -10,6 +10,36 @@ interface dormSelectListType {
     school?: string;
 }
 
+/* 
+    To add a dorm to the list, add an object to the dormSelectList array using this structure 
+    {
+        key: "Dorm Name",
+        label: "Dorm Name",
+        school: "School Name"   
+    }
+    for a dorm that is associated with multiple schools, you can create duplicate objects in the array
+
+    To add a new school, add an object to the schoolSelectList using this structure
+    {
+        key: "School Name",
+        label: "School Name"
+    }
+    
+    to add an address, create a new object in the structure using 
+    ["Dorm Name"]: {
+        postalCode: "Postal Code",
+        country: "CA", // Two Character Code
+        city: "City",
+        state: "ON", // Two Character Code
+        street: "Street Name",
+    }
+
+    To create a new group, add the group name to DormGroups using 
+    | "Dorm Group"
+    Add the dorms to the group by adding the "Dorm Name" to the group list
+
+*/
+
 export const dormSelectList: dormSelectListType[] = [
     {
         key: "Woodroffe Place",
