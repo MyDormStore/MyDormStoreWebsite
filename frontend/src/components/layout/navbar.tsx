@@ -10,8 +10,20 @@ export default function NavBar() {
         <NavigationMenu className="border-b-2 w-screen">
             <NavigationMenuList className="w-screen">
                 <NavigationMenuItem>
-                    <NavigationMenuLink>
-                        <img src="/Logo.png" className="h-8" />
+                    <NavigationMenuLink
+                        href="https://mydormstore.ca/"
+                        onClick={() =>
+                            (window.location.href = "https://mydormstore.ca/")
+                        }
+                    >
+                        <img
+                            src="/Logo.png"
+                            className="h-8"
+                            onClick={() =>
+                                (window.location.href =
+                                    "https://mydormstore.ca/")
+                            }
+                        />
                     </NavigationMenuLink>
                 </NavigationMenuItem>
             </NavigationMenuList>

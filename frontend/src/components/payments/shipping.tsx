@@ -100,7 +100,13 @@ export default function ShippingForm({
                 response.data.availableShippingRates === null ||
                 response.data.availableShippingRates.length === 0
             ) {
-                setRates(null);
+                setRates([
+                    {
+                        service: "Standard",
+                        cost: 23.0,
+                        transitTime: 3,
+                    },
+                ]);
                 return;
             }
 
@@ -314,7 +320,7 @@ export default function ShippingForm({
                                                                     "hover:cursor-pointer",
                                                                     selectedRate ===
                                                                         service
-                                                                        ? "font-bold bg-secondary"
+                                                                        ? "font-bold bg-secondary hover:bg-secondary"
                                                                         : ""
                                                                 )}
                                                             >

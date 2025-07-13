@@ -105,7 +105,7 @@ export default function App() {
                 return false;
             }
         } else {
-            return false;
+            return true;
         }
     });
 
@@ -129,7 +129,7 @@ export default function App() {
                 return false;
             }
         } else {
-            return false;
+            return true;
         }
     });
 
