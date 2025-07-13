@@ -68,7 +68,11 @@ export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
                     <SearchSelect
                         dataList={dormSelectList.filter((dorm) => {
                             if (school) {
-                                return dorm.school === school;
+                                if (dorm.school) {
+                                    return dorm.school === school;
+                                } else {
+                                    return true;
+                                }
                             }
                             return true;
                         })}

@@ -607,7 +607,7 @@ export const dormSelectList: dormSelectListType[] = [
     },
     {
         key: "Other",
-        label: "Other",
+        label: "Other/Not Listed",
     },
 ].sort((a, b) => {
     if (a.key < b.key) {
