@@ -87,50 +87,44 @@ export default function App() {
 
     const requiredProducts = products.filter((product) => {
         // filter the products that are assigned and then filter the variants
-        if (dorm) {
-            if (
-                product.node.metafields &&
-                product.node.metafields[0] !== null
-            ) {
-                const hasDorm =
-                    checkGroupFromDorm(
-                        product.node.metafields[0].value
-                            .replace(/^\[|\]$/g, "")
-                            .replace(/^\"|\"$/g, "")
-                            .split(",") as DormGroups[],
-                        dorm
-                    ) || product.node.metafields[0].value.includes(dorm);
-                return hasDorm;
-            } else {
-                return false;
-            }
+        // if (dorm) {
+        if (product.node.metafields && product.node.metafields[0] !== null) {
+            const hasDorm =
+                checkGroupFromDorm(
+                    product.node.metafields[0].value
+                        .replace(/^\[|\]$/g, "")
+                        .replace(/^\"|\"$/g, "")
+                        .split(",") as DormGroups[],
+                    dorm
+                ) || product.node.metafields[0].value.includes(dorm);
+            return hasDorm;
         } else {
-            return true;
+            return false;
         }
+        // } else {
+        //     return true;
+        // }
     });
 
     const recommendedProducts = products.filter((product) => {
         // filter the products that are assigned and then filter the variants
-        if (dorm) {
-            if (
-                product.node.metafields &&
-                product.node.metafields[1] !== null
-            ) {
-                const hasDorm =
-                    checkGroupFromDorm(
-                        product.node.metafields[1].value
-                            .replace(/^\[|\]$/g, "")
-                            .replace(/^\"|\"$/g, "")
-                            .split(",") as DormGroups[],
-                        dorm
-                    ) || product.node.metafields[1].value.includes(dorm);
-                return hasDorm;
-            } else {
-                return false;
-            }
+        // if (dorm) {
+        if (product.node.metafields && product.node.metafields[1] !== null) {
+            const hasDorm =
+                checkGroupFromDorm(
+                    product.node.metafields[1].value
+                        .replace(/^\[|\]$/g, "")
+                        .replace(/^\"|\"$/g, "")
+                        .split(",") as DormGroups[],
+                    dorm
+                ) || product.node.metafields[1].value.includes(dorm);
+            return hasDorm;
         } else {
-            return true;
+            return false;
         }
+        // } else {
+        //     return true;
+        // }
     });
 
     const notInCart = useFormStore((state) => state.notInCart);
