@@ -85,12 +85,20 @@ export function SuccessPage() {
                                                     <span className="font-semibold">
                                                         {
                                                             product.merchandise
-                                                                .title
+                                                                .product.title
                                                         }
                                                     </span>
-                                                    {/* <span className="font-light">
-                                        {product.description}
-                                    </span> */}
+                                                    {product.merchandise
+                                                        .title !==
+                                                        "Default Title" && (
+                                                        <span className="font-light">
+                                                            {
+                                                                product
+                                                                    .merchandise
+                                                                    .title
+                                                            }
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                             <TableCell>

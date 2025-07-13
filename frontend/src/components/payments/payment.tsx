@@ -88,7 +88,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     deliveryDetails: delivery,
                     taxLines: taxLines,
                     shipping: shipping,
-                    amount: amount,
+                    amount: amount * 100,
                     notInCart: notInCart,
                     rp_id: rp_id ? rp_id : undefined,
                 };
@@ -98,7 +98,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                 const response = await axios.post(
                     `${
                         import.meta.env.VITE_BACKEND_URL
-                    }/Stripe/create-payment-intent/${amount * 100}`,
+                    }/Stripe/create-payment-intent/`,
                     payload
                 );
 

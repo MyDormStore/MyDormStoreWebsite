@@ -38,7 +38,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     const payload: Payload = req.body;
     // console.log(payload);
 
-    const amount = req.params.amount;
+    const amount = req.body.amount;
     if (!amount) {
         res.status(400).send("Missing amount");
     }
