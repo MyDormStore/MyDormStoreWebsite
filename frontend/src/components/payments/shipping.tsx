@@ -3,6 +3,7 @@ import {
     Card,
     CardContent,
     CardDescription,
+    CardFooter,
     CardHeader,
     CardTitle,
 } from "../ui/card";
@@ -41,6 +42,7 @@ import {
     TableHeader,
     TableRow,
 } from "../ui/table";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // rates form for checkout
 
@@ -96,6 +98,10 @@ export default function ShippingForm({
                 payload
             );
 
+            console.log(response.data);
+
+            response.data.taxLines && setTaxLines(response.data.taxLines);
+
             if (
                 response.data.availableShippingRates === null ||
                 response.data.availableShippingRates.length === 0
@@ -109,8 +115,6 @@ export default function ShippingForm({
                 ]);
                 return;
             }
-
-            setTaxLines(response.data.taxLines);
 
             setRates(
                 response.data.availableShippingRates.map((rate: any) => {
@@ -193,6 +197,8 @@ export default function ShippingForm({
     };
 
     const errorMessage = get(form.formState.errors, "service")?.message;
+
+    const isMobile = useIsMobile();
 
     return (
         <Form {...form}>
@@ -281,87 +287,181 @@ export default function ShippingForm({
                                 )}
                             />
                             <div className="flex flex-col gap-2">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-1/2">
-                                                Service
-                                            </TableHead>
-                                            <TableHead className="w-1/12">
-                                                Cost
-                                            </TableHead>
-                                            <TableHead>
-                                                Delivery Times
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {rates !== null ? (
-                                            rates.length > 0 ? (
-                                                rates
-                                                    .sort((a, b) =>
-                                                        a.cost > b.cost ? 1 : -1
-                                                    )
-                                                    .map((rate) => {
-                                                        const {
-                                                            service,
-                                                            cost,
-                                                            transitTime,
-                                                        } = rate;
-                                                        return (
-                                                            <TableRow
-                                                                key={service}
-                                                                onClick={() =>
-                                                                    addRate(
-                                                                        rate
-                                                                    )
-                                                                }
-                                                                className={cn(
-                                                                    "hover:cursor-pointer",
-                                                                    selectedRate ===
+                                {isMobile ? (
+                                    rates !== null ? (
+                                        rates.length > 0 ? (
+                                            rates
+                                                .sort((a, b) =>
+                                                    a.cost > b.cost ? 1 : -1
+                                                )
+                                                .map((rate) => {
+                                                    const {
+                                                        service,
+                                                        cost,
+                                                        transitTime,
+                                                    } = rate;
+                                                    return (
+                                                        <Card
+                                                            key={service}
+                                                            // className={cn(
+                                                            //     "hover:cursor-pointer",
+                                                            //     selectedRate ===
+                                                            //         service
+                                                            //         ? "font-bold bg-secondary hover:bg-secondary"
+                                                            //         : ""
+                                                            // )}
+                                                        >
+                                                            <CardHeader className="text-lg">
+                                                                {service}
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <div className="flex flex-col gap-2">
+                                                                    <span>
+                                                                        {" "}
+                                                                        {cost ===
+                                                                        0
+                                                                            ? "Free"
+                                                                            : `$${cost.toFixed(
+                                                                                  2
+                                                                              )}`}
+                                                                    </span>
+                                                                    <span>
+                                                                        {transitTime ===
+                                                                        1
+                                                                            ? "Next day delivery"
+                                                                            : `Ships within the next ${transitTime} days`}
+                                                                    </span>
+                                                                </div>
+                                                            </CardContent>
+                                                            <CardFooter>
+                                                                <Button
+                                                                    variant={
+                                                                        selectedRate ===
                                                                         service
-                                                                        ? "font-bold bg-secondary hover:bg-secondary"
-                                                                        : ""
-                                                                )}
-                                                            >
-                                                                <TableCell>
-                                                                    {service}
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    {cost === 0
-                                                                        ? "Free"
-                                                                        : `$${cost.toFixed(
-                                                                              2
-                                                                          )}`}
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    {transitTime ===
-                                                                    1
-                                                                        ? "Next day delivery"
-                                                                        : `Ships within the ${transitTime} days`}
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        );
-                                                    })
-                                            ) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={3}>
-                                                        <Skeleton className="h-8 w-full" />
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
+                                                                            ? "default"
+                                                                            : "outline"
+                                                                    }
+                                                                    className="w-full"
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        addRate(
+                                                                            rate
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Select
+                                                                    Service
+                                                                </Button>
+                                                            </CardFooter>
+                                                        </Card>
+                                                    );
+                                                })
                                         ) : (
                                             <TableRow>
                                                 <TableCell colSpan={3}>
-                                                    Rates not available. Try
-                                                    changing the delivery
-                                                    address or the items in your
-                                                    cart.
+                                                    <Skeleton className="h-8 w-full" />
                                                 </TableCell>
                                             </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
+                                        )
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3}>
+                                                Rates not available. Try
+                                                changing the delivery address or
+                                                the items in your cart.
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-1/2">
+                                                    Service
+                                                </TableHead>
+                                                <TableHead className="w-1/12">
+                                                    Cost
+                                                </TableHead>
+                                                <TableHead>
+                                                    Delivery Times
+                                                </TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {rates !== null ? (
+                                                rates.length > 0 ? (
+                                                    rates
+                                                        .sort((a, b) =>
+                                                            a.cost > b.cost
+                                                                ? 1
+                                                                : -1
+                                                        )
+                                                        .map((rate) => {
+                                                            const {
+                                                                service,
+                                                                cost,
+                                                                transitTime,
+                                                            } = rate;
+                                                            return (
+                                                                <TableRow
+                                                                    key={
+                                                                        service
+                                                                    }
+                                                                    onClick={() =>
+                                                                        addRate(
+                                                                            rate
+                                                                        )
+                                                                    }
+                                                                    className={cn(
+                                                                        "hover:cursor-pointer",
+                                                                        selectedRate ===
+                                                                            service
+                                                                            ? "font-bold bg-secondary hover:bg-secondary"
+                                                                            : ""
+                                                                    )}
+                                                                >
+                                                                    <TableCell>
+                                                                        {
+                                                                            service
+                                                                        }
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {cost ===
+                                                                        0
+                                                                            ? "Free"
+                                                                            : `$${cost.toFixed(
+                                                                                  2
+                                                                              )}`}
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {transitTime ===
+                                                                        1
+                                                                            ? "Next day delivery"
+                                                                            : `Ships within the next ${transitTime} days`}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            );
+                                                        })
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={3}>
+                                                            <Skeleton className="h-8 w-full" />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={3}>
+                                                        Rates not available. Try
+                                                        changing the delivery
+                                                        address or the items in
+                                                        your cart.
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                )}
                                 <p
                                     data-slot="form-message"
                                     className={cn("text-destructive text-sm")}
