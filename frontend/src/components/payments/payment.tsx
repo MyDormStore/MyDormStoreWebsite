@@ -41,6 +41,7 @@ import CountryDropdown from "../dropdown/countries";
 import StateDropdown from "../dropdown/states";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 
 // payment form for checkout
 
@@ -445,11 +446,14 @@ const CheckoutForm = ({
                     </>
                 )}
                 <Separator />
-
-                <PaymentElement
-                    options={{ layout: "auto" }}
-                    id="payment-element"
-                />
+                {stripe && elements ? (
+                    <PaymentElement
+                        options={{ layout: "auto" }}
+                        id="payment-element"
+                    />
+                ) : (
+                    <Skeleton className="w-full h-10" />
+                )}
                 <Button
                     className="flex-auto"
                     type="submit"
