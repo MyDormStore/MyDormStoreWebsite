@@ -4,7 +4,7 @@ import type { LayoutProps } from "@/types/types";
 
 export default function CheckoutLayout({ children }: LayoutProps) {
     return (
-        <div className="grid grid-cols-1 gap-8 px-4 sm:px-6 md:px-24 lg:px-32 2xl:grid-cols-[60%_40%] w-full max-w-screen overflow-x-hidden">
+        <div className="grid grid-cols-1 gap-8 px-4 sm:px-6 md:px-24 lg:px-32 xl:grid-cols-[60%_40%] w-full max-w-screen overflow-x-hidden">
             {children}
         </div>
     );
