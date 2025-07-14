@@ -95,14 +95,18 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
 
                 setPayload(payload);
 
-                const response = await axios.post(
-                    `${
-                        import.meta.env.VITE_BACKEND_URL
-                    }/Stripe/create-payment-intent/`,
-                    payload
-                );
+                try {
+                    const response = await axios.post(
+                        `${
+                            import.meta.env.VITE_BACKEND_URL
+                        }/Stripe/create-payment-intent`,
+                        payload
+                    );
 
-                setClientSecret(response.data.clientSecret);
+                    setClientSecret(response.data.clientSecret);
+                } catch (err) {
+                    console.error(err);
+                }
             }
         };
         fetchData();
