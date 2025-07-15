@@ -211,7 +211,7 @@ export default function App() {
                             <ProductTable dorm={dorm} products={products} />
                             <div className="grid gap-8 lg:gap-8 md:grid-cols-2">
                                 <div className="flex flex-col gap-4">
-                                    {/* <DiscountInput /> */}
+                                    <DiscountInput />
                                 </div>
                                 <div className="md:w-3/4 md:ml-auto">
                                     <TotalDetails />

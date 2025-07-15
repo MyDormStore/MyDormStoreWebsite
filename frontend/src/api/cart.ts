@@ -2,11 +2,21 @@ import { Cart } from "@/types/shopify";
 import { client } from "./client";
 
 const cartResponse = `
-id
+    id
     totalQuantity
+    discountCodes {
+      applicable
+      code
+    }
+    cost {
+      totalAmount {
+        amount
+      }
+    }
     lines(first: 250) {
       nodes {
         id
+        
         attributes {
           key
           value
@@ -190,6 +200,45 @@ export const removeProductFromCart = async (id: string[], cartId: string) => {
         }
 
         return data.cartLinesRemove.cart as Cart;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+};
+
+const applyDiscountQuery = `
+mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]!) {
+  cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+    cart {
+      ${cartResponse}
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+export const applyDiscountCode = async (
+    cartId: string,
+    discountCode: string
+) => {
+    try {
+        const { data, errors } = await client.request(applyDiscountQuery, {
+            variables: {
+                cartId: cartId,
+                discountCodes: [discountCode],
+            },
+        });
+
+        if (errors) {
+            throw errors;
+        }
+
+        console.log(data);
+
+        return data.cartDiscountCodesUpdate.cart as Cart;
     } catch (err) {
         console.error(err);
         return null;

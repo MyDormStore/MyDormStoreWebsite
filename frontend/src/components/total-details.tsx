@@ -14,7 +14,9 @@ export function TotalDetails() {
 
     useEffect(() => {
         if (cart) {
-            const total = cart?.lines.nodes.reduce((sum, product) => {
+            const totalCart = parseFloat(cart.cost.totalAmount.amount);
+
+            const totalCalculated = cart?.lines.nodes.reduce((sum, product) => {
                 return (
                     sum +
                     Number(product.cost.amountPerQuantity.amount) *
@@ -22,7 +24,9 @@ export function TotalDetails() {
                 );
             }, 0);
 
-            setTotalPrice(total);
+            setTotalPrice(
+                totalCart < totalCalculated ? totalCart : totalCalculated
+            );
         }
     }, [cart]);
 

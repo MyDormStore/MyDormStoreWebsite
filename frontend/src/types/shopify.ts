@@ -35,6 +35,17 @@ export interface ShopifyProductsData {
 
 export type Cart = {
     id: string;
+    cost: {
+        totalAmount: {
+            amount: string;
+        };
+    };
+    discountCodes: [
+        {
+            applicable: string;
+            code: string;
+        }
+    ];
     lines: {
         nodes: CartLine[];
     };
