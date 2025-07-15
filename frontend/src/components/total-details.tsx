@@ -11,6 +11,9 @@ export function TotalDetails() {
     const { shippingCost, taxLines } = useShippingContext();
 
     const [totalPrice, setTotalPrice] = useState(0);
+    const [originalPrice, setOriginalPrice] = useState<number | undefined>(
+        undefined
+    );
 
     useEffect(() => {
         if (cart) {
@@ -27,12 +30,20 @@ export function TotalDetails() {
             setTotalPrice(
                 totalCart < totalCalculated ? totalCart : totalCalculated
             );
+
+            setOriginalPrice(
+                totalCart < totalCalculated ? totalCalculated : undefined
+            );
         }
     }, [cart]);
 
     return (
         <div className="grid gap-2">
-            <CostDetails title="Subtotal:" value={totalPrice} />
+            <CostDetails
+                title="Subtotal:"
+                value={totalPrice}
+                originalPrice={originalPrice}
+            />
             <CostDetails title="Shipping" value={shippingCost} />
             <CostDetails
                 title="Estimated Tax:"
@@ -60,15 +71,28 @@ export function TotalDetails() {
 interface CostDetailsProps {
     title: string;
     value: number;
+    originalPrice?: number;
     className?: string;
 }
 
-function CostDetails({ title, value, className = "" }: CostDetailsProps) {
+function CostDetails({
+    title,
+    value,
+    originalPrice,
+    className = "",
+}: CostDetailsProps) {
     return (
         <div className="grid gap-2 grid-cols-[1fr_0.3fr]">
             <h1 className={`text-sm ${className}`}>{title}</h1>
             {value && value !== 0 ? (
-                <span className="text-right">${value.toFixed(2)}</span>
+                <span className="text-right flex gap-2">
+                    {originalPrice && (
+                        <span className="line-through">
+                            ${originalPrice.toFixed(2)}
+                        </span>
+                    )}
+                    ${value.toFixed(2)}
+                </span>
             ) : (
                 <Skeleton />
             )}
