@@ -43,6 +43,10 @@ export type Cart = {
 
 export type CartLine = {
     id: string;
+    attributes?: {
+        key: string;
+        value: string;
+    }[];
     merchandise: {
         id: string;
         title: string;

@@ -31,6 +31,10 @@ export function SuccessPage() {
 
     const hasOrdered = useRef(false); // Prevent duplicate order creation
 
+    if (cart && cart.lines.nodes.length <= 0) {
+        navigate("/");
+    }
+
     useEffect(() => {
         const fetchAPI = async () => {
             if (cartID) {
@@ -81,10 +85,6 @@ export function SuccessPage() {
             removeProductFromCart(IDs, cart.id);
         }
     }, [cart, hasOrdered]);
-
-    if (cart && cart.lines.nodes.length <= 0) {
-        navigate("/");
-    }
 
     return (
         <div className="w-dvw h-dvh overflow-y-scroll flex flex-col">

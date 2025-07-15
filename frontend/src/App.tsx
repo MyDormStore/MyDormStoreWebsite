@@ -65,9 +65,10 @@ export default function App() {
         const fetchAPI = async () => {
             if (cartID) {
                 const key = searchParams.get("key");
-                setCart(
-                    await getCart(`gid://shopify/Cart/${cartID}?key=${key}`)
+                const cartResponse = await getCart(
+                    `gid://shopify/Cart/${cartID}?key=${key}`
                 );
+                setCart(cartResponse);
                 const productsResponse = await getProducts();
                 productsResponse && setProducts(productsResponse);
             }
@@ -188,7 +189,8 @@ export default function App() {
                                     size={"icon"}
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        window.history.back();
+                                        window.location.href =
+                                            "https://mydormstore.ca/cart";
                                     }}
                                 >
                                     <ChevronLeft />
@@ -234,13 +236,6 @@ export default function App() {
                                                 return [
                                                     data.variants.edges.filter(
                                                         (product) => {
-                                                            console.log(
-                                                                data.title,
-                                                                product.node
-                                                                    .title,
-                                                                product.node
-                                                                    .metafields
-                                                            );
                                                             if (
                                                                 product.node
                                                                     .metafields
@@ -324,9 +319,6 @@ export default function App() {
                                                                         )
                                                                     );
                                                                 }
-                                                                console.log(
-                                                                    "test"
-                                                                );
                                                                 return true;
                                                             } else {
                                                                 return false;

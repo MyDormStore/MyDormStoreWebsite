@@ -7,6 +7,10 @@ id
     lines(first: 250) {
       nodes {
         id
+        attributes {
+          key
+          value
+        }
         cost {
           amountPerQuantity {
             amount

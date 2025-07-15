@@ -455,6 +455,21 @@ export function ProductTable({
                                             {product.merchandise.title}
                                         </span>
                                     )}
+                                    {product.attributes &&
+                                        product.attributes.some(
+                                            (prod) =>
+                                                prod.key === "Included Products"
+                                        ) && (
+                                            <span className="font-light max-w-96 text-wrap">
+                                                {
+                                                    product.attributes.find(
+                                                        (prod) =>
+                                                            prod.key ===
+                                                            "Included Products"
+                                                    )?.value
+                                                }
+                                            </span>
+                                        )}
                                 </div>
                             </TableCell>
                             <TableCell>
