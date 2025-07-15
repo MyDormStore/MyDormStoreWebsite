@@ -1,6 +1,11 @@
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import {
+    useLocation,
+    useNavigate,
+    useParams,
+    useSearchParams,
+} from "react-router";
 import NavBar from "./components/layout/navbar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Cart } from "./types/shopify";
 import { getCart, removeProductFromCart } from "./api/cart";
 import {
@@ -12,16 +17,25 @@ import {
     TableRow,
 } from "./components/ui/table";
 import CheckoutLayout from "./components/layout/checkout-layout";
+import axios from "axios";
+import { usePayloadStore } from "./core/payload";
 
 export function SuccessPage() {
     const { cartID } = useParams();
     const [searchParams] = useSearchParams();
     const [cart, setCart] = useState<Cart | null>(null);
+    const navigate = useNavigate();
+
+    const payload = usePayloadStore((state) => state.payload);
+    const setPayload = usePayloadStore((state) => state.setPayload);
+
+    const hasOrdered = useRef(false); // Prevent duplicate order creation
 
     useEffect(() => {
         const fetchAPI = async () => {
             if (cartID) {
                 const key = searchParams.get("key");
+                console.log(key);
                 setCart(
                     await getCart(`gid://shopify/Cart/${cartID}?key=${key}`)
                 );
@@ -31,16 +45,43 @@ export function SuccessPage() {
     }, [cartID]);
 
     useEffect(() => {
-        if (cart) {
-            const IDs = cart.lines.nodes.map((cartLine) => {
-                return cartLine.id;
-            });
+        const createOrder = async () => {
+            const paymentIntent = searchParams.get("payment_intent");
+            const paymentIntentClientSecret = searchParams.get(
+                "payment_intent_client_secret"
+            );
 
+            if (
+                !hasOrdered.current &&
+                paymentIntent &&
+                paymentIntentClientSecret &&
+                payload
+            ) {
+                hasOrdered.current = true; // 👈 Mark as executed
+                try {
+                    const response = await axios.post(
+                        `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
+                        payload
+                    );
+                    console.log(response);
+                    setPayload(null);
+                } catch (error) {
+                    console.error("Order creation failed:", error);
+                    hasOrdered.current = false; // Optionally allow retry on failure
+                }
+            }
+        };
+
+        createOrder();
+    }, [searchParams, payload]);
+
+    useEffect(() => {
+        if (cart && hasOrdered.current) {
+            const IDs = cart.lines.nodes.map((cartLine) => cartLine.id);
             removeProductFromCart(IDs, cart.id);
         }
-    }, [cart]);
+    }, [cart, hasOrdered]);
 
-    const navigate = useNavigate();
     if (cart && cart.lines.nodes.length <= 0) {
         navigate("/");
     }

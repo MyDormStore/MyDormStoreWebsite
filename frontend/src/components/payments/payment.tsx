@@ -42,6 +42,7 @@ import StateDropdown from "../dropdown/states";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import { usePayloadStore } from "@/core/payload";
 
 // payment form for checkout
 
@@ -57,8 +58,10 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     const notInCart = useFormStore((state) => state.notInCart);
 
     const [clientSecret, setClientSecret] = useState("");
-    const [payload, setPayload] = useState<any>(null);
     const [searchParams] = useSearchParams();
+
+    const payload = usePayloadStore((state) => state.payload);
+    const setPayload = usePayloadStore((state) => state.setPayload);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -134,10 +137,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                             }}
                             stripe={stripe}
                         >
-                            <CheckoutForm
-                                payload={payload}
-                                setPayload={setPayload}
-                            />
+                            <CheckoutForm />
                         </Elements>
                     )}
                 </CardContent>
@@ -158,13 +158,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     );
 }
 
-const CheckoutForm = ({
-    payload,
-    setPayload,
-}: {
-    payload: any;
-    setPayload: React.Dispatch<any>;
-}) => {
+const CheckoutForm = () => {
     const elements = useElements();
     const stripe = useStripe();
 
@@ -176,20 +170,13 @@ const CheckoutForm = ({
         defaultValues: payment,
     });
 
+    const payload = usePayloadStore((state) => state.payload);
+    const setPayload = usePayloadStore((state) => state.setPayload);
+
     const [loading, setLoading] = useState(false);
 
     const { cartID } = useParams();
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
-
-    const [URL, setURL] = useState("");
-
-    useEffect(() => {
-        if (cartID) {
-            const key = searchParams.get("key");
-            setURL(`/${cartID}/success?key=${key}`);
-        }
-    }, [cartID]);
 
     const onSubmit = async (data: SecondaryAddressSchemaType) => {
         setLoading(true);
@@ -201,16 +188,17 @@ const CheckoutForm = ({
         };
         setPayload(newPayload);
 
+        console.log(payload);
         try {
             if (stripe && elements) {
                 const { error } = await stripe.confirmPayment({
                     elements,
+
                     confirmParams: {
                         return_url: `${
                             window.location.origin
                         }/${cartID}/success?key=${searchParams.get("key")}`,
                     },
-                    // No `redirect: "if_required"` here; Klarna requires a redirect
                 });
 
                 if (error) {
@@ -218,11 +206,6 @@ const CheckoutForm = ({
                     // optionally show user error
                     return;
                 }
-                const response = await axios.post(
-                    `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
-                    newPayload
-                );
-
                 // No navigation here — redirect handled by Stripe
             }
         } catch (err) {

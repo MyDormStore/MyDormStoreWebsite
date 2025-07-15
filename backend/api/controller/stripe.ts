@@ -52,6 +52,8 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
             deliveryDetails: JSON.stringify(payload.deliveryDetails),
             taxLines: JSON.stringify(payload.taxLines),
             shipping: JSON.stringify(payload.shipping),
+            amount: payload.amount,
+            // secondaryDetails: JSON.stringify(payload.secondaryDetails)
         },
     });
 
