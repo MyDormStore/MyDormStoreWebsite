@@ -161,7 +161,7 @@ export default function ShippingForm({
                         return [
                             // ...prevRates,
                             {
-                                service: "Flat Rate",
+                                service: "Move-In Day Delivery",
                                 cost: 10,
                                 transitTime: 2,
                             },
@@ -326,10 +326,13 @@ export default function ShippingForm({
                                                                               )}`}
                                                                     </span>
                                                                     <span>
-                                                                        {transitTime ===
-                                                                        1
+                                                                        {service ===
+                                                                        "Move-In Day Delivery"
+                                                                            ? "Move-In Day Delivery"
+                                                                            : transitTime ===
+                                                                              1
                                                                             ? "Next day delivery"
-                                                                            : `Ships within the next ${transitTime} days`}
+                                                                            : `Ships in ${transitTime} days`}
                                                                     </span>
                                                                 </div>
                                                             </CardContent>
@@ -434,10 +437,13 @@ export default function ShippingForm({
                                                                               )}`}
                                                                     </TableCell>
                                                                     <TableCell>
-                                                                        {transitTime ===
-                                                                        1
+                                                                        {service ===
+                                                                        "Move-In Day Delivery"
+                                                                            ? "Move-In Day Delivery"
+                                                                            : transitTime ===
+                                                                              1
                                                                             ? "Next day delivery"
-                                                                            : `Ships within the next ${transitTime} days`}
+                                                                            : `Ships in ${transitTime} days`}
                                                                     </TableCell>
                                                                 </TableRow>
                                                             );

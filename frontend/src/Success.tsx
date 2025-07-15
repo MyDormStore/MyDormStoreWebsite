@@ -7,7 +7,7 @@ import {
 import NavBar from "./components/layout/navbar";
 import { useEffect, useRef, useState } from "react";
 import { Cart } from "./types/shopify";
-import { getCart, removeProductFromCart } from "./api/cart";
+import { applyDiscountCode, getCart, removeProductFromCart } from "./api/cart";
 import {
     Table,
     TableBody,
@@ -40,9 +40,14 @@ export function SuccessPage() {
             if (cartID) {
                 const key = searchParams.get("key");
                 console.log(key);
-                setCart(
-                    await getCart(`gid://shopify/Cart/${cartID}?key=${key}`)
+                const cartResponse = await getCart(
+                    `gid://shopify/Cart/${cartID}?key=${key}`
                 );
+                setCart(cartResponse);
+
+                if (cartResponse.discountCodes[0].applicable) {
+                    applyDiscountCode(cartResponse.id, "");
+                }
             }
         };
         fetchAPI();
