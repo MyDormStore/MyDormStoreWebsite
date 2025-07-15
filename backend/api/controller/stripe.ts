@@ -53,7 +53,13 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
             taxLines: JSON.stringify(payload.taxLines),
             shipping: JSON.stringify(payload.shipping),
             amount: payload.amount,
-            // secondaryDetails: JSON.stringify(payload.secondaryDetails)
+            secondaryDetails: payload.secondaryDetails
+                ? JSON.stringify(payload.secondaryDetails)
+                : null,
+            notInCart: payload.notInCart
+                ? JSON.stringify(payload.notInCart)
+                : null,
+            rp_id: payload.rp_id ?? null,
         },
     });
 
@@ -62,47 +68,63 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     });
 };
 
-// const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+export const getPaymentIntent = async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-// export const webhook = async (req: Request, res: Response) => {
-//     let event: Stripe.Event = req.body;
+    const paymentIntent = await stripe.paymentIntents.retrieve(id);
 
-//     if (endpointSecret) {
-//         const signature = req.headers["stripe-signature"];
-//         if (signature) {
-//             try {
-//                 event = stripe.webhooks.constructEvent(
-//                     req.body,
-//                     signature,
-//                     endpointSecret
-//                 );
-//             } catch (err) {
-//                 console.error(`Webhook signature verification failed.`, err);
-//                 res.sendStatus(400);
-//             }
-//         }
-//     }
+    res.send(paymentIntent);
+};
 
-//     switch (event.type) {
-//         case "payment_intent.succeeded":
-//             const paymentIntent = event.data.object;
-//             const metadata = paymentIntent.metadata;
-//             const payload: Payload = {
-//                 customer: metadata.customer,
-//                 lineItems: JSON.parse(metadata.lineItems),
-//                 deliveryDetails: JSON.parse(metadata.deliveryDetails),
-//                 taxLines: JSON.parse(metadata.taxLines),
-//                 shipping: JSON.parse(metadata.shipping),
-//             };
-//             console.log(payload);
-//             const ID = await createOrder(payload, paymentIntent.amount / 100);
-//             console.log(
-//                 `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`
-//             );
-//             break;
-//         default:
-//             console.log(`unhandled event type ${event.type}`);
-//     }
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-//     res.status(200).send();
-// };
+export const webhook = async (req: Request, res: Response) => {
+    let event: Stripe.Event = req.body;
+
+    if (endpointSecret) {
+        const signature = req.headers["stripe-signature"];
+        if (signature) {
+            try {
+                event = stripe.webhooks.constructEvent(
+                    req.body,
+                    signature,
+                    endpointSecret
+                );
+            } catch (err) {
+                console.error(`Webhook signature verification failed.`, err);
+                res.sendStatus(400);
+            }
+        }
+    }
+
+    switch (event.type) {
+        case "payment_intent.succeeded":
+            const paymentIntent = event.data.object;
+            const metadata = paymentIntent.metadata;
+            const payload: Payload = {
+                amount: parseFloat(metadata.amount),
+                customer: metadata.customer,
+                lineItems: JSON.parse(metadata.lineItems),
+                deliveryDetails: JSON.parse(metadata.deliveryDetails),
+                taxLines: JSON.parse(metadata.taxLines),
+                shipping: JSON.parse(metadata.shipping),
+                secondaryDetails: metadata.secondaryDetails
+                    ? JSON.parse(metadata.secondaryDetails)
+                    : null,
+                notInCart: metadata.notInCart
+                    ? JSON.parse(metadata.notInCart)
+                    : null,
+                rp_id: metadata.rp_id ?? null,
+            };
+            console.log(payload);
+            const ID = await createOrder(payload);
+            console.log(
+                `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`
+            );
+            break;
+        default:
+            console.log(`unhandled event type ${event.type}`);
+    }
+
+    res.status(200).send();
+};

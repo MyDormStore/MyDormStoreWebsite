@@ -55,23 +55,33 @@ export function SuccessPage() {
                 "payment_intent_client_secret"
             );
 
-            if (
-                !hasOrdered.current &&
-                paymentIntent &&
-                paymentIntentClientSecret &&
-                payload
-            ) {
-                hasOrdered.current = true; // 👈 Mark as executed
-                try {
-                    const response = await axios.post(
-                        `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
-                        payload
-                    );
-                    console.log(response);
-                    setPayload(null);
-                } catch (error) {
-                    console.error("Order creation failed:", error);
-                    hasOrdered.current = false; // Optionally allow retry on failure
+            // console.log(paymentIntent);
+
+            const response = await axios.get(
+                `${
+                    import.meta.env.VITE_BACKEND_URL
+                }/Stripe/payment-intent/${paymentIntent}`
+            );
+
+            const data = response.data;
+            console.log(data);
+
+            if (!hasOrdered.current && paymentIntent && payload) {
+                if (data.status === "succeeded") {
+                    hasOrdered.current = true; // 👈 Mark as executed
+                    try {
+                        const response = await axios.post(
+                            `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
+                            payload
+                        );
+                        console.log(response);
+                        setPayload(null);
+                    } catch (error) {
+                        console.error("Order creation failed:", error);
+                        hasOrdered.current = false; // Optionally allow retry on failure
+                    }
+                } else {
+                    navigate(`/${cartID}?key=${searchParams.get("key")}`);
                 }
             }
         };
