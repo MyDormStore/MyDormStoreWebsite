@@ -202,11 +202,6 @@ const CheckoutForm = ({
         setPayload(newPayload);
 
         try {
-            const response = await axios.post(
-                `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
-                newPayload
-            );
-
             if (stripe && elements) {
                 const { error } = await stripe.confirmPayment({
                     elements,
@@ -222,6 +217,11 @@ const CheckoutForm = ({
                     console.error("Payment error", error);
                     // optionally show user error
                 }
+                const response = await axios.post(
+                    `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
+                    newPayload
+                );
+
                 // No navigation here — redirect handled by Stripe
             }
         } catch (err) {
