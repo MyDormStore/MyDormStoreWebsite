@@ -216,6 +216,7 @@ const CheckoutForm = ({
                 if (error) {
                     console.error("Payment error", error);
                     // optionally show user error
+                    return;
                 }
                 const response = await axios.post(
                     `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
