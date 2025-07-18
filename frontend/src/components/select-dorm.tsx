@@ -156,7 +156,7 @@ export function SearchSelect({
                     <CommandList>
                         <CommandEmpty>List is empty.</CommandEmpty>
                         <CommandGroup className="w-full">
-                            <ScrollArea>
+                            <ScrollArea className="h-24">
                                 {dataList.map((data) => (
                                     <CommandItem
                                         key={data.key}
