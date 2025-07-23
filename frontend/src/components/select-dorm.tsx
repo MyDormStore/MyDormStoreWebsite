@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Input } from "./ui/input";
+import { usePayloadStore } from "@/core/payload";
 
 interface SelectDormProps {
     dorm: string;
@@ -34,10 +35,26 @@ interface SelectDormProps {
 
 export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
     const [school, setSchool] = useState<string>("");
+    const payload = usePayloadStore((state) => state.payload);
+    const setPayload = usePayloadStore((state) => state.setPayload);
 
     useEffect(() => {
         setDorm("");
     }, [school, setDorm]);
+
+    useEffect(() => {
+        setPayload({
+            ...payload,
+            school: school,
+        });
+    }, [school]);
+
+    useEffect(() => {
+        setPayload({
+            ...payload,
+            dorm: dorm,
+        });
+    }, [dorm]);
     return (
         <div className="flex gap-4 flex-col">
             <div className="grid gap-2">
@@ -156,7 +173,7 @@ export function SearchSelect({
                     <CommandList>
                         <CommandEmpty>List is empty.</CommandEmpty>
                         <CommandGroup className="w-full">
-                            <ScrollArea className="h-24">
+                            <ScrollArea className="max-h-24">
                                 {dataList.map((data) => (
                                     <CommandItem
                                         key={data.key}

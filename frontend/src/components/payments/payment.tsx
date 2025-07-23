@@ -81,7 +81,8 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
 
                 const rp_id = searchParams.get("rp_id");
 
-                const payload = {
+                const newPayload = {
+                    ...payload,
                     customer: "customer ID", // TODO: get the ID from shopify
                     lineItems: lineItems.map((cartItem) => {
                         return {
@@ -97,7 +98,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     rp_id: rp_id ? rp_id : undefined,
                 };
 
-                setPayload(payload);
+                setPayload(newPayload);
 
                 try {
                     const response = await axios.post(
@@ -107,7 +108,9 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                         payload
                     );
 
-                    setClientSecret(response.data.clientSecret);
+                    if (response.data) {
+                        setClientSecret(response.data.clientSecret);
+                    }
                 } catch (err) {
                     console.error(err);
                 }

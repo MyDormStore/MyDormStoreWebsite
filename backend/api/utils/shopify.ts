@@ -2,8 +2,8 @@ import { client } from "../services/shopify";
 import { LineItems, Order, Payload } from "../types/types";
 
 const orderMutation = `
-mutation CreateOrder($order: OrderCreateOrderInput!) {
-  orderCreate(order: $order) {
+mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOptionsInput) {
+      orderCreate(order: $order, options: $options) {
     order {
       id
     }
@@ -26,6 +26,8 @@ export const createOrder = async (payload: Payload) => {
         secondaryDetails,
         notInCart,
         rp_id,
+        dorm,
+        school,
     } = payload;
 
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
@@ -94,6 +96,19 @@ export const createOrder = async (payload: Payload) => {
         });
     }
 
+    if (dorm) {
+        order.customAttributes?.push({
+            key: "Dorm",
+            value: dorm,
+        });
+    }
+    if (school) {
+        order.customAttributes?.push({
+            key: "School",
+            value: school,
+        });
+    }
+
     if (secondaryDetails && secondaryDetails.toggleSecondaryDetails) {
         order["billingAddress"] = {
             firstName: secondaryDetails.firstName,
@@ -109,12 +124,21 @@ export const createOrder = async (payload: Payload) => {
     const { data, errors } = await client.request(orderMutation, {
         variables: {
             order: order,
+            options: {
+                sendReceipt: true,
+                sendFulfillmentReceipt: true,
+            },
         },
     });
 
     if (errors) {
         console.error(errors);
         return errors;
+    }
+
+    if (data.orderCreate.userErrors && data.orderCreate.userErrors.length > 0) {
+        console.error(data.orderCreate.userErrors);
+        // return errors;
     }
 
     return data.orderCreate.order.id;

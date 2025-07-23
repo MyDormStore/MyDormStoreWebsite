@@ -26,6 +26,8 @@ export type Payload = {
     };
     notInCart?: string[];
     rp_id?: string | undefined;
+    dorm?: string;
+    school?: string;
 };
 
 type TaxLines = [
