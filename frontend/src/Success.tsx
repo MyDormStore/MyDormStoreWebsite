@@ -60,7 +60,7 @@ export function SuccessPage() {
                 "payment_intent_client_secret"
             );
 
-            // console.log(paymentIntent);
+            // console.log(payload);
 
             const response = await axios.get(
                 `${
@@ -69,7 +69,7 @@ export function SuccessPage() {
             );
 
             const data = response.data;
-            console.log(data);
+            // console.log(data);
 
             if (!hasOrdered.current && paymentIntent && payload) {
                 if (data.status === "succeeded") {
@@ -80,7 +80,7 @@ export function SuccessPage() {
                             payload
                         );
                         console.log(response);
-                        setPayload(null);
+                        setPayload({});
                     } catch (error) {
                         console.error("Order creation failed:", error);
                         hasOrdered.current = false; // Optionally allow retry on failure

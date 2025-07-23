@@ -10,7 +10,7 @@ interface PayloadState {
 export const usePayloadStore = create<PayloadState>()(
     persist(
         (set, get) => ({
-            payload: null,
+            payload: {},
             setPayload(payload) {
                 set({ payload: payload });
             },
