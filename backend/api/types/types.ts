@@ -1,6 +1,11 @@
 export type LineItems = {
     variantId: string;
     quantity: number;
+    attributes?: {
+        key: string;
+        value: string;
+    }[];
+    amount?: number;
 };
 
 export type Payload = {

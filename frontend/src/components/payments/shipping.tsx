@@ -76,7 +76,7 @@ export default function ShippingForm({
     });
 
     const { cart } = useCartContext();
-    const { setShippingCost, setTaxLines } = useShippingContext();
+    const { shippingCost, setShippingCost, setTaxLines } = useShippingContext();
 
     const fetchRates = async () => {
         // Simulating an API call to fetch shipping rates
@@ -88,6 +88,8 @@ export default function ShippingForm({
                     return {
                         variantId: cartItem.merchandise.id,
                         quantity: cartItem.quantity,
+                        attributes: cartItem.attributes,
+                        amount: cartItem.cost.amountPerQuantity.amount,
                     };
                 }),
                 deliveryDetails: delivery,
@@ -193,7 +195,11 @@ export default function ShippingForm({
 
     const onSubmit = (data: ShippingFormSchemaType) => {
         addShipping(data);
-        nextTab();
+        if (shippingCost > 0) {
+            nextTab();
+        } else {
+            form.setError("service", { type: "required" });
+        }
     };
 
     const errorMessage = get(form.formState.errors, "service")?.message;

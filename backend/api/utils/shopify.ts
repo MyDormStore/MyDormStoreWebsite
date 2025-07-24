@@ -33,13 +33,53 @@ export const createOrder = async (payload: Payload) => {
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
         deliveryDetails;
 
+    const cartItems = lineItems.flatMap((item) => {
+        if (item.attributes) {
+            const index = item.attributes.findIndex(
+                (attribute) => attribute.key === "__byob"
+            );
+            console.log(index);
+            if (index === -1) {
+                return {
+                    variantId: item.variantId,
+                    quantity: item.quantity,
+
+                    requiresShipping: true,
+                };
+            }
+
+            const products: Array<any> = JSON.parse(
+                item.attributes[index].value
+            );
+            const productItems = products.map((product: any) => {
+                return {
+                    variantId: `gid://shopify/ProductVariant/${product.id}`,
+                    quantity: product.quantity,
+                    requiresShipping: true,
+                };
+            });
+
+            console.log(productItems);
+
+            return [
+                {
+                    variantId: item.variantId,
+                    quantity: item.quantity,
+                },
+                ...productItems,
+            ];
+        }
+        return {
+            variantId: item.variantId,
+            quantity: item.quantity,
+            requiresShipping: true,
+        };
+    });
+
     let order: Order = {
         currency: "CAD",
         financialStatus: "PAID",
-        lineItems: lineItems.map((item) => ({
-            ...item,
-            requiresShipping: true,
-        })),
+        lineItems: cartItems,
         email: email,
         phone: phoneNumber,
         shippingAddress: {
@@ -257,11 +297,58 @@ export const calculateDraftOrder = async (payload: Payload) => {
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
         deliveryDetails;
 
-    let draftOrder: any = {
-        lineItems: lineItems.map((item) => ({
+    console.log(payload);
+
+    const cartItems = lineItems.flatMap((item) => {
+        if (item.attributes) {
+            const index = item.attributes.findIndex(
+                (attribute) => attribute.key === "__byob"
+            );
+            if (index === -1) {
+                return {
+                    variantId: item.variantId,
+                    quantity: item.quantity,
+                };
+            }
+
+            const discountedPrice = item.attributes.find(
+                (attribute) => attribute.key === "__totalByob"
+            )?.value;
+
+            if (discountedPrice && parseFloat(discountedPrice) > 0) {
+                const products: Array<any> = JSON.parse(
+                    item.attributes[index].value
+                );
+
+                let total = 0;
+
+                const productItems = products.flatMap((product: any) => {
+                    total += parseFloat(product.price) / 100;
+                    return {
+                        variantId: `gid://shopify/ProductVariant/${product.id}`,
+                        quantity: product.quantity,
+                    };
+                });
+
+                return [
+                    {
+                        variantId: item.variantId,
+                        quantity: item.quantity,
+                    },
+                    ...productItems,
+                ];
+            }
+        }
+        return {
             variantId: item.variantId,
             quantity: item.quantity,
-        })),
+        };
+    });
+
+    console.log(cartItems);
+
+    let draftOrder: any = {
+        lineItems: cartItems,
         email: email,
         phone: phoneNumber,
         shippingAddress: {
@@ -284,6 +371,8 @@ export const calculateDraftOrder = async (payload: Payload) => {
         console.error(errors);
         return;
     }
+
+    console.log(JSON.stringify(data));
 
     return data;
 };

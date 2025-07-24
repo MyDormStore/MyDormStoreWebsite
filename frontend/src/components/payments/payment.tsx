@@ -68,7 +68,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
             if (cart && clientSecret === "") {
                 const lineItems = cart.lines.nodes; // contains cart items
 
-                const amount =
+                const amount = Math.round(
                     lineItems.reduce((sum, curr) => {
                         return (
                             parseFloat(curr.cost.amountPerQuantity.amount) *
@@ -76,8 +76,9 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                             sum
                         );
                     }, 0) +
-                    shippingCost +
-                    parseFloat(taxLines[0].priceSet.shopMoney.amount);
+                        shippingCost +
+                        parseFloat(taxLines[0].priceSet.shopMoney.amount)
+                );
 
                 const rp_id = searchParams.get("rp_id");
 
@@ -88,6 +89,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                         return {
                             variantId: cartItem.merchandise.id,
                             quantity: cartItem.quantity,
+                            attributes: cartItem.attributes,
                         };
                     }),
                     deliveryDetails: delivery,
@@ -100,19 +102,22 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
 
                 setPayload(newPayload);
 
-                try {
-                    const response = await axios.post(
-                        `${
-                            import.meta.env.VITE_BACKEND_URL
-                        }/Stripe/create-payment-intent`,
-                        payload
-                    );
+                if (amount > 0) {
+                    console.log(newPayload);
+                    try {
+                        const response = await axios.post(
+                            `${
+                                import.meta.env.VITE_BACKEND_URL
+                            }/Stripe/create-payment-intent`,
+                            newPayload
+                        );
 
-                    if (response.data) {
-                        setClientSecret(response.data.clientSecret);
+                        if (response.data) {
+                            setClientSecret(response.data.clientSecret);
+                        }
+                    } catch (err) {
+                        console.error(err);
                     }
-                } catch (err) {
-                    console.error(err);
                 }
             }
         };

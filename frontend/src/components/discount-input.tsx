@@ -15,7 +15,10 @@ export function DiscountInput() {
     const handleApply = async () => {
         setLoading(true);
         if (cart) {
-            const cartResponse = await applyDiscountCode(cart?.id, input);
+            const cartResponse = await applyDiscountCode(
+                cart?.id,
+                input.replace(" ", "") // remove spaces
+            );
             setCart(cartResponse);
         }
         setLoading(false);

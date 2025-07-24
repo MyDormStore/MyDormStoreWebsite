@@ -46,21 +46,21 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     const paymentIntent = await stripe.paymentIntents.create({
         amount: parseInt(amount), // price changes
         currency: "cad",
-        metadata: {
-            customer: payload.customer,
-            lineItems: JSON.stringify(payload.lineItems),
-            deliveryDetails: JSON.stringify(payload.deliveryDetails),
-            taxLines: JSON.stringify(payload.taxLines),
-            shipping: JSON.stringify(payload.shipping),
-            amount: payload.amount,
-            secondaryDetails: payload.secondaryDetails
-                ? JSON.stringify(payload.secondaryDetails)
-                : null,
-            notInCart: payload.notInCart
-                ? JSON.stringify(payload.notInCart)
-                : null,
-            rp_id: payload.rp_id ?? null,
-        },
+        // metadata: {
+        //     customer: payload.customer,
+        //     lineItems: JSON.stringify(payload.lineItems),
+        //     deliveryDetails: JSON.stringify(payload.deliveryDetails),
+        //     taxLines: JSON.stringify(payload.taxLines),
+        //     shipping: JSON.stringify(payload.shipping),
+        //     amount: payload.amount,
+        //     secondaryDetails: payload.secondaryDetails
+        //         ? JSON.stringify(payload.secondaryDetails)
+        //         : null,
+        //     notInCart: payload.notInCart
+        //         ? JSON.stringify(payload.notInCart)
+        //         : null,
+        //     rp_id: payload.rp_id ?? null,
+        // },
     });
 
     res.send({

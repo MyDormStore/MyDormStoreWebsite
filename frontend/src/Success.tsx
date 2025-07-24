@@ -45,7 +45,10 @@ export function SuccessPage() {
                 );
                 setCart(cartResponse);
 
-                if (cartResponse.discountCodes[0].applicable) {
+                if (
+                    cartResponse.discountCodes &&
+                    cartResponse.discountCodes[0].applicable
+                ) {
                     applyDiscountCode(cartResponse.id, "");
                 }
             }
@@ -80,7 +83,9 @@ export function SuccessPage() {
                             payload
                         );
                         console.log(response);
-                        setPayload({});
+                        if (!response.data.graphQLErrors) {
+                            setPayload({});
+                        }
                     } catch (error) {
                         console.error("Order creation failed:", error);
                         hasOrdered.current = false; // Optionally allow retry on failure
