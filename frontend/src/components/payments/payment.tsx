@@ -66,19 +66,17 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     useEffect(() => {
         const fetchData = async () => {
             if (cart && clientSecret === "") {
+                console.log(cart);
                 const lineItems = cart.lines.nodes; // contains cart items
 
-                const amount = Math.round(
-                    lineItems.reduce((sum, curr) => {
-                        return (
-                            parseFloat(curr.cost.amountPerQuantity.amount) *
-                                curr.quantity +
-                            sum
-                        );
-                    }, 0) +
-                        shippingCost +
-                        parseFloat(taxLines[0].priceSet.shopMoney.amount)
-                );
+                const amount =
+                    parseFloat(cart.cost.totalAmount.amount) +
+                    Number(shippingCost || 0) +
+                    Number(
+                        parseFloat(
+                            taxLines?.[0]?.priceSet?.shopMoney?.amount
+                        ) || 0
+                    );
 
                 const rp_id = searchParams.get("rp_id");
 
@@ -95,7 +93,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     deliveryDetails: delivery,
                     taxLines: taxLines,
                     shipping: shipping,
-                    amount: amount * 100,
+                    amount: Math.round(amount * 100),
                     notInCart: notInCart,
                     rp_id: rp_id ? rp_id : undefined,
                 };

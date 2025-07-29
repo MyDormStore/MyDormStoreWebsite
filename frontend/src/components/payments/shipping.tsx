@@ -69,14 +69,27 @@ export default function ShippingForm({
     const delivery = useFormStore((state) => state.delivery);
 
     const [rates, setRates] = useState<Rates[] | null>([]);
-    const [selectedRate, setSelectedRate] = useState("");
 
     const form = useForm<ShippingFormSchemaType>({
         resolver: zodResolver(shippingFormSchema),
+        defaultValues: {
+            service: shipping?.service || "",
+            cost: shipping?.cost || 0,
+            transitTime: shipping?.transitTime || 0,
+            moveInDate: shipping?.moveInDate || undefined,
+        },
+        mode: "onChange",
+        reValidateMode: "onChange",
     });
+
+    const [selectedRate, setSelectedRate] = useState(
+        form.getValues("service") || ""
+    );
 
     const { cart } = useCartContext();
     const { shippingCost, setShippingCost, setTaxLines } = useShippingContext();
+
+    console.log(shippingCost, selectedRate, shipping, form.getValues());
 
     const fetchRates = async () => {
         // Simulating an API call to fetch shipping rates
@@ -99,8 +112,6 @@ export default function ShippingForm({
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
-
-            console.log(response.data);
 
             response.data.taxLines && setTaxLines(response.data.taxLines);
 
@@ -307,16 +318,7 @@ export default function ShippingForm({
                                                         transitTime,
                                                     } = rate;
                                                     return (
-                                                        <Card
-                                                            key={service}
-                                                            // className={cn(
-                                                            //     "hover:cursor-pointer",
-                                                            //     selectedRate ===
-                                                            //         service
-                                                            //         ? "font-bold bg-secondary hover:bg-secondary"
-                                                            //         : ""
-                                                            // )}
-                                                        >
+                                                        <Card key={service}>
                                                             <CardHeader className="text-lg">
                                                                 {service}
                                                             </CardHeader>

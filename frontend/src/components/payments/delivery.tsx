@@ -46,7 +46,24 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
 
     const form = useForm<DeliveryFormSchemaType>({
         resolver: zodResolver(deliveryFormSchema),
-        defaultValues: delivery,
+        defaultValues: delivery
+            ? delivery
+            : {
+                  email: "",
+                  firstName: "",
+                  lastName: "",
+                  phoneNumber: "",
+                  shippingAddress: {
+                      street: "",
+                      city: "",
+                      country: "",
+
+                      state: "",
+                      postalCode: "",
+                  },
+              },
+        mode: "onChange",
+        reValidateMode: "onChange",
     });
 
     const onSubmit = async (data: DeliveryFormSchemaType) => {

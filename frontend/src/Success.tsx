@@ -56,54 +56,91 @@ export function SuccessPage() {
         fetchAPI();
     }, [cartID]);
 
+    const [orderLoading, setOrderLoading] = useState(false);
+    const [orderError, setOrderError] = useState<string | null>(null);
+
     useEffect(() => {
         const createOrder = async () => {
             const paymentIntent = searchParams.get("payment_intent");
-            const paymentIntentClientSecret = searchParams.get(
-                "payment_intent_client_secret"
-            );
+            if (
+                !paymentIntent ||
+                !payload ||
+                !cart ||
+                hasOrdered.current ||
+                orderLoading
+            ) {
+                return;
+            }
 
-            // console.log(payload);
+            setOrderLoading(true);
+            setOrderError(null);
 
-            const response = await axios.get(
-                `${
-                    import.meta.env.VITE_BACKEND_URL
-                }/Stripe/payment-intent/${paymentIntent}`
-            );
+            try {
+                const response = await axios.get(
+                    `${
+                        import.meta.env.VITE_BACKEND_URL
+                    }/Stripe/payment-intent/${paymentIntent}`
+                );
+                const data = response.data;
 
-            const data = response.data;
-            // console.log(data);
-
-            if (!hasOrdered.current && paymentIntent && payload) {
                 if (data.status === "succeeded") {
-                    hasOrdered.current = true; // 👈 Mark as executed
-                    try {
-                        const response = await axios.post(
-                            `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
-                            payload
+                    const orderResponse = await axios.post(
+                        `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
+                        payload
+                    );
+                    console.log(orderResponse);
+
+                    if (!orderResponse.data.graphQLErrors) {
+                        hasOrdered.current = true;
+                        setPayload({});
+                        // Only clear cart after order is successful
+                        const IDs = cart.lines.nodes.map(
+                            (cartLine) => cartLine.id
                         );
-                        console.log(response);
-                        if (!response.data.graphQLErrors) {
-                            setPayload({});
-                        }
-                    } catch (error) {
-                        console.error("Order creation failed:", error);
-                        hasOrdered.current = false; // Optionally allow retry on failure
+                        await removeProductFromCart(IDs, cart.id);
+                    } else {
+                        throw new Error();
                     }
                 }
+            } catch (error: any) {
+                setOrderError("Order creation failed. Please contact support.");
+                console.error("Order creation failed:", error);
+                hasOrdered.current = false;
+            } finally {
+                setOrderLoading(false);
             }
         };
 
         createOrder();
-    }, [searchParams, payload]);
+        // Only run when cart, payload, and searchParams are all ready
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cart, payload, searchParams]);
 
-    useEffect(() => {
-        if (cart && hasOrdered.current) {
-            const IDs = cart.lines.nodes.map((cartLine) => cartLine.id);
-            removeProductFromCart(IDs, cart.id);
-        }
-    }, [cart, hasOrdered]);
+    if (orderLoading) {
+        return (
+            <div className="w-dvw h-dvh overflow-y-scroll flex flex-col">
+                <div className="h-fit">
+                    <NavBar />
+                </div>
+                <div className="text-center text-lg text-blue-600 my-4">
+                    Processing your order...
+                </div>
+            </div>
+        );
+    }
 
+    if (orderError) {
+        return (
+            <div className="w-dvw h-dvh overflow-y-scroll flex flex-col">
+                <div className="h-fit">
+                    <NavBar />
+                </div>
+                <div className="flex items-center justify-center h-screen">
+                    <div className="text-red-500">{orderError}</div>
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="w-dvw h-dvh overflow-y-scroll flex flex-col">
             <div className="h-fit">
