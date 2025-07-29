@@ -90,8 +90,6 @@ export function SuccessPage() {
                         console.error("Order creation failed:", error);
                         hasOrdered.current = false; // Optionally allow retry on failure
                     }
-                } else {
-                    navigate(`/${cartID}?key=${searchParams.get("key")}`);
                 }
             }
         };
