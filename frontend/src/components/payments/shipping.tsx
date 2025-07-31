@@ -89,8 +89,6 @@ export default function ShippingForm({
     const { cart } = useCartContext();
     const { shippingCost, setShippingCost, setTaxLines } = useShippingContext();
 
-    console.log(shippingCost, selectedRate, shipping, form.getValues());
-
     const fetchRates = async () => {
         // Simulating an API call to fetch shipping rates
         if (cart) {

@@ -43,6 +43,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { usePayloadStore } from "@/core/payload";
+import { constructFromSymbol } from "date-fns/constants";
 
 // payment form for checkout
 
@@ -173,8 +174,21 @@ const CheckoutForm = () => {
 
     const form = useForm<SecondaryAddressSchemaType>({
         resolver: zodResolver(secondaryAddressSchema),
-        defaultValues: payment,
+        defaultValues: payment
+            ? payment
+            : {
+                  toggleSecondaryDetails: false,
+                  email: "",
+                  firstName: "",
+                  lastName: "",
+                  billingAddress: undefined,
+                  phoneNumber: "",
+              },
+        mode: "onChange",
+        reValidateMode: "onChange",
     });
+
+    console.log(form.formState.errors, form.getValues());
 
     const payload = usePayloadStore((state) => state.payload);
     const setPayload = usePayloadStore((state) => state.setPayload);

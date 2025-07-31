@@ -6,7 +6,18 @@ export const secondaryAddressSchema = z.object({
     email: z.string().email().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
-    billingAddress: addressSchema.partial().optional(),
+    billingAddress: z
+        .object({
+            postalCode: z.string().toUpperCase(),
+            country: z.string().toUpperCase(),
+            city: z.string(),
+            state: z.string().toUpperCase(),
+            street: z.string(),
+            residential: z.boolean().optional(),
+        })
+        .partial()
+        .optional()
+        .nullable(),
     phoneNumber: z.string().optional(),
 });
 export type SecondaryAddressSchemaType = z.infer<typeof secondaryAddressSchema>;

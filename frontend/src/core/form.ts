@@ -23,7 +23,7 @@ export const useFormStore = create<FormState>()(
     (set, get) => ({
         delivery: {} as DeliveryFormSchemaType,
         shipping: {} as ShippingFormSchemaType,
-        payment: {} as PaymentFormSchemaType,
+        payment: {} as SecondaryAddressSchemaType,
         notInCart: [],
         addDelivery(data) {
             set({ delivery: data });

@@ -29,7 +29,7 @@ export function SuccessPage() {
     const payload = usePayloadStore((state) => state.payload);
     const setPayload = usePayloadStore((state) => state.setPayload);
 
-    const hasOrdered = useRef(false); // Prevent duplicate order creation
+    const [hasOrdered, setHasOrdered] = useState(false); // Add this line
 
     if (cart && cart.lines.nodes.length <= 0) {
         navigate("/");
@@ -66,7 +66,7 @@ export function SuccessPage() {
                 !paymentIntent ||
                 !payload ||
                 !cart ||
-                hasOrdered.current ||
+                hasOrdered || // Use state instead of ref
                 orderLoading
             ) {
                 return;
@@ -91,7 +91,7 @@ export function SuccessPage() {
                     console.log(orderResponse);
 
                     if (!orderResponse.data.graphQLErrors) {
-                        hasOrdered.current = true;
+                        setHasOrdered(true); // Update state
                         setPayload({});
                         // Only clear cart after order is successful
                         const IDs = cart.lines.nodes.map(
@@ -105,16 +105,14 @@ export function SuccessPage() {
             } catch (error: any) {
                 setOrderError("Order creation failed. Please contact support.");
                 console.error("Order creation failed:", error);
-                hasOrdered.current = false;
+                setHasOrdered(false); // Update state
             } finally {
                 setOrderLoading(false);
             }
         };
 
         createOrder();
-        // Only run when cart, payload, and searchParams are all ready
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cart, payload, searchParams]);
+    }, [cart, payload, searchParams, hasOrdered, orderLoading]);
 
     if (orderLoading) {
         return (
