@@ -15,7 +15,6 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
 }
 
 `;
-
 export const createOrder = async (payload: Payload) => {
     const {
         lineItems,
@@ -38,45 +37,51 @@ export const createOrder = async (payload: Payload) => {
             const index = item.attributes.findIndex(
                 (attribute) => attribute.key === "__byob"
             );
-            console.log(index);
-            if (index === -1) {
-                return {
-                    variantId: item.variantId,
-                    quantity: item.quantity,
 
-                    requiresShipping: true,
-                };
+            if (index === -1) {
+                return [
+                    {
+                        variantId: item.variantId,
+                        quantity: item.quantity,
+                        requiresShipping: true,
+                    },
+                ];
             }
 
-            const products: Array<any> = JSON.parse(
-                item.attributes[index].value
-            );
-            const productItems = products.map((product: any) => {
-                return {
+            let productItems: Array<any> = [];
+            try {
+                const products: Array<any> = JSON.parse(
+                    item.attributes[index]?.value || "[]"
+                );
+                productItems = products.map((product: any) => ({
                     variantId: `gid://shopify/ProductVariant/${product.id}`,
                     quantity: product.quantity,
                     requiresShipping: true,
-                };
-            });
-
-            console.log(productItems);
+                }));
+            } catch (err) {
+                console.error("Failed to parse BYOB JSON:", err);
+            }
 
             return [
                 {
                     variantId: item.variantId,
                     quantity: item.quantity,
+                    requiresShipping: true,
                 },
                 ...productItems,
             ];
         }
-        return {
-            variantId: item.variantId,
-            quantity: item.quantity,
-            requiresShipping: true,
-        };
+
+        return [
+            {
+                variantId: item.variantId,
+                quantity: item.quantity,
+                requiresShipping: true,
+            },
+        ];
     });
 
-    let order: Order = {
+    const order: Order = {
         currency: "CAD",
         financialStatus: "PAID",
         lineItems: cartItems,
@@ -102,7 +107,9 @@ export const createOrder = async (payload: Payload) => {
                 },
             },
         ],
-        taxLines: [{ ...taxLines[0], title: "HST" }],
+        taxLines: taxLines?.length
+            ? [{ ...taxLines[0], title: "HST" }]
+            : undefined,
         billingAddress: undefined,
         transactions: {
             amountSet: {
@@ -115,6 +122,7 @@ export const createOrder = async (payload: Payload) => {
         customAttributes: [],
     };
 
+    // Add custom attributes conditionally
     if (shipping.moveInDate) {
         order.customAttributes?.push({
             key: "Move In Date",
@@ -122,7 +130,7 @@ export const createOrder = async (payload: Payload) => {
         });
     }
 
-    if (notInCart && notInCart.length > 0) {
+    if (notInCart?.length) {
         order.customAttributes?.push({
             key: "Not In Cart",
             value: notInCart.join(", "),
@@ -130,27 +138,19 @@ export const createOrder = async (payload: Payload) => {
     }
 
     if (rp_id) {
-        order.customAttributes?.push({
-            key: "rp_id",
-            value: rp_id,
-        });
+        order.customAttributes?.push({ key: "rp_id", value: rp_id });
     }
 
     if (dorm) {
-        order.customAttributes?.push({
-            key: "Dorm",
-            value: dorm,
-        });
-    }
-    if (school) {
-        order.customAttributes?.push({
-            key: "School",
-            value: school,
-        });
+        order.customAttributes?.push({ key: "Dorm", value: dorm });
     }
 
-    if (secondaryDetails && secondaryDetails.toggleSecondaryDetails) {
-        order["billingAddress"] = {
+    if (school) {
+        order.customAttributes?.push({ key: "School", value: school });
+    }
+
+    if (secondaryDetails?.toggleSecondaryDetails) {
+        order.billingAddress = {
             firstName: secondaryDetails.firstName,
             lastName: secondaryDetails.lastName,
             address1: secondaryDetails.billingAddress.street,
@@ -161,27 +161,33 @@ export const createOrder = async (payload: Payload) => {
         };
     }
 
-    const { data, errors } = await client.request(orderMutation, {
-        variables: {
-            order: order,
-            options: {
-                sendReceipt: true,
-                sendFulfillmentReceipt: true,
+    try {
+        const { data, errors } = await client.request(orderMutation, {
+            variables: {
+                order: order,
+                options: {
+                    sendReceipt: true,
+                    sendFulfillmentReceipt: true,
+                },
             },
-        },
-    });
+        });
 
-    if (errors) {
-        console.error(errors);
-        return errors;
+        if (errors) {
+            console.error("GraphQL errors:", errors);
+            return { errors };
+        }
+
+        const userErrors = data.orderCreate.userErrors;
+        if (userErrors?.length > 0) {
+            console.error("User errors:", userErrors);
+            return { userErrors };
+        }
+
+        return data.orderCreate.order.id;
+    } catch (err) {
+        console.error("Request failed:", err);
+        return { error: "Failed to create order" };
     }
-
-    if (data.orderCreate.userErrors && data.orderCreate.userErrors.length > 0) {
-        console.error(data.orderCreate.userErrors);
-        // return errors;
-    }
-
-    return data.orderCreate.order.id;
 };
 
 const draftOrderMutation = `
