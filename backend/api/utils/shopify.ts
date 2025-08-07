@@ -190,76 +190,6 @@ export const createOrder = async (payload: Payload) => {
     }
 };
 
-const draftOrderMutation = `
-mutation CreateDraftOrder($input: DraftOrderInput!) {
-  draftOrderCreate(input: $input) {
-    draftOrder {
-      id
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}
-`;
-
-export const createDraftOrder = async (payload: Payload) => {
-    const { lineItems, customer, deliveryDetails } = payload;
-
-    // const {
-    //     shippingAddress,
-    //     secondaryDetails,
-    //     firstName,
-    //     lastName,
-    //     email,
-    //     phoneNumber,
-    //     toggleSecondaryDetails,
-    // } = deliveryDetails;
-
-    // let draftOrder: any = {
-    //     lineItems: lineItems.map((item) => ({
-    //         variantId: item.variantId,
-    //         quantity: item.quantity,
-    //     })),
-    //     email: email,
-    //     phone: phoneNumber,
-    //     shippingAddress: {
-    //         firstName,
-    //         lastName,
-    //         address1: shippingAddress.street,
-    //         city: shippingAddress.city,
-    //         countryCode: shippingAddress.country,
-    //         zip: shippingAddress.postalCode,
-    //         provinceCode: shippingAddress.state,
-    //     },
-    //     useCustomerDefaultAddress: false,
-    // };
-
-    // if (toggleSecondaryDetails && secondaryDetails) {
-    //     draftOrder.billingAddress = {
-    //         firstName: secondaryDetails.firstName,
-    //         lastName: secondaryDetails.lastName,
-    //         address1: secondaryDetails.billingAddress.street,
-    //         city: secondaryDetails.billingAddress.city,
-    //         countryCode: secondaryDetails.billingAddress.country,
-    //         zip: secondaryDetails.billingAddress.postalCode,
-    //         provinceCode: secondaryDetails.billingAddress.state,
-    //     };
-    // }
-
-    // const { data, errors } = await client.request(draftOrderMutation, {
-    //     variables: { input: draftOrder },
-    // });
-
-    // if (errors) {
-    //     console.error(errors);
-    //     return;
-    // }
-
-    // return data.draftOrderCreate.draftOrder;
-};
-
 const draftOrderCalculateMutation = `
 mutation CalculateDraftOrder($input: DraftOrderInput!) {
     draftOrderCalculate(input: $input) {
@@ -351,12 +281,9 @@ export const calculateDraftOrder = async (payload: Payload) => {
         };
     });
 
-    console.log(cartItems);
-
     let draftOrder: any = {
         lineItems: cartItems,
         email: email,
-        phone: phoneNumber,
         shippingAddress: {
             firstName,
             lastName,
