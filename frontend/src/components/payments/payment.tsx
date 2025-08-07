@@ -149,7 +149,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
         <div className="flex flex-col gap-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Shipping Service</CardTitle>
+                    <CardTitle>Payment Details</CardTitle>
                     <CardDescription>
                         Fill out your card details and click Pay Now
                     </CardDescription>
