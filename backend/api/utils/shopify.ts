@@ -226,67 +226,66 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
     }
 }
 `;
-
 export const calculateDraftOrder = async (payload: Payload) => {
-    const { lineItems, customer, deliveryDetails } = payload;
-
-    const { shippingAddress, firstName, lastName, email, phoneNumber } =
-        deliveryDetails;
-
-    console.log(payload);
+    const { lineItems, deliveryDetails } = payload;
+    const { shippingAddress, email } = deliveryDetails;
 
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
-            const index = item.attributes.findIndex(
-                (attribute) => attribute.key === "__byob"
+            const byobIndex = item.attributes.findIndex(
+                (attr) => attr.key === "__byob"
             );
-            if (index === -1) {
-                return {
-                    variantId: item.variantId,
-                    quantity: item.quantity,
-                };
-            }
-
             const discountedPrice = item.attributes.find(
-                (attribute) => attribute.key === "__totalByob"
+                (attr) => attr.key === "__totalByob"
             )?.value;
 
-            if (discountedPrice && parseFloat(discountedPrice) > 0) {
-                const products: Array<any> = JSON.parse(
-                    item.attributes[index].value
-                );
+            if (
+                byobIndex !== -1 &&
+                discountedPrice &&
+                parseFloat(discountedPrice) > 0
+            ) {
+                try {
+                    const products: Array<any> = JSON.parse(
+                        item.attributes[byobIndex].value
+                    );
 
-                let total = 0;
-
-                const productItems = products.flatMap((product: any) => {
-                    total += parseFloat(product.price) / 100;
-                    return {
+                    const productItems = products.map((product: any) => ({
                         variantId: `gid://shopify/ProductVariant/${product.id}`,
                         quantity: product.quantity,
-                    };
-                });
+                    }));
 
-                return [
-                    {
-                        variantId: item.variantId,
-                        quantity: item.quantity,
-                    },
-                    ...productItems,
-                ];
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                        ...productItems,
+                    ];
+                } catch (error) {
+                    console.error("Failed to parse BYOB JSON:", error);
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                    ];
+                }
             }
         }
-        return {
-            variantId: item.variantId,
-            quantity: item.quantity,
-        };
+
+        // Default case
+        return [
+            {
+                variantId: item.variantId,
+                quantity: item.quantity,
+            },
+        ];
     });
 
-    let draftOrder: any = {
+    const draftOrder = {
         lineItems: cartItems,
-        email: email,
+        email,
         shippingAddress: {
-            firstName,
-            lastName,
             address1: shippingAddress.street,
             city: shippingAddress.city,
             countryCode: shippingAddress.country,
@@ -296,16 +295,151 @@ export const calculateDraftOrder = async (payload: Payload) => {
         useCustomerDefaultAddress: false,
     };
 
-    const { data, errors } = await client.request(draftOrderCalculateMutation, {
-        variables: { input: draftOrder },
+    try {
+        const { data, errors } = await client.request(
+            draftOrderCalculateMutation,
+            {
+                variables: { input: draftOrder },
+            }
+        );
+
+        if (errors) {
+            console.error("GraphQL Errors:", errors);
+            return null;
+        }
+
+        console.log("Draft order calculated:", JSON.stringify(data, null, 2));
+        return data;
+    } catch (err) {
+        console.error("Request failed:", err);
+        return null;
+    }
+};
+
+const finalAmountMutation = `
+mutation CalculateDraftOrder($input: DraftOrderInput!) {
+    draftOrderCalculate(input: $input) {
+        calculatedDraftOrder {
+            availableShippingRates {
+                title
+                price {
+                    amount
+                    currencyCode    
+                }
+            }
+            taxLines {
+                rate
+                priceSet {
+                    shopMoney {
+                        amount
+                        currencyCode    
+                    }
+                }
+            }
+            currencyCode
+            lineItems {
+                title
+                quantity
+                requiresShipping
+            }
+            totalPriceSet {
+                shopMoney {
+                    amount
+                    currencyCode
+                }
+            }
+        }
+    }
+}
+`;
+
+export const calculateFinalAmount = async (payload: Payload) => {
+    const { lineItems, deliveryDetails } = payload;
+    const { shippingAddress, email } = deliveryDetails;
+
+    const cartItems = lineItems.flatMap((item) => {
+        if (item.attributes) {
+            const byobIndex = item.attributes.findIndex(
+                (attr) => attr.key === "__byob"
+            );
+            const discountedPrice = item.attributes.find(
+                (attr) => attr.key === "__totalByob"
+            )?.value;
+
+            if (
+                byobIndex !== -1 &&
+                discountedPrice &&
+                parseFloat(discountedPrice) > 0
+            ) {
+                try {
+                    const products: Array<any> = JSON.parse(
+                        item.attributes[byobIndex].value
+                    );
+
+                    const productItems = products.map((product: any) => ({
+                        variantId: `gid://shopify/ProductVariant/${product.id}`,
+                        quantity: product.quantity,
+                    }));
+
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                        ...productItems,
+                    ];
+                } catch (error) {
+                    console.error("Failed to parse BYOB JSON:", error);
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                    ];
+                }
+            }
+        }
+
+        // Default case
+        return [
+            {
+                variantId: item.variantId,
+                quantity: item.quantity,
+            },
+        ];
     });
 
-    if (errors) {
-        console.error(errors);
-        return;
+    const draftOrder = {
+        lineItems: cartItems,
+        email,
+        shippingAddress: {
+            address1: shippingAddress.street,
+            city: shippingAddress.city,
+            countryCode: shippingAddress.country,
+            zip: shippingAddress.postalCode,
+            provinceCode: shippingAddress.state,
+        },
+        useCustomerDefaultAddress: false,
+    };
+
+    try {
+        const { data, errors } = await client.request(
+            draftOrderCalculateMutation,
+            {
+                variables: { input: draftOrder },
+            }
+        );
+
+        if (errors) {
+            console.error("GraphQL Errors:", errors);
+            return null;
+        }
+
+        console.log("Draft order calculated:", JSON.stringify(data, null, 2));
+        return data.draftOrderCalculate.calculatedDraftOrder;
+    } catch (err) {
+        console.error("Request failed:", err);
+        return null;
     }
-
-    console.log(JSON.stringify(data));
-
-    return data;
 };
+// ...existing code...

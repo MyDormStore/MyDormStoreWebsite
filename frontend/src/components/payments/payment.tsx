@@ -70,14 +70,20 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                 console.log(cart);
                 const lineItems = cart.lines.nodes; // contains cart items
 
-                const amount =
-                    parseFloat(cart.cost.totalAmount.amount) +
-                    Number(shippingCost || 0) +
-                    Number(
-                        parseFloat(
-                            taxLines?.[0]?.priceSet?.shopMoney?.amount
-                        ) || 0
-                    );
+                const baseAmount = parseFloat(
+                    cart.cost.totalAmount.amount || "0"
+                );
+                const totalTax =
+                    taxLines?.reduce((sum: number, line: any) => {
+                        return (
+                            sum +
+                            parseFloat(line?.priceSet?.shopMoney?.amount || "0")
+                        );
+                    }, 0) || 0;
+
+                const totalShipping = Number(shippingCost || "0");
+
+                const amount = baseAmount + totalTax + totalShipping;
 
                 const rp_id = searchParams.get("rp_id");
 
@@ -99,10 +105,26 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     rp_id: rp_id ? rp_id : undefined,
                 };
 
+                const finalAmount = await axios.post(
+                    `${import.meta.env.VITE_BACKEND_URL}/Shopify/finalize`,
+                    newPayload
+                );
+
+                console.log(
+                    "Final amount from Shopify:",
+                    Number(finalAmount.data)
+                );
+
+                if (finalAmount.data) {
+                    newPayload.amount = Math.round(
+                        (Number(finalAmount.data) + totalShipping) * 100
+                    );
+                }
+
                 setPayload(newPayload);
 
                 if (amount > 0) {
-                    console.log(newPayload);
+                    // console.log(newPayload);
                     try {
                         const response = await axios.post(
                             `${
