@@ -42,31 +42,44 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     if (!amount) {
         res.status(400).send("Missing amount");
     }
+    function chunkString(str: string, maxLength: number): string[] {
+        const chunks = [];
+        for (let i = 0; i < str.length; i += maxLength) {
+            chunks.push(str.substring(i, i + maxLength));
+        }
+        return chunks;
+    }
 
+    // 1. Stringify the full lineItems array
+    const lineItemsJson = JSON.stringify(payload.lineItems);
+
+    // 2. Chunk into pieces ≤ 500 characters
+    const lineItemChunks = chunkString(lineItemsJson, 500);
+
+    // 3. Start building metadata
+    const metadata: { [key: string]: string | number | null } = {
+        customer: payload.customer,
+        deliveryDetails: JSON.stringify(payload.deliveryDetails),
+        taxLines: JSON.stringify(payload.taxLines),
+        shipping: JSON.stringify(payload.shipping),
+        amount: payload.amount,
+        secondaryDetails: payload.secondaryDetails
+            ? JSON.stringify(payload.secondaryDetails)
+            : null,
+        notInCart: payload.notInCart ? JSON.stringify(payload.notInCart) : null,
+        rp_id: payload.rp_id ?? null,
+    };
+
+    // 4. Add chunked lineItems into metadata
+    lineItemChunks.forEach((chunk, index) => {
+        metadata[`lineItems_part_${index + 1}`] = chunk;
+    });
+
+    // 5. Create PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-        amount: parseInt(amount), // price changes
+        amount: parseInt(amount),
         currency: "cad",
-        metadata: {
-            customer: payload.customer,
-            lineItems: JSON.stringify(
-                payload.lineItems.map((item) => ({
-                    variantId: item.variantId,
-                    quantity: item.quantity,
-                    amount: item.amount,
-                }))
-            ),
-            deliveryDetails: JSON.stringify(payload.deliveryDetails),
-            taxLines: JSON.stringify(payload.taxLines),
-            shipping: JSON.stringify(payload.shipping),
-            amount: payload.amount,
-            secondaryDetails: payload.secondaryDetails
-                ? JSON.stringify(payload.secondaryDetails)
-                : null,
-            notInCart: payload.notInCart
-                ? JSON.stringify(payload.notInCart)
-                : null,
-            rp_id: payload.rp_id ?? null,
-        },
+        metadata,
     });
 
     res.send({
@@ -134,3 +147,22 @@ export const webhook = async (req: Request, res: Response) => {
 
     res.status(200).send();
 };
+
+/*
+used for reconstruction of line items
+
+function reconstructLineItems(metadata) {
+  const parts = Object.keys(metadata)
+    .filter((key) => key.startsWith("lineItems_part_"))
+    .sort((a, b) => {
+      const aIndex = parseInt(a.split("_").pop());
+      const bIndex = parseInt(b.split("_").pop());
+      return aIndex - bIndex;
+    })
+    .map((key) => metadata[key]);
+
+  const fullJson = parts.join("");
+  return JSON.parse(fullJson);
+}
+
+ */
