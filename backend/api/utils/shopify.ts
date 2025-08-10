@@ -86,7 +86,6 @@ export const createOrder = async (payload: Payload) => {
         financialStatus: "PAID",
         lineItems: cartItems,
         email: email,
-        phone: phoneNumber,
         shippingAddress: {
             firstName: firstName,
             lastName: lastName,
@@ -121,6 +120,13 @@ export const createOrder = async (payload: Payload) => {
         },
         customAttributes: [],
     };
+
+    if (phoneNumber) {
+        order.customAttributes?.push({
+            key: "Phone number",
+            value: phoneNumber,
+        });
+    }
 
     // Add custom attributes conditionally
     if (shipping.moveInDate) {
