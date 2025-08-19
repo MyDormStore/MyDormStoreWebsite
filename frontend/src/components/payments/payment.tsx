@@ -102,6 +102,9 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     shipping: shipping,
                     amount: Math.round(amount * 100),
                     notInCart: notInCart,
+                    discountCodes: cart.discountCodes?.[0].applicable
+                        ? [cart.discountCodes?.[0].code]
+                        : undefined,
                     rp_id: rp_id ? rp_id : undefined,
                 };
 
@@ -115,11 +118,15 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     Number(finalAmount.data)
                 );
 
+                console.log("original amount", newPayload.amount);
+
                 if (finalAmount.data) {
                     newPayload.amount = Math.round(
                         (Number(finalAmount.data) + totalShipping) * 100
                     );
                 }
+
+                console.log("validated amount", newPayload.amount);
 
                 setPayload(newPayload);
 

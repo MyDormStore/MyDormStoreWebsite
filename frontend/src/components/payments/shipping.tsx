@@ -103,6 +103,9 @@ export default function ShippingForm({
                         amount: cartItem.cost.amountPerQuantity.amount,
                     };
                 }),
+                discountCodes: cart.discountCodes?.[0].applicable
+                    ? [cart.discountCodes?.[0].code]
+                    : undefined,
                 deliveryDetails: delivery,
             };
 
@@ -204,7 +207,7 @@ export default function ShippingForm({
 
     const onSubmit = (data: ShippingFormSchemaType) => {
         addShipping(data);
-        if (shippingCost > 0) {
+        if (shippingCost >= 0) {
             nextTab();
         } else {
             form.setError("service", { type: "required" });

@@ -289,6 +289,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
     });
 
     const draftOrder = {
+        discountCodes: payload.discountCodes ?? [],
         lineItems: cartItems,
         email,
         shippingAddress: {
@@ -314,7 +315,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
             return null;
         }
 
-        console.log("Draft order calculated:", JSON.stringify(data, null, 2));
+        // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return data;
     } catch (err) {
         console.error("Request failed:", err);
@@ -416,6 +417,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
     });
 
     const draftOrder = {
+        discountCodes: payload.discountCodes ?? [],
         lineItems: cartItems,
         email,
         shippingAddress: {
@@ -441,11 +443,10 @@ export const calculateFinalAmount = async (payload: Payload) => {
             return null;
         }
 
-        console.log("Draft order calculated:", JSON.stringify(data, null, 2));
+        // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return data.draftOrderCalculate.calculatedDraftOrder;
     } catch (err) {
         console.error("Request failed:", err);
         return null;
     }
 };
-// ...existing code...

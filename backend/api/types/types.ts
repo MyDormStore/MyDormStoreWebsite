@@ -33,6 +33,7 @@ export type Payload = {
     rp_id?: string | undefined;
     dorm?: string;
     school?: string;
+    discountCodes?: string[];
 };
 
 type TaxLines = [
