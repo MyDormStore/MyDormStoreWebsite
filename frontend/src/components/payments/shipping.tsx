@@ -207,10 +207,13 @@ export default function ShippingForm({
 
     const onSubmit = (data: ShippingFormSchemaType) => {
         addShipping(data);
-        if (shippingCost >= 0) {
+        if (data.service) {
             nextTab();
         } else {
-            form.setError("service", { type: "required" });
+            form.setError("service", {
+                type: "required",
+                message: "Shipping service is required",
+            });
         }
     };
 

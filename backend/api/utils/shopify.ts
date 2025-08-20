@@ -97,7 +97,7 @@ export const createOrder = async (payload: Payload) => {
         },
         shippingLines: [
             {
-                title: shipping.service,
+                title: shipping.service || "Standard Shipping",
                 priceSet: {
                     shopMoney: {
                         amount: shipping.cost,
