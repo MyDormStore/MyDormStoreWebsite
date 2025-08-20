@@ -128,6 +128,13 @@ export const createOrder = async (payload: Payload) => {
         });
     }
 
+    if (payload.discountCodes) {
+        order.customAttributes?.push({
+            key: "Discount Codes",
+            value: payload.discountCodes.join(", "),
+        });
+    }
+
     // Add custom attributes conditionally
     if (shipping.moveInDate) {
         order.customAttributes?.push({
