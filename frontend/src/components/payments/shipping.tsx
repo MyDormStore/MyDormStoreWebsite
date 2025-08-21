@@ -109,10 +109,7 @@ export default function ShippingForm({
                 deliveryDetails: delivery,
             };
 
-            const response = {
-                data: { taxLines: [], availableShippingRates: [] },
-            };
-            await axios.post(
+            const response = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
@@ -126,7 +123,7 @@ export default function ShippingForm({
                 setRates([
                     {
                         service: "Standard",
-                        cost: 0.0,
+                        cost: 23.0,
                         transitTime: 3,
                     },
                 ]);
