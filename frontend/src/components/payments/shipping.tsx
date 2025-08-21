@@ -207,7 +207,7 @@ export default function ShippingForm({
 
     const onSubmit = (data: ShippingFormSchemaType) => {
         addShipping(data);
-        if (data.service) {
+        if (shippingCost > 0 || (shippingCost === 0 && data.service !== "")) {
             nextTab();
         } else {
             form.setError("service", {
