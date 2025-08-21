@@ -102,7 +102,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     shipping: shipping,
                     amount: Math.round(amount * 100),
                     notInCart: notInCart,
-                    discountCodes: cart.discountCodes?.[0].applicable
+                    discountCodes: cart.discountCodes?.[0]?.applicable
                         ? [cart.discountCodes?.[0].code]
                         : undefined,
                     rp_id: rp_id ? rp_id : undefined,
