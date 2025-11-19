@@ -1201,11 +1201,11 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         street: "700 Spadina Avenue",
     },
     "Okanagan - Kelowna": {
-        postalCode: "V1Y 4X8",
+        postalCode: "V1Y 9K9",
         country: "CA",
         city: "KELOWNA",
         state: "BC",
-        street: "860 K.L.O. Road",
+        street: "880 K.L.O. Road",
     },
     "Okanagan - Vernon": {
         postalCode: "V1B 2N5",
@@ -2251,6 +2251,8 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
         "Neill-Wycik",
         "North Tower (TRU)",
         "Northern",
+        "Okanagan - Kelowna",
+        "Okanagan - Vernon",
         "Parkside Student Residence",
         "Preston House",
         "Quad Phase 1 (Toronto)",
