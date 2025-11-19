@@ -121,7 +121,7 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        Student's School Email
+                                        Order Confirmation Email
                                     </FormLabel>
                                     <FormControl>
                                         <Input {...field} />
