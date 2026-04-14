@@ -46,6 +46,11 @@ export const dormSelectList: dormSelectListType[] = [
         label: "Woodroffe Place",
         school: "Algonquin College",
     },
+     {
+        key: "Algonquin College",
+        label: "Algonquin College",
+        school: "Algonquin College",
+    },
     { key: "Skirtch", label: "Skirtch", school: "Brock" },
     {
         key: "Regent Student Living at Lake",
@@ -924,6 +929,13 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         city: "WINNIPEG",
         state: "MB",
         street: "2537 Pembina Highway",
+    },
+    "Algonquin College": {
+        postalCode: "K2G 1V8",
+        country: "CA",
+        city: "OTTAWA",
+        state: "ON",
+        street: "Campus Store Receiving, 1385 Woodroffe Ave., Building ‘H’",
     },
     "Alma Sandy Hill": {
         postalCode: "K1N 7Z9",
