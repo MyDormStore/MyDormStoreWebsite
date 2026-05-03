@@ -18,20 +18,28 @@ export const orderCreation = async (req: Request, res: Response) => {
 
 export const calculateOrder = async (req: Request, res: Response) => {
     const payload = req.body;
-    const data = await calculateDraftOrder(payload);
-    if (!data) {
-        res.status(500).json({ error: "Failed to calculate draft order" }).end;
+    const result = await calculateDraftOrder(payload);
+    if (result.error) {
+        res.status(500).json({
+            error: "Failed to calculate draft order",
+            details: result.error,
+        });
+        return;
     }
-    res.status(200).json(data.draftOrderCalculate.calculatedDraftOrder);
+    res.status(200).json(result.data.draftOrderCalculate.calculatedDraftOrder);
 };
 
 export const finalAmount = async (req: Request, res: Response) => {
     const payload = req.body;
-    const data = await calculateFinalAmount(payload);
-    if (!data) {
+    const result = await calculateFinalAmount(payload);
+    if (result.error) {
         res.status(500)
-            .json({ error: "Failed to calculate final amount" })
+            .json({
+                error: "Failed to calculate final amount",
+                details: result.error,
+            })
             .end();
+        return;
     }
-    res.status(200).json(data.totalPriceSet.shopMoney.amount);
+    res.status(200).json(result.data.totalPriceSet.shopMoney.amount);
 };

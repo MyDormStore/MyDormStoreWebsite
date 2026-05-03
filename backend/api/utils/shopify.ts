@@ -35,7 +35,7 @@ export const createOrder = async (payload: Payload) => {
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
             const index = item.attributes.findIndex(
-                (attribute) => attribute.key === "__byob"
+                (attribute) => attribute.key === "__byob",
             );
 
             if (index === -1) {
@@ -51,7 +51,7 @@ export const createOrder = async (payload: Payload) => {
             let productItems: Array<any> = [];
             try {
                 const products: Array<any> = JSON.parse(
-                    item.attributes[index]?.value || "[]"
+                    item.attributes[index]?.value || "[]",
                 );
                 productItems = products.map((product: any) => ({
                     variantId: `gid://shopify/ProductVariant/${product.id}`,
@@ -246,10 +246,10 @@ export const calculateDraftOrder = async (payload: Payload) => {
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
             const byobIndex = item.attributes.findIndex(
-                (attr) => attr.key === "__byob"
+                (attr) => attr.key === "__byob",
             );
             const discountedPrice = item.attributes.find(
-                (attr) => attr.key === "__totalByob"
+                (attr) => attr.key === "__totalByob",
             )?.value;
 
             if (
@@ -259,7 +259,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
             ) {
                 try {
                     const products: Array<any> = JSON.parse(
-                        item.attributes[byobIndex].value
+                        item.attributes[byobIndex].value,
                     );
 
                     const productItems = products.map((product: any) => ({
@@ -314,19 +314,19 @@ export const calculateDraftOrder = async (payload: Payload) => {
             draftOrderCalculateMutation,
             {
                 variables: { input: draftOrder },
-            }
+            },
         );
 
         if (errors) {
             console.error("GraphQL Errors:", errors);
-            return null;
+            return { error: errors };
         }
 
         // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
-        return data;
+        return { data };
     } catch (err) {
         console.error("Request failed:", err);
-        return null;
+        return { error: err };
     }
 };
 
@@ -374,10 +374,10 @@ export const calculateFinalAmount = async (payload: Payload) => {
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
             const byobIndex = item.attributes.findIndex(
-                (attr) => attr.key === "__byob"
+                (attr) => attr.key === "__byob",
             );
             const discountedPrice = item.attributes.find(
-                (attr) => attr.key === "__totalByob"
+                (attr) => attr.key === "__totalByob",
             )?.value;
 
             if (
@@ -387,7 +387,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
             ) {
                 try {
                     const products: Array<any> = JSON.parse(
-                        item.attributes[byobIndex].value
+                        item.attributes[byobIndex].value,
                     );
 
                     const productItems = products.map((product: any) => ({
@@ -442,18 +442,18 @@ export const calculateFinalAmount = async (payload: Payload) => {
             draftOrderCalculateMutation,
             {
                 variables: { input: draftOrder },
-            }
+            },
         );
 
         if (errors) {
             console.error("GraphQL Errors:", errors);
-            return null;
+            return { error: errors };
         }
 
         // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
-        return data.draftOrderCalculate.calculatedDraftOrder;
+        return { data: data.draftOrderCalculate.calculatedDraftOrder };
     } catch (err) {
         console.error("Request failed:", err);
-        return null;
+        return { error: err };
     }
 };
