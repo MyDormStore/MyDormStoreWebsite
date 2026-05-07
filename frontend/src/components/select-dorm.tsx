@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Input } from "./ui/input";
 import { usePayloadStore } from "@/core/payload";
+import { useSearchParams } from "react-router";
 
 interface SelectDormProps {
     dorm: string;
@@ -37,6 +38,30 @@ export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
     const [school, setSchool] = useState<string>("");
     const payload = usePayloadStore((state) => state.payload);
     const setPayload = usePayloadStore((state) => state.setPayload);
+    const [searchParams] = useSearchParams();
+    const residencesParam = searchParams
+        .get("residences")
+        ?.replace(/%20/g, " ")
+        ?.replace(/-/g, " ");
+    const allowedResidence = residencesParam ? residencesParam.trim() : null;
+
+    let filteredDorms;
+    if (allowedResidence) {
+        filteredDorms = dormSelectList.filter(
+            (d) => d.key === allowedResidence,
+        );
+    } else {
+        filteredDorms = dormSelectList.filter((dorm) => {
+            if (school) {
+                if (dorm.school) {
+                    return dorm.school === school;
+                } else {
+                    return true;
+                }
+            }
+            return true;
+        });
+    }
 
     useEffect(() => {
         setDorm("");
@@ -55,53 +80,80 @@ export function SelectDorm({ dorm, setDorm }: SelectDormProps) {
             dorm: dorm,
         });
     }, [dorm]);
+
+    useEffect(() => {
+        if (allowedResidence && filteredDorms.length > 0) {
+            setSchool(filteredDorms[0].school || "");
+            setDorm(filteredDorms[0].key);
+        }
+    }, [allowedResidence, filteredDorms]);
+
+    console.log(searchParams, allowedResidence, filteredDorms);
+
     return (
         <div className="flex gap-4 flex-col">
-            <div className="grid gap-2">
-                <Label>What school are you attending? (Optional)</Label>
-                <SearchSelect
-                    dataList={schoolSelectList}
-                    setValue={setSchool}
-                    value={school}
-                />
-                {/* <Select onValueChange={setSchool} value={school}>
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose Dorm..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {schoolSelectList.map((school) => {
-                            return (
-                                <SelectItem key={school.key} value={school.key}>
-                                    {school.label}
-                                </SelectItem>
-                            );
-                        })}
-                    </SelectContent>
-                </Select> */}
-            </div>
-            <div className="grid gap-2">
-                <Label>What residence are you staying in? (Optional)</Label>
-                {school !== "Other" ? (
+            {!allowedResidence && (
+                <div className="grid gap-2">
+                    <Label>What school are you attending? (Optional)</Label>
                     <SearchSelect
-                        dataList={dormSelectList.filter((dorm) => {
-                            if (school) {
-                                if (dorm.school) {
-                                    return dorm.school === school;
-                                } else {
-                                    return true;
-                                }
-                            }
-                            return true;
-                        })}
-                        setValue={setDorm}
-                        value={dorm}
-                        disabled={!school}
+                        dataList={schoolSelectList}
+                        setValue={setSchool}
+                        value={school}
                     />
+                    {/* <Select onValueChange={setSchool} value={school}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Choose Dorm..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {schoolSelectList.map((school) => {
+                                return (
+                                    <SelectItem key={school.key} value={school.key}>
+                                        {school.label}
+                                    </SelectItem>
+                                );
+                            })}
+                        </SelectContent>
+                    </Select> */}
+                </div>
+            )}
+            <div className="grid gap-2">
+                {!allowedResidence ? (
+                    <>
+                        <Label>
+                            What residence are you staying in? (Optional)
+                        </Label>
+                        {school !== "Other" ? (
+                            <SearchSelect
+                                dataList={filteredDorms}
+                                setValue={setDorm}
+                                value={dorm}
+                                disabled={allowedResidence ? false : !school}
+                            />
+                        ) : (
+                            <Input
+                                value={dorm}
+                                onChange={(e) => setDorm(e.target.value)}
+                            />
+                        )}
+                    </>
                 ) : (
-                    <Input
-                        value={dorm}
-                        onChange={(e) => setDorm(e.target.value)}
-                    />
+                    <>
+                        <Label>You are staying in: </Label>
+                        {school !== "Other" ? (
+                            <SearchSelect
+                                dataList={filteredDorms}
+                                setValue={setDorm}
+                                value={dorm}
+                                disabled={true}
+                            />
+                        ) : (
+                            <Input
+                                value={dorm}
+                                onChange={(e) => setDorm(e.target.value)}
+                                disabled={true}
+                            />
+                        )}
+                    </>
                 )}
                 {/* <Select onValueChange={setDorm} value={dorm} disabled={!school}>
                     <SelectTrigger className="w-full">
@@ -182,7 +234,7 @@ export function SearchSelect({
                                             setValue(
                                                 currentValue === value
                                                     ? ""
-                                                    : currentValue
+                                                    : currentValue,
                                             );
                                             setOpen(false);
                                         }}
