@@ -12,10 +12,12 @@ interface FormState {
     shipping: ShippingFormSchemaType;
     payment: SecondaryAddressSchemaType;
     notInCart: string[];
+    orderType: "move-in" | "regular" | "";
     addDelivery: (data: DeliveryFormSchemaType) => void;
     addShipping: (data: ShippingFormSchemaType) => void;
     addPayment: (data: SecondaryAddressSchemaType) => void;
     addNotInCart: (data: string[]) => void;
+    setOrderType: (type: "move-in" | "regular") => void;
 }
 
 export const useFormStore = create<FormState>()(
@@ -25,6 +27,7 @@ export const useFormStore = create<FormState>()(
         shipping: {} as ShippingFormSchemaType,
         payment: {} as SecondaryAddressSchemaType,
         notInCart: [],
+        orderType: "",
         addDelivery(data) {
             set({ delivery: data });
         },
@@ -37,7 +40,10 @@ export const useFormStore = create<FormState>()(
         addNotInCart(data) {
             set({ notInCart: data });
         },
-    })
+        setOrderType(type) {
+            set({ orderType: type });
+        },
+    }),
     //     {
     //         name: "form-storage",
     //         storage: createJSONStorage(() => localStorage),

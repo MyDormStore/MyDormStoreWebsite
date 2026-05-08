@@ -12,6 +12,7 @@ import { ProductDetailsCard } from "./components/product-details";
 import { ProductTable } from "./components/product-table";
 import { RecommendedProducts } from "./components/recommended-products";
 import { SelectDorm } from "./components/select-dorm";
+import { SelectOrderType } from "./components/select-order-type";
 import { TotalDetails } from "./components/total-details";
 import { CartContextProvider } from "./context/cartContext";
 import { ShippingContextProvider } from "./context/shippingContext";
@@ -130,6 +131,7 @@ export default function App() {
 
     const notInCart = useFormStore((state) => state.notInCart);
     const addNotInCart = useFormStore((state) => state.addNotInCart);
+    const orderType = useFormStore((state) => state.orderType);
 
     useEffect(() => {
         const missingProducts: string[] = [];
@@ -201,10 +203,12 @@ export default function App() {
                                 </h1>
                             </div>
 
+                            <SelectOrderType />
+
                             <div className="grid gap-4">
                                 <SelectDorm dorm={dorm} setDorm={setDorm} />
 
-                                {notInCart.length > 0 && (
+                                {orderType === "move-in" && notInCart.length > 0 && (
                                     <MissingProducts products={notInCart} />
                                 )}
                             </div>
@@ -217,7 +221,7 @@ export default function App() {
                                     <TotalDetails />
                                 </div>
                             </div>
-                            {requiredProducts.concat(recommendedProducts)
+                            {orderType === "move-in" && requiredProducts.concat(recommendedProducts)
                                 .length > 0 && (
                                 <div className="w-full gap-4">
                                     <h1 className="md:text-lg font-semibold">

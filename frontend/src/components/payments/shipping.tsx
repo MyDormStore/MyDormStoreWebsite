@@ -67,6 +67,7 @@ export default function ShippingForm({
     const shipping = useFormStore((state) => state.shipping);
     const addShipping = useFormStore((state) => state.addShipping);
     const delivery = useFormStore((state) => state.delivery);
+    const orderType = useFormStore((state) => state.orderType);
 
     const [rates, setRates] = useState<Rates[] | null>([]);
 
@@ -155,7 +156,7 @@ export default function ShippingForm({
         // Watch for changes in the form and update the shipping context
 
         const subscription = form.watch((data) => {
-            if (data.moveInDate && rates && dorm) {
+            if (orderType === "move-in" && data.moveInDate && rates && dorm) {
                 const moveInDate = new Date(data.moveInDate);
                 if (
                     (moveInDate.getMonth() === 7 &&
@@ -188,7 +189,7 @@ export default function ShippingForm({
             }
         });
         return () => subscription.unsubscribe();
-    }, [form, dorm]);
+    }, [form, dorm, orderType]);
 
     useEffect(() => {
         fetchRates();
@@ -234,20 +235,21 @@ export default function ShippingForm({
 
                     <CardContent>
                         <div className="flex flex-col gap-4">
-                            <FormField
-                                control={form.control}
-                                name="moveInDate"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>
-                                            Move in Date (Optional)
-                                        </FormLabel>{" "}
-                                        <div className="flex gap-2">
-                                            <Popover>
-                                                <PopoverTrigger
-                                                    asChild
-                                                    className=""
-                                                >
+                            {orderType === "move-in" && (
+                                <FormField
+                                    control={form.control}
+                                    name="moveInDate"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>
+                                                Move in Date (Optional)
+                                            </FormLabel>{" "}
+                                            <div className="flex gap-2">
+                                                <Popover>
+                                                    <PopoverTrigger
+                                                        asChild
+                                                        className=""
+                                                    >
                                                     <FormControl>
                                                         <Button
                                                             variant={"outline"}
@@ -307,6 +309,7 @@ export default function ShippingForm({
                                     </FormItem>
                                 )}
                             />
+                            )}
                             <div className="flex flex-col gap-2">
                                 {isMobile ? (
                                     rates !== null ? (
