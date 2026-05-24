@@ -75,13 +75,15 @@
     --primary: #00347d;
     --primary-foreground: #ffffff;
 
-    /* SECONDARY = soft cream surface for less-important buttons */
-    --secondary: #fff8f1;
+    /* SECONDARY = mist (soft blue) — visible on white, used for secondary
+       buttons (e.g. the "Add to Cart" inside the bedding-size warning alert).
+       Mist is just dark enough to read against #fff backgrounds. */
+    --secondary: #eaf6ff;
     --secondary-foreground: #00347d;
 
-    /* ACCENT = mist (soft blue) — used for hover states, subtle highlights.
+    /* ACCENT = cream — used for soft hover backgrounds & subtle highlights.
        NOT rose. Rose only appears on italic em + final checkout CTA. */
-    --accent: #eaf6ff;
+    --accent: #fff8f1;
     --accent-foreground: #00347d;
 
     /* Muted backgrounds (cream) */
