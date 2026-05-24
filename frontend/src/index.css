@@ -189,21 +189,25 @@
         font-weight: 800;
     }
 
-    /* Orange "Incorrect bedding size" warning icon — make it impossible to miss.
-       Component sets w-4 h-4 -mr-4 which is tiny + pulled under nearby content.
-       Override size, kill the negative margin, add a subtle pulse on mobile. */
-    .lucide-circle-alert.text-orange-500,
-    svg[class*="lucide-circle-alert"].text-orange-500 {
-        width: 1.75rem !important;      /* 28px on desktop */
+    /* Orange "Incorrect bedding size" warning icon — only the CLICKABLE one
+       (inside a PopoverTrigger button) gets bumped. The icon inside the
+       MissingProducts <Alert> component stays at its default size. */
+    button .lucide-circle-alert.text-orange-500,
+    button svg[class*="lucide-circle-alert"].text-orange-500,
+    [role="button"] .lucide-circle-alert.text-orange-500,
+    [data-slot="popover-trigger"] .lucide-circle-alert.text-orange-500 {
+        width: 1.75rem !important;       /* 28px on desktop */
         height: 1.75rem !important;
         margin-right: 0.25rem !important;
         flex-shrink: 0 !important;
         cursor: pointer;
     }
-    /* Mobile: even bigger + subtle pulse so it's the obvious tap target */
+    /* Mobile: even bigger + subtle pulse on the clickable warning */
     @media (max-width: 768px) {
-        .lucide-circle-alert.text-orange-500,
-        svg[class*="lucide-circle-alert"].text-orange-500 {
+        button .lucide-circle-alert.text-orange-500,
+        button svg[class*="lucide-circle-alert"].text-orange-500,
+        [role="button"] .lucide-circle-alert.text-orange-500,
+        [data-slot="popover-trigger"] .lucide-circle-alert.text-orange-500 {
             width: 2.125rem !important;  /* 34px on phones */
             height: 2.125rem !important;
             margin-right: 0.5rem !important;
