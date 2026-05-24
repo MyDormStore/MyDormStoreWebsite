@@ -189,11 +189,30 @@
         font-weight: 800;
     }
 
-    /* Bump the orange "Incorrect bedding size" warning icon so it's noticeable */
+    /* Orange "Incorrect bedding size" warning icon — make it impossible to miss.
+       Component sets w-4 h-4 -mr-4 which is tiny + pulled under nearby content.
+       Override size, kill the negative margin, add a subtle pulse on mobile. */
     .lucide-circle-alert.text-orange-500,
     svg[class*="lucide-circle-alert"].text-orange-500 {
-        width: 1.5rem !important;       /* 24px — was 16px */
-        height: 1.5rem !important;
+        width: 1.75rem !important;      /* 28px on desktop */
+        height: 1.75rem !important;
+        margin-right: 0.25rem !important;
+        flex-shrink: 0 !important;
+        cursor: pointer;
+    }
+    /* Mobile: even bigger + subtle pulse so it's the obvious tap target */
+    @media (max-width: 768px) {
+        .lucide-circle-alert.text-orange-500,
+        svg[class*="lucide-circle-alert"].text-orange-500 {
+            width: 2.125rem !important;  /* 34px on phones */
+            height: 2.125rem !important;
+            margin-right: 0.5rem !important;
+            animation: mdsAlertPulse 2s ease-in-out infinite;
+        }
+    }
+    @keyframes mdsAlertPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%      { opacity: 0.75; transform: scale(1.08); }
     }
 }
 
