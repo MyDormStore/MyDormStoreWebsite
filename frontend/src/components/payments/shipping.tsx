@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from "../ui/card";
+
 import { useCartContext } from "@/context/cartContext";
 import { useShippingContext } from "@/context/shippingContext";
 import { useFormStore } from "@/core/form";
@@ -43,68 +44,65 @@ import {
 } from "../ui/table";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// Residences whose packages ship to the school's BOOKSTORE for pickup
-// (rather than direct-to-room). Used to swap the move-in delivery label.
-const BOOKSTORE_RESIDENCES = new Set<string>([
-    // Algonquin
-    "Algonquin College",
-    // Mount Allison
-    "Mount Allison University",
-    // TMU
-    "TMU Bookstore",
-    // Sheridan
-    "Sheridan College",
-    // Wilfrid Laurier (residences + hawkshops)
-    "Wilfrid Laurier University (Waterloo Residence)",
-    "Wilfrid Laurier University (Brantford Residence)",
-    "Wilfrid Laurier University HawkShop (Waterloo)",
-    "Wilfrid Laurier University HawkShop (Brantford)",
-    // University of Alberta — all residences
-    "Elsey's House",
-    "Marge's House",
-    "Rockress (Graduate Residence)",
-    "Stonecrop (Graduate Residence)",
-    "Juniper (Graduate Residence)",
-    "Speedwell (Graduate Residence)",
-    "Aspen House",
-    "Maple House",
-    "Alexander Mackenzie Hall (Lister)",
-    "Anthony Henday Hall (Lister)",
-    "Henry Kelsey Hall (Lister)",
-    "Mary Schäffer Hall (Lister)",
-    "Thelma Chalifoux Hall (Lister)",
-    "Peter Lougheed Hall",
-    "Alder House",
-    "Linden House",
-    "International House",
-    "Nîpisîy House",
-    "Résidence Saint-Jean",
-    "Pinecrest House",
-    "Tamarack House",
-    "HUB",
-    "University of Alberta Bookstore",
-    // Nova Scotia Community College — all campuses
-    "Nova Scotia Community College",
-    "Akerley Campus",
-    "Centre of Geographic Sciences (COGS)",
-    "Ivany Campus",
-    "Pictou Campus",
-    "Strait Area Campus",
-    "Truro Campus",
-]);
-
 // rates form for checkout
+
 interface ShippingFormProps {
     prevTab: () => void;
     nextTab: () => void;
     dorm: string;
 }
+
 interface Rates {
     logo?: string;
     service: string;
     cost: number;
     transitTime: number;
 }
+
+// Residences that have an on-campus bookstore partnership.
+// If the customer picks one of these as their dorm, the
+// "Move-In Day Delivery" rate is renamed to "Bookstore Pickup on Move-In Day".
+const BOOKSTORE_RESIDENCES = new Set<string>([
+    // Algonquin
+    "Algonquin College",
+    // Sheridan
+    "Sheridan College",
+    // Mount Allison
+    "Mount Allison University",
+    // TMU
+    "TMU Bookstore",
+    // Wilfrid Laurier
+    "Wilfrid Laurier University (Waterloo Residence)",
+    "Wilfrid Laurier University (Brantford Residence)",
+    "Wilfrid Laurier University HawkShop (Waterloo)",
+    "Wilfrid Laurier University HawkShop (Brantford)",
+    // U of A
+    "Elsey's House",
+    "Marge's House",
+    "Rockress (Graduate Residence)",
+    "Lister Centre",
+    "Pinecrest House",
+    "Schaffer House",
+    "Mackenzie House",
+    "Henday Hall",
+    "Kelsey Hall",
+    "Aspenglen House",
+    // NSCC
+    "NSCC Akerley Campus",
+    "NSCC Annapolis Valley Campus",
+    "NSCC Burridge Campus",
+    "NSCC Cumberland Campus",
+    "NSCC Institute of Technology Campus",
+    "NSCC Kingstec Campus",
+    "NSCC Lunenburg Campus",
+    "NSCC Marconi Campus",
+    "NSCC Pictou Campus",
+    "NSCC Shelburne Campus",
+    "NSCC Strait Area Campus",
+    "NSCC Truro Campus",
+    "NSCC Waterfront Campus",
+]);
+
 export default function ShippingForm({
     prevTab,
     nextTab,
@@ -114,7 +112,9 @@ export default function ShippingForm({
     const addShipping = useFormStore((state) => state.addShipping);
     const delivery = useFormStore((state) => state.delivery);
     const orderType = useFormStore((state) => state.orderType);
+
     const [rates, setRates] = useState<Rates[] | null>([]);
+
     const form = useForm<ShippingFormSchemaType>({
         resolver: zodResolver(shippingFormSchema),
         defaultValues: {
@@ -126,11 +126,14 @@ export default function ShippingForm({
         mode: "onChange",
         reValidateMode: "onChange",
     });
+
     const [selectedRate, setSelectedRate] = useState(
         form.getValues("service") || ""
     );
+
     const { cart } = useCartContext();
     const { shippingCost, setShippingCost, setTaxLines } = useShippingContext();
+
     const fetchRates = async () => {
         // Simulating an API call to fetch shipping rates
         if (cart) {
@@ -150,11 +153,14 @@ export default function ShippingForm({
                     : undefined,
                 deliveryDetails: delivery,
             };
+
             const response = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
+
             response.data.taxLines && setTaxLines(response.data.taxLines);
+
             if (
                 response.data.availableShippingRates === null ||
                 response.data.availableShippingRates.length === 0
@@ -168,6 +174,7 @@ export default function ShippingForm({
                 ]);
                 return;
             }
+
             setRates(
                 response.data.availableShippingRates.map((rate: any) => {
                     let transitTime = 5; // default transit time
@@ -178,6 +185,7 @@ export default function ShippingForm({
                     ) {
                         transitTime = 3; // express services usually have a transit time of 1 day\
                     }
+
                     return {
                         service: rate.title,
                         cost: Number(rate.price.amount),
@@ -187,8 +195,10 @@ export default function ShippingForm({
             );
         }
     };
+
     useEffect(() => {
         // Watch for changes in the form and update the shipping context
+
         const subscription = form.watch((data) => {
             if (orderType === "move-in" && data.moveInDate && rates && dorm) {
                 const moveInDate = new Date(data.moveInDate);
@@ -197,29 +207,31 @@ export default function ShippingForm({
                         moveInDate.getDate() >= 24) ||
                     (moveInDate.getMonth() === 8 && moveInDate.getDate() <= 7)
                 ) {
-                    // Show the move-in / bookstore-pickup rate during the Aug 24–Sept 7 window
+                    // If the move-in date is in August or September, show the flat rate
+                    // Province-based pricing: $19.95 for ON/QC, $34.95 for the rest of Canada
+                    const province =
+                        delivery?.shippingAddress?.state?.toUpperCase() || "";
+                    const moveInCost =
+                        province === "ON" || province === "QC"
+                            ? 19.95
+                            : 34.95;
+
+                    // Conditional label: only show "Bookstore Pickup" if the
+                    // customer's residence is on the bookstore partnership list
+                    const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
+                    const serviceName = isBookstore
+                        ? "Bookstore Pickup on Move-In Day"
+                        : "Move-In Day Delivery";
+
                     setRates((prevRates) => {
                         if (!prevRates) return prevRates;
-                        // Skip if a move-in / bookstore rate is already in the list
-                        const hasMoveInRate = prevRates.some((rate) =>
-                            rate.service.includes("Move-In Day") ||
-                            rate.service.includes("Bookstore Pickup")
+                        // Check if the move-in rate already exists
+                        const hasMoveIn = prevRates.some(
+                            (rate) =>
+                                rate.service.includes("Move-In Day") ||
+                                rate.service.includes("Bookstore Pickup")
                         );
-                        if (hasMoveInRate) return prevRates;
-
-                        // Province-based pricing: ON/QC = $19.95, rest of Canada = $34.95
-                        const province =
-                            delivery?.shippingAddress?.state?.toUpperCase() || "";
-                        const moveInCost =
-                            province === "ON" || province === "QC"
-                                ? 19.95
-                                : 34.95;
-
-                        // Label depends on whether the selected residence has a bookstore partnership
-                        const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
-                        const serviceName = isBookstore
-                            ? "Bookstore Pickup on Move-In Day"
-                            : "Move-In Day Delivery";
+                        if (hasMoveIn) return prevRates;
 
                         return [
                             {
@@ -236,18 +248,23 @@ export default function ShippingForm({
             }
         });
         return () => subscription.unsubscribe();
-    }, [form, dorm, orderType]);
+    }, [form, dorm, orderType, delivery]);
+
     useEffect(() => {
         fetchRates();
     }, [cart]);
+
     const addRate = (rate: Rates) => {
         const { service, cost, transitTime } = rate;
+
         form.setValue("cost", cost);
         form.setValue("service", service);
         form.setValue("transitTime", transitTime);
+
         setShippingCost(cost);
         setSelectedRate(service);
     };
+
     const onSubmit = (data: ShippingFormSchemaType) => {
         addShipping(data);
         if (shippingCost > 0 || (shippingCost === 0 && data.service !== "")) {
@@ -259,8 +276,23 @@ export default function ShippingForm({
             });
         }
     };
+
     const errorMessage = get(form.formState.errors, "service")?.message;
+
     const isMobile = useIsMobile();
+
+    // Helper — friendly delivery-time text for a rate row
+    const getDeliveryTimeText = (service: string, transitTime: number) => {
+        if (
+            service.includes("Move-In Day") ||
+            service.includes("Bookstore Pickup")
+        ) {
+            return "Arrives by move-in day";
+        }
+        if (transitTime === 1) return "Next day delivery";
+        return `Ships in ${transitTime} days`;
+    };
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -271,6 +303,7 @@ export default function ShippingForm({
                             Choose the rate that you want to use for shipping
                         </CardDescription>
                     </CardHeader>
+
                     <CardContent>
                         <div className="flex flex-col gap-4">
                             {orderType === "move-in" && (
@@ -379,17 +412,10 @@ export default function ShippingForm({
                                                                               )}`}
                                                                     </span>
                                                                     <span>
-                                                                        {service.includes(
-                                                                            "Move-In Day"
-                                                                        ) ||
-                                                                        service.includes(
-                                                                            "Bookstore Pickup"
-                                                                        )
-                                                                            ? service
-                                                                            : transitTime ===
-                                                                              1
-                                                                            ? "Next day delivery"
-                                                                            : `Ships in ${transitTime} days`}
+                                                                        {getDeliveryTimeText(
+                                                                            service,
+                                                                            transitTime
+                                                                        )}
                                                                     </span>
                                                                 </div>
                                                             </CardContent>
@@ -494,17 +520,10 @@ export default function ShippingForm({
                                                                               )}`}
                                                                     </TableCell>
                                                                     <TableCell>
-                                                                        {service.includes(
-                                                                            "Move-In Day"
-                                                                        ) ||
-                                                                        service.includes(
-                                                                            "Bookstore Pickup"
-                                                                        )
-                                                                            ? service
-                                                                            : transitTime ===
-                                                                              1
-                                                                            ? "Next day delivery"
-                                                                            : `Ships in ${transitTime} days`}
+                                                                        {getDeliveryTimeText(
+                                                                            service,
+                                                                            transitTime
+                                                                        )}
                                                                     </TableCell>
                                                                 </TableRow>
                                                             );
@@ -551,6 +570,7 @@ export default function ShippingForm({
                         {" "}
                         Previous{" "}
                     </Button>
+
                     <Button className="flex-auto"> Next </Button>
                 </div>
             </form>
