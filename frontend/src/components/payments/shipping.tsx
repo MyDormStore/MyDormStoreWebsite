@@ -7,7 +7,6 @@ import {
     CardHeader,
     CardTitle,
 } from "../ui/card";
-
 import { useCartContext } from "@/context/cartContext";
 import { useShippingContext } from "@/context/shippingContext";
 import { useFormStore } from "@/core/form";
@@ -43,22 +42,18 @@ import {
     TableRow,
 } from "../ui/table";
 import { useIsMobile } from "@/hooks/use-mobile";
-
 // rates form for checkout
-
 interface ShippingFormProps {
     prevTab: () => void;
     nextTab: () => void;
     dorm: string;
 }
-
 interface Rates {
     logo?: string;
     service: string;
     cost: number;
     transitTime: number;
 }
-
 // Residences that have an on-campus bookstore partnership.
 // If the customer picks one of these as their dorm, the
 // "Move-In Day Delivery" rate is renamed to "Bookstore Pickup".
@@ -102,7 +97,6 @@ const BOOKSTORE_RESIDENCES = new Set<string>([
     "NSCC Truro Campus",
     "NSCC Waterfront Campus",
 ]);
-
 export default function ShippingForm({
     prevTab,
     nextTab,
@@ -112,9 +106,7 @@ export default function ShippingForm({
     const addShipping = useFormStore((state) => state.addShipping);
     const delivery = useFormStore((state) => state.delivery);
     const orderType = useFormStore((state) => state.orderType);
-
     const [rates, setRates] = useState<Rates[] | null>([]);
-
     const form = useForm<ShippingFormSchemaType>({
         resolver: zodResolver(shippingFormSchema),
         defaultValues: {
@@ -126,16 +118,32 @@ export default function ShippingForm({
         mode: "onChange",
         reValidateMode: "onChange",
     });
-
     const [selectedRate, setSelectedRate] = useState(
         form.getValues("service") || ""
     );
-
     const { cart } = useCartContext();
     const { shippingCost, setShippingCost, setTaxLines } = useShippingContext();
 
+    // Build the single move-in rate (province-priced + bookstore-aware label)
+    const buildMoveInRate = (): Rates => {
+        const province =
+            delivery?.shippingAddress?.state?.toUpperCase() || "";
+        const moveInCost =
+            province === "ON" || province === "QC" ? 19.95 : 34.95;
+        const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
+        const serviceName = isBookstore
+            ? "Bookstore Pickup"
+            : "Move-In Day Delivery";
+        return {
+            service: serviceName,
+            cost: moveInCost,
+            transitTime: 2,
+        };
+    };
+
     const fetchRates = async () => {
-        // Simulating an API call to fetch shipping rates
+        // Always call backend — even for move-in orders — so tax lines
+        // and payment-step setup data come through.
         if (cart) {
             const lineItems = cart.lines.nodes; // contains cart items
             const payload = {
@@ -153,14 +161,23 @@ export default function ShippingForm({
                     : undefined,
                 deliveryDetails: delivery,
             };
-
             const response = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
 
+            // ALWAYS set tax lines so the payment step + tax pill render
             response.data.taxLines && setTaxLines(response.data.taxLines);
 
+            // Move-in orders → discard the carrier rates, show only the
+            // single move-in rate (province-priced, bookstore-aware label).
+            // We still needed the backend call above for tax + payment setup.
+            if (orderType === "move-in") {
+                setRates([buildMoveInRate()]);
+                return;
+            }
+
+            // Regular orders → show the rates returned by Shopify
             if (
                 response.data.availableShippingRates === null ||
                 response.data.availableShippingRates.length === 0
@@ -174,7 +191,6 @@ export default function ShippingForm({
                 ]);
                 return;
             }
-
             setRates(
                 response.data.availableShippingRates.map((rate: any) => {
                     let transitTime = 5; // default transit time
@@ -185,7 +201,6 @@ export default function ShippingForm({
                     ) {
                         transitTime = 3; // express services usually have a transit time of 1 day\
                     }
-
                     return {
                         service: rate.title,
                         cost: Number(rate.price.amount),
@@ -196,47 +211,18 @@ export default function ShippingForm({
         }
     };
 
-    // Build the single move-in rate (province-priced + bookstore-aware label)
-    const buildMoveInRate = (): Rates => {
-        const province =
-            delivery?.shippingAddress?.state?.toUpperCase() || "";
-        const moveInCost =
-            province === "ON" || province === "QC" ? 19.95 : 34.95;
-        const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
-        const serviceName = isBookstore
-            ? "Bookstore Pickup"
-            : "Move-In Day Delivery";
-
-        return {
-            service: serviceName,
-            cost: moveInCost,
-            transitTime: 2,
-        };
-    };
-
     useEffect(() => {
-        // Move-in orders → ONLY show the move-in day delivery rate
-        // (no regular carrier rates, even if they'd be cheaper)
-        if (orderType === "move-in") {
-            setRates([buildMoveInRate()]);
-            return;
-        }
-
-        // Regular orders → fetch normal carrier rates from Shopify
         fetchRates();
     }, [cart, orderType, dorm, delivery]);
 
     const addRate = (rate: Rates) => {
         const { service, cost, transitTime } = rate;
-
         form.setValue("cost", cost);
         form.setValue("service", service);
         form.setValue("transitTime", transitTime);
-
         setShippingCost(cost);
         setSelectedRate(service);
     };
-
     const onSubmit = (data: ShippingFormSchemaType) => {
         addShipping(data);
         if (shippingCost > 0 || (shippingCost === 0 && data.service !== "")) {
@@ -248,11 +234,8 @@ export default function ShippingForm({
             });
         }
     };
-
     const errorMessage = get(form.formState.errors, "service")?.message;
-
     const isMobile = useIsMobile();
-
     // Helper — friendly delivery-time text for a rate row
     const getDeliveryTimeText = (service: string, transitTime: number) => {
         if (
@@ -264,7 +247,6 @@ export default function ShippingForm({
         if (transitTime === 1) return "Next day delivery";
         return `Ships in ${transitTime} days`;
     };
-
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -275,7 +257,6 @@ export default function ShippingForm({
                             Choose the rate that you want to use for shipping
                         </CardDescription>
                     </CardHeader>
-
                     <CardContent>
                         <div className="flex flex-col gap-4">
                             {orderType === "move-in" && (
@@ -544,7 +525,6 @@ export default function ShippingForm({
                         {" "}
                         Previous{" "}
                     </Button>
-
                     <Button className="flex-auto"> Next </Button>
                 </div>
             </form>
