@@ -282,8 +282,14 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                     </CardContent>
                 </Card>
                 <div className={"flex gap-4"}>
-                    <Button className="flex-auto"> Next </Button>
-                </div>
+    <Button
+        className="flex-auto"
+        type="submit"
+        disabled={!form.formState.isValid}
+    >
+        Next
+    </Button>
+</div>
             </form>
         </Form>
     );
