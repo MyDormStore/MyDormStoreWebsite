@@ -59,6 +59,8 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     const notInCart = useFormStore((state) => state.notInCart);
 
     const [clientSecret, setClientSecret] = useState("");
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
     const [searchParams] = useSearchParams();
 
     const payload = usePayloadStore((state) => state.payload);
@@ -67,6 +69,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
     useEffect(() => {
         const fetchData = async () => {
             if (cart && clientSecret === "") {
+                setLoadError(null);
                 console.log(cart);
                 const lineItems = cart.lines.nodes; // contains cart items
 
@@ -108,31 +111,30 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     rp_id: rp_id ? rp_id : undefined,
                 };
 
-                const finalAmount = await axios.post(
-                    `${import.meta.env.VITE_BACKEND_URL}/Shopify/finalize`,
-                    newPayload
-                );
-
-                console.log(
-                    "Final amount from Shopify:",
-                    Number(finalAmount.data)
-                );
-
-                console.log("original amount", newPayload.amount);
-
-                if (finalAmount.data) {
-                    newPayload.amount = Math.round(
-                        (Number(finalAmount.data) + totalShipping) * 100
+                try {
+                    const finalAmount = await axios.post(
+                        `${import.meta.env.VITE_BACKEND_URL}/Shopify/finalize`,
+                        newPayload
                     );
-                }
 
-                console.log("validated amount", newPayload.amount);
+                    console.log(
+                        "Final amount from Shopify:",
+                        Number(finalAmount.data)
+                    );
 
-                setPayload(newPayload);
+                    console.log("original amount", newPayload.amount);
 
-                if (amount > 0) {
-                    // console.log(newPayload);
-                    try {
+                    if (finalAmount.data) {
+                        newPayload.amount = Math.round(
+                            (Number(finalAmount.data) + totalShipping) * 100
+                        );
+                    }
+
+                    console.log("validated amount", newPayload.amount);
+
+                    setPayload(newPayload);
+
+                    if (amount > 0) {
                         const response = await axios.post(
                             `${
                                 import.meta.env.VITE_BACKEND_URL
@@ -140,17 +142,28 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                             newPayload
                         );
 
-                        if (response.data) {
+                        if (response.data?.clientSecret) {
                             setClientSecret(response.data.clientSecret);
+                        } else {
+                            setLoadError(
+                                "We couldn't set up the payment form. Please try again."
+                            );
                         }
-                    } catch (err) {
-                        console.error(err);
+                    } else {
+                        setLoadError(
+                            "Your cart total is $0. Please add items before checking out."
+                        );
                     }
+                } catch (err) {
+                    console.error(err);
+                    setLoadError(
+                        "We couldn't set up the payment form. This sometimes happens when the cart has missing required items. Please try again, or go back and review your cart."
+                    );
                 }
             }
         };
         fetchData();
-    }, [cart]);
+    }, [cart, retryCount]);
 
     return (
         <div className="flex flex-col gap-4">
@@ -162,7 +175,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {clientSecret && (
+                    {clientSecret ? (
                         <Elements
                             options={{
                                 clientSecret,
@@ -175,6 +188,28 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                         >
                             <CheckoutForm />
                         </Elements>
+                    ) : loadError ? (
+                        <div className="flex flex-col gap-3 p-4 rounded-md border border-destructive/30 bg-destructive/5">
+                            <p className="text-sm text-destructive">
+                                {loadError}
+                            </p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setClientSecret("");
+                                    setLoadError(null);
+                                    setRetryCount((c) => c + 1);
+                                }}
+                            >
+                                Try again
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading payment form...
+                        </div>
                     )}
                 </CardContent>
             </Card>
