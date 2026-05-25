@@ -196,63 +196,35 @@ export default function ShippingForm({
         }
     };
 
-    useEffect(() => {
-        // Watch for changes in the form and update the shipping context
+    // Build the single move-in rate (province-priced + bookstore-aware label)
+    const buildMoveInRate = (): Rates => {
+        const province =
+            delivery?.shippingAddress?.state?.toUpperCase() || "";
+        const moveInCost =
+            province === "ON" || province === "QC" ? 19.95 : 34.95;
+        const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
+        const serviceName = isBookstore
+            ? "Bookstore Pickup on Move-In Day"
+            : "Move-In Day Delivery";
 
-        const subscription = form.watch((data) => {
-            if (orderType === "move-in" && data.moveInDate && rates && dorm) {
-                const moveInDate = new Date(data.moveInDate);
-                if (
-                    (moveInDate.getMonth() === 7 &&
-                        moveInDate.getDate() >= 24) ||
-                    (moveInDate.getMonth() === 8 && moveInDate.getDate() <= 7)
-                ) {
-                    // If the move-in date is in August or September, show the flat rate
-                    // Province-based pricing: $19.95 for ON/QC, $34.95 for the rest of Canada
-                    const province =
-                        delivery?.shippingAddress?.state?.toUpperCase() || "";
-                    const moveInCost =
-                        province === "ON" || province === "QC"
-                            ? 19.95
-                            : 34.95;
-
-                    // Conditional label: only show "Bookstore Pickup" if the
-                    // customer's residence is on the bookstore partnership list
-                    const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
-                    const serviceName = isBookstore
-                        ? "Bookstore Pickup on Move-In Day"
-                        : "Move-In Day Delivery";
-
-                    setRates((prevRates) => {
-                        if (!prevRates) return prevRates;
-                        // Check if the move-in rate already exists
-                        const hasMoveIn = prevRates.some(
-                            (rate) =>
-                                rate.service.includes("Move-In Day") ||
-                                rate.service.includes("Bookstore Pickup")
-                        );
-                        if (hasMoveIn) return prevRates;
-
-                        return [
-                            {
-                                service: serviceName,
-                                cost: moveInCost,
-                                transitTime: 2,
-                            },
-                        ];
-                    });
-                }
-            } else {
-                // If the move-in date is not in August or September, show the original rates
-                fetchRates();
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [form, dorm, orderType, delivery]);
+        return {
+            service: serviceName,
+            cost: moveInCost,
+            transitTime: 2,
+        };
+    };
 
     useEffect(() => {
+        // Move-in orders → ONLY show the move-in day delivery rate
+        // (no regular carrier rates, even if they'd be cheaper)
+        if (orderType === "move-in") {
+            setRates([buildMoveInRate()]);
+            return;
+        }
+
+        // Regular orders → fetch normal carrier rates from Shopify
         fetchRates();
-    }, [cart]);
+    }, [cart, orderType, dorm, delivery]);
 
     const addRate = (rate: Rates) => {
         const { service, cost, transitTime } = rate;
@@ -459,6 +431,7 @@ export default function ShippingForm({
                                         </TableRow>
                                     )
                                 ) : (
+                                    <div className="overflow-hidden rounded-lg border">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -547,6 +520,7 @@ export default function ShippingForm({
                                             )}
                                         </TableBody>
                                     </Table>
+                                    </div>
                                 )}
                                 <p
                                     data-slot="form-message"
