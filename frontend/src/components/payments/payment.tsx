@@ -157,7 +157,7 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                 } catch (err) {
                     console.error(err);
                     setLoadError(
-                        "We couldn't set up the payment form. This sometimes happens when the cart has missing required items. Please try again, or go back and review your cart."
+                        "We couldn't set up the payment form. This sometimes happens when the cart has missing required items or delivery details are invalid. Please try again, or go back and review your cart."
                     );
                 }
             }
