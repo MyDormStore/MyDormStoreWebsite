@@ -142,73 +142,80 @@ export default function ShippingForm({
     };
 
     const fetchRates = async () => {
-        // Always call backend — even for move-in orders — so tax lines
-        // and payment-step setup data come through.
-        if (cart) {
-            const lineItems = cart.lines.nodes; // contains cart items
-            const payload = {
-                customer: "customer ID", // TODO: get the ID from shopify
-                lineItems: lineItems.map((cartItem) => {
-                    return {
-                        variantId: cartItem.merchandise.id,
-                        quantity: cartItem.quantity,
-                        attributes: cartItem.attributes,
-                        amount: cartItem.cost.amountPerQuantity.amount,
-                    };
-                }),
-                discountCodes: cart.discountCodes?.[0]?.applicable
-                    ? [cart.discountCodes?.[0].code]
-                    : undefined,
-                deliveryDetails: delivery,
-            };
-            const response = await axios.post(
+        if (!cart) return;
+
+        const lineItems = cart.lines.nodes; // contains cart items
+        const payload = {
+            customer: "customer ID", // TODO: get the ID from shopify
+            lineItems: lineItems.map((cartItem) => {
+                return {
+                    variantId: cartItem.merchandise.id,
+                    quantity: cartItem.quantity,
+                    attributes: cartItem.attributes,
+                    amount: cartItem.cost.amountPerQuantity.amount,
+                };
+            }),
+            discountCodes: cart.discountCodes?.[0]?.applicable
+                ? [cart.discountCodes?.[0].code]
+                : undefined,
+            deliveryDetails: delivery,
+        };
+
+        // Try to call backend for tax lines + (for regular orders) carrier rates.
+        // If it fails (e.g. cart validation, network), we still want move-in
+        // orders to show their local-only rate so checkout isn't blocked.
+        let response: any = null;
+        try {
+            response = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
-
-            // ALWAYS set tax lines so the payment step + tax pill render
-            response.data.taxLines && setTaxLines(response.data.taxLines);
-
-            // Move-in orders → discard the carrier rates, show only the
-            // single move-in rate (province-priced, bookstore-aware label).
-            // We still needed the backend call above for tax + payment setup.
-            if (orderType === "move-in") {
-                setRates([buildMoveInRate()]);
-                return;
-            }
-
-            // Regular orders → show the rates returned by Shopify
-            if (
-                response.data.availableShippingRates === null ||
-                response.data.availableShippingRates.length === 0
-            ) {
-                setRates([
-                    {
-                        service: "Standard",
-                        cost: 23.0,
-                        transitTime: 3,
-                    },
-                ]);
-                return;
-            }
-            setRates(
-                response.data.availableShippingRates.map((rate: any) => {
-                    let transitTime = 5; // default transit time
-                    if (
-                        rate.title.includes("Express") ||
-                        rate.title.includes("Expedited") ||
-                        rate.title.includes("Priority")
-                    ) {
-                        transitTime = 3; // express services usually have a transit time of 1 day\
-                    }
-                    return {
-                        service: rate.title,
-                        cost: Number(rate.price.amount),
-                        transitTime: transitTime,
-                    } as Rates;
-                })
-            );
+            response?.data?.taxLines &&
+                setTaxLines(response.data.taxLines);
+        } catch (err) {
+            console.warn("Shipping calculate failed:", err);
+            // Keep going — for move-in orders we can still show the rate
         }
+
+        // Move-in orders → show the single move-in rate, regardless of
+        // whether the backend call succeeded. Province-priced + bookstore-aware.
+        if (orderType === "move-in") {
+            setRates([buildMoveInRate()]);
+            return;
+        }
+
+        // Regular orders → use backend carrier rates
+        if (
+            !response ||
+            response.data.availableShippingRates === null ||
+            response.data.availableShippingRates.length === 0
+        ) {
+            setRates([
+                {
+                    service: "Standard",
+                    cost: 23.0,
+                    transitTime: 3,
+                },
+            ]);
+            return;
+        }
+        setRates(
+            response.data.availableShippingRates.map((rate: any) => {
+                let transitTime = 5; // default transit time
+                if (
+                    rate.title.includes("Express") ||
+                    rate.title.includes("Expedited") ||
+                    rate.title.includes("Priority")
+                ) {
+                    transitTime = 3; // express services usually have a transit time of 1 day\
+                }
+                return {
+                    service: rate.title,
+                    cost: Number(rate.price.amount),
+                    transitTime: transitTime,
+                } as Rates;
+            })
+        );
     };
 
     useEffect(() => {
