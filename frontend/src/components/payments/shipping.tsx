@@ -61,7 +61,7 @@ interface Rates {
 
 // Residences that have an on-campus bookstore partnership.
 // If the customer picks one of these as their dorm, the
-// "Move-In Day Delivery" rate is renamed to "Bookstore Pickup on Move-In Day".
+// "Move-In Day Delivery" rate is renamed to "Bookstore Pickup".
 const BOOKSTORE_RESIDENCES = new Set<string>([
     // Algonquin
     "Algonquin College",
@@ -204,7 +204,7 @@ export default function ShippingForm({
             province === "ON" || province === "QC" ? 19.95 : 34.95;
         const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
         const serviceName = isBookstore
-            ? "Bookstore Pickup on Move-In Day"
+            ? "Bookstore Pickup"
             : "Move-In Day Delivery";
 
         return {
