@@ -144,6 +144,13 @@ export default function ShippingForm({
     const fetchRates = async () => {
         if (!cart) return;
 
+        // Set move-in rate IMMEDIATELY for move-in orders — it's pure local
+        // logic and doesn't depend on the backend. If the backend call also
+        // succeeds we'll get tax lines too, but the rate is never blocked.
+        if (orderType === "move-in") {
+            setRates([buildMoveInRate()]);
+        }
+
         const lineItems = cart.lines.nodes; // contains cart items
         const payload = {
             customer: "customer ID", // TODO: get the ID from shopify
@@ -161,61 +168,55 @@ export default function ShippingForm({
             deliveryDetails: delivery,
         };
 
-        // Try to call backend for tax lines + (for regular orders) carrier rates.
-        // If it fails (e.g. cart validation, network), we still want move-in
-        // orders to show their local-only rate so checkout isn't blocked.
-        let response: any = null;
         try {
-            response = await axios.post(
+            const response = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
-            response?.data?.taxLines &&
+
+            // Set tax lines if present (used by Payment + summary)
+            if (response?.data?.taxLines) {
                 setTaxLines(response.data.taxLines);
+            }
+
+            // Move-in already handled above — just need tax from the call
+            if (orderType === "move-in") return;
+
+            // Regular orders → display backend carrier rates
+            const carrierRates = response?.data?.availableShippingRates;
+            if (!carrierRates || carrierRates.length === 0) {
+                setRates([
+                    { service: "Standard", cost: 23.0, transitTime: 3 },
+                ]);
+                return;
+            }
+            setRates(
+                carrierRates.map((rate: any) => {
+                    let transitTime = 5; // default transit time
+                    if (
+                        rate.title.includes("Express") ||
+                        rate.title.includes("Expedited") ||
+                        rate.title.includes("Priority")
+                    ) {
+                        transitTime = 3;
+                    }
+                    return {
+                        service: rate.title,
+                        cost: Number(rate.price.amount),
+                        transitTime: transitTime,
+                    } as Rates;
+                })
+            );
         } catch (err) {
             console.warn("Shipping calculate failed:", err);
-            // Keep going — for move-in orders we can still show the rate
+            // Backend failed — make sure regular orders still see SOMETHING
+            // so the checkout isn't blocked on a never-loading skeleton row
+            if (orderType !== "move-in") {
+                setRates([
+                    { service: "Standard", cost: 23.0, transitTime: 3 },
+                ]);
+            }
         }
-
-        // Move-in orders → show the single move-in rate, regardless of
-        // whether the backend call succeeded. Province-priced + bookstore-aware.
-        if (orderType === "move-in") {
-            setRates([buildMoveInRate()]);
-            return;
-        }
-
-        // Regular orders → use backend carrier rates
-        if (
-            !response ||
-            response.data.availableShippingRates === null ||
-            response.data.availableShippingRates.length === 0
-        ) {
-            setRates([
-                {
-                    service: "Standard",
-                    cost: 23.0,
-                    transitTime: 3,
-                },
-            ]);
-            return;
-        }
-        setRates(
-            response.data.availableShippingRates.map((rate: any) => {
-                let transitTime = 5; // default transit time
-                if (
-                    rate.title.includes("Express") ||
-                    rate.title.includes("Expedited") ||
-                    rate.title.includes("Priority")
-                ) {
-                    transitTime = 3; // express services usually have a transit time of 1 day\
-                }
-                return {
-                    service: rate.title,
-                    cost: Number(rate.price.amount),
-                    transitTime: transitTime,
-                } as Rates;
-            })
-        );
     };
 
     useEffect(() => {
