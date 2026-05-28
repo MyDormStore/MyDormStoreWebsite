@@ -1811,7 +1811,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
     },
     "Lorenzo": {
         postalCode: "90007",
-        country: "USA",
+        country: "US",
         city: "Los Angeles",
         state: "CA",
         street: "325 West Adams Blvd",
