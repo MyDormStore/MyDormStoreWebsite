@@ -806,6 +806,11 @@ export const dormSelectList: dormSelectListType[] = [
         school: "Northwestern Polytechnic",
     },
     {
+        key: "Lorenzo",
+        label: "Lorenzo",
+        school: "University of Southern California",
+    },
+    {
         key: "Other",
         label: "Other/Not Listed",
     },
@@ -890,6 +895,7 @@ export const schoolSelectList: dormSelectListType[] = [
     { key: "University of Quebec", label: "University of Quebec" },
     { key: "Ahuntsic College", label: "Ahuntsic College" },
     { key: "Dawson College", label: "Dawson College" },
+    { key: "University of Southern California", label: "University of Southern California" },
     { key: "Other", label: "Other/Not Listed" },
 ].sort((a, b) => {
     if (a.key < b.key) {
@@ -1803,6 +1809,13 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "AB",
         street: "10609 106 Ave Building E",
     },
+    "Lorenzo": {
+        postalCode: "90007",
+        country: "USA",
+        city: "Los Angeles",
+        state: "CA",
+        street: "325 West Adams Blvd",
+    },
     
 };
 
@@ -1882,6 +1895,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Knox College",
 "Lambton",
 "Linden House",
+"Lorenzo",
 "Loretto College",
 "Luxe London",
 "Maisonville Yards",
@@ -1953,7 +1967,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Woodsworth College",
     ],
     TwinOnly: [
-    "Akerley Campus",
+   "Akerley Campus",
 "Alder House",
 "Alexander Mackenzie Hall (Lister)",
 "Anthony Henday Hall (Lister)",
@@ -1970,6 +1984,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Joan Foley Hall Apartments",
 "Knox College",
 "Linden House",
+"Lorenzo",
 "Maple House",
 "Marge's House",
 "Mary Schäffer Hall (Lister)",
@@ -2416,6 +2431,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Jesuit Residence",
 "Joan Foley Hall Apartments",
 "King Street Towers",
+"Lorenzo",
 "Luxe London",
 "Maisonville Yards",
 "McGill Residence (TRU)",
@@ -2481,6 +2497,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Hespeler House",
 "Joan Foley Hall Apartments",
 "King Street Towers",
+"Lorenzo",
 "Luxe London",
 "Maisonville Yards",
 "McGill Residence (TRU)",
@@ -2512,5 +2529,6 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Wilfrid Laurier University (Waterloo Residence)",
 "Wilfrid Laurier University HawkShop (Brantford)",
 "Wilfrid Laurier University HawkShop (Waterloo)",
-"Woodroffe Place",],
+"Woodroffe Place",
+],
 };
