@@ -1,14 +1,10 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
-
 import { config } from "dotenv";
 import { Payload } from "../types/types";
 import { createOrder } from "../utils/shopify";
-
 config({ path: ".env" });
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
-
 // TODO: initially using checkoutsession but don't need
 export const createCheckoutSession = async (req: Request, res: Response) => {
     const session = await stripe.checkout.sessions.create({
@@ -30,14 +26,11 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
         return_url:
             "https://example.com/return?session_id={CHECKOUT_SESSION_ID}",
     });
-
     res.json({ checkoutSessionClientSecret: session.client_secret });
 };
-
 export const createPaymentIntent = async (req: Request, res: Response) => {
     const payload: Payload = req.body;
     // console.log(payload);
-
     const amount = req.body.amount;
     if (!amount) {
         res.status(400).send("Missing amount");
@@ -49,13 +42,10 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         }
         return chunks;
     }
-
     // 1. Stringify the full lineItems array
     const lineItemsJson = JSON.stringify(payload.lineItems);
-
     // 2. Chunk into pieces ≤ 500 characters
     const lineItemChunks = chunkString(lineItemsJson, 500);
-
     // 3. Start building metadata
     const metadata: { [key: string]: string | number | null } = {
         customer: payload.customer,
@@ -69,37 +59,32 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         notInCart: payload.notInCart ? JSON.stringify(payload.notInCart) : null,
         rp_id: payload.rp_id ?? null,
     };
-
     // 4. Add chunked lineItems into metadata
     lineItemChunks.forEach((chunk, index) => {
         metadata[`lineItems_part_${index + 1}`] = chunk;
     });
-
     // 5. Create PaymentIntent
+    //    Pull currency off the request body (sent from frontend based on
+    //    Shopify cart's currencyCode). Defaults to "cad" if not provided
+    //    so older clients keep working.
+    const currency = (req.body.currency || "cad").toLowerCase();
     const paymentIntent = await stripe.paymentIntents.create({
         amount: parseInt(amount),
-        currency: "cad",
+        currency,
         metadata,
     });
-
     res.send({
         clientSecret: paymentIntent.client_secret,
     });
 };
-
 export const getPaymentIntent = async (req: Request, res: Response) => {
     const { id } = req.params;
-
     const paymentIntent = await stripe.paymentIntents.retrieve(id);
-
     res.send(paymentIntent);
 };
-
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
 export const webhook = async (req: Request, res: Response) => {
     let event: Stripe.Event = req.body;
-
     if (endpointSecret) {
         const signature = req.headers["stripe-signature"];
         if (signature) {
@@ -115,7 +100,6 @@ export const webhook = async (req: Request, res: Response) => {
             }
         }
     }
-
     switch (event.type) {
         case "payment_intent.succeeded":
             const paymentIntent = event.data.object;
@@ -144,13 +128,10 @@ export const webhook = async (req: Request, res: Response) => {
         default:
             console.log(`unhandled event type ${event.type}`);
     }
-
     res.status(200).send();
 };
-
 /*
 used for reconstruction of line items
-
 function reconstructLineItems(metadata) {
   const parts = Object.keys(metadata)
     .filter((key) => key.startsWith("lineItems_part_"))
@@ -160,9 +141,7 @@ function reconstructLineItems(metadata) {
       return aIndex - bIndex;
     })
     .map((key) => metadata[key]);
-
   const fullJson = parts.join("");
   return JSON.parse(fullJson);
 }
-
  */
