@@ -108,13 +108,13 @@ export default function ShippingForm({
     const orderType = useFormStore((state) => state.orderType);
     const [rates, setRates] = useState<Rates[] | null>([]);
     const form = useForm<ShippingFormSchemaType>({
-        resolver: zodResolver(shippingFormSchema),
         defaultValues: {
             service: shipping?.service || "",
             cost: shipping?.cost || 0,
             transitTime: shipping?.transitTime || 0,
             moveInDate: shipping?.moveInDate || undefined,
         },
+        resolver: zodResolver(shippingFormSchema),
         mode: "onChange",
         reValidateMode: "onChange",
     });
@@ -123,13 +123,26 @@ export default function ShippingForm({
     );
     const { cart } = useCartContext();
     const { shippingCost, setShippingCost, setTaxLines } = useShippingContext();
-
-    // Build the single move-in rate (province-priced + bookstore-aware label)
+    // Build the single move-in rate (currency- + province-aware)
     const buildMoveInRate = (): Rates => {
         const province =
             delivery?.shippingAddress?.state?.toUpperCase() || "";
-        const moveInCost =
-            province === "ON" || province === "QC" ? 19.95 : 34.95;
+
+        // Detect the cart's currency (set by Shopify Markets based on
+        // customer location — USD for US visitors, CAD for Canadian, etc.)
+        const cartCurrency =
+            cart?.cost?.totalAmount?.currencyCode?.toUpperCase() || "CAD";
+
+        let moveInCost: number;
+        if (cartCurrency === "USD") {
+            // US customers see USD prices — charge $34.95 USD shipping
+            moveInCost = 34.95;
+        } else {
+            // CAD customers — province-based pricing
+            moveInCost =
+                province === "ON" || province === "QC" ? 19.95 : 34.95;
+        }
+
         const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
         const serviceName = isBookstore
             ? "Bookstore Pickup"
@@ -140,17 +153,14 @@ export default function ShippingForm({
             transitTime: 2,
         };
     };
-
     const fetchRates = async () => {
         if (!cart) return;
-
         // Set move-in rate IMMEDIATELY for move-in orders — it's pure local
         // logic and doesn't depend on the backend. If the backend call also
         // succeeds we'll get tax lines too, but the rate is never blocked.
         if (orderType === "move-in") {
             setRates([buildMoveInRate()]);
         }
-
         const lineItems = cart.lines.nodes; // contains cart items
         const payload = {
             customer: "customer ID", // TODO: get the ID from shopify
@@ -167,21 +177,17 @@ export default function ShippingForm({
                 : undefined,
             deliveryDetails: delivery,
         };
-
         try {
             const response = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/Shopify/calculate`,
                 payload
             );
-
             // Set tax lines if present (used by Payment + summary)
             if (response?.data?.taxLines) {
                 setTaxLines(response.data.taxLines);
             }
-
             // Move-in already handled above — just need tax from the call
             if (orderType === "move-in") return;
-
             // Regular orders → display backend carrier rates
             const carrierRates = response?.data?.availableShippingRates;
             if (!carrierRates || carrierRates.length === 0) {
@@ -218,11 +224,9 @@ export default function ShippingForm({
             }
         }
     };
-
     useEffect(() => {
         fetchRates();
     }, [cart, orderType, dorm, delivery]);
-
     const addRate = (rate: Rates) => {
         const { service, cost, transitTime } = rate;
         form.setValue("cost", cost);
