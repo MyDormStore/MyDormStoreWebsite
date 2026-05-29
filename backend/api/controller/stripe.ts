@@ -106,6 +106,10 @@ export const webhook = async (req: Request, res: Response) => {
             const metadata = paymentIntent.metadata;
             const payload: Payload = {
                 amount: parseFloat(metadata.amount),
+                // Pass through the actual currency Stripe charged in
+                // (e.g. "USD" for US customers) so the Shopify order
+                // is created with the matching currency labels.
+                currency: (paymentIntent.currency || "cad").toUpperCase(),
                 customer: metadata.customer,
                 lineItems: JSON.parse(metadata.lineItems),
                 deliveryDetails: JSON.parse(metadata.deliveryDetails),
