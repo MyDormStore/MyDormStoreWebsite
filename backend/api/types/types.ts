@@ -20,6 +20,8 @@ export type Payload = {
         moveInDate?: string;
     };
     amount: number;
+    currency?: string;
+    discountAmount?: number;
     secondaryDetails?: {
         toggleSecondaryDetails?: boolean;
         email: string;
