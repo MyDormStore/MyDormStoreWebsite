@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { config } from "dotenv";
 import { Payload } from "../types/types";
 import { createOrder } from "../utils/shopify";
+import { trackKlaviyoEvent } from "../utils/klaviyo";
 config({ path: ".env" });
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 // TODO: initially using checkoutsession but don't need
@@ -139,6 +140,29 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         customer: customerId,
         metadata,
     });
+
+    // 7. Fire "Started Checkout" event to Klaviyo for abandoned-cart
+    //    recovery flows. Wrapped in its own try/catch internally so
+    //    failures don't break the response.
+    if (payload.deliveryDetails?.email) {
+        trackKlaviyoEvent({
+            eventName: "Started Checkout",
+            email: payload.deliveryDetails.email,
+            firstName: payload.deliveryDetails.firstName,
+            lastName: payload.deliveryDetails.lastName,
+            phone: payload.deliveryDetails.phoneNumber,
+            value: (payload.amount || 0) / 100,
+            properties: {
+                cart_value: (payload.amount || 0) / 100,
+                currency: currency.toUpperCase(),
+                dorm: payload.dorm || "",
+                school: payload.school || "",
+                stripe_payment_intent_id: paymentIntent.id,
+                checkout_url: "https://mydormstore.ca/cart",
+            },
+        });
+    }
+
     res.send({
         clientSecret: paymentIntent.client_secret,
     });
@@ -202,7 +226,91 @@ export const webhook = async (req: Request, res: Response) => {
             console.log(
                 `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`
             );
+
+            // Fire "Placed Order" event so Klaviyo knows to exclude
+            // this customer from abandoned-cart flows.
+            if (payload.deliveryDetails?.email) {
+                trackKlaviyoEvent({
+                    eventName: "Placed Order",
+                    email: payload.deliveryDetails.email,
+                    firstName: payload.deliveryDetails.firstName,
+                    lastName: payload.deliveryDetails.lastName,
+                    value: paymentIntent.amount / 100,
+                    properties: {
+                        order_total: paymentIntent.amount / 100,
+                        currency: paymentIntent.currency?.toUpperCase(),
+                        dorm: payload.dorm || "",
+                        school: payload.school || "",
+                        shopify_order_id: typeof ID === "string" ? ID : "",
+                        stripe_payment_intent_id: paymentIntent.id,
+                    },
+                });
+            }
             break;
+
+        case "payment_intent.payment_failed": {
+            const failedIntent = event.data.object;
+            const failedMeta = failedIntent.metadata;
+
+            // Try to recover the customer's email from the PaymentIntent
+            // (set when the Stripe Customer was attached) or from the
+            // deliveryDetails metadata if available.
+            let failEmail: string | undefined;
+            let failFirstName: string | undefined;
+            let failLastName: string | undefined;
+            try {
+                if (failedIntent.customer) {
+                    const stripeCustomer = await stripe.customers.retrieve(
+                        failedIntent.customer as string
+                    );
+                    if (!("deleted" in stripeCustomer)) {
+                        failEmail = stripeCustomer.email || undefined;
+                        const parts = (stripeCustomer.name || "").split(" ");
+                        failFirstName = parts[0];
+                        failLastName = parts.slice(1).join(" ") || undefined;
+                    }
+                }
+                if (!failEmail && failedMeta.deliveryDetails) {
+                    const d = JSON.parse(failedMeta.deliveryDetails);
+                    failEmail = d?.email;
+                    failFirstName = d?.firstName;
+                    failLastName = d?.lastName;
+                }
+            } catch (e) {
+                console.warn(
+                    "Couldn't look up customer for failed payment:",
+                    e
+                );
+            }
+
+            console.log(
+                `PaymentIntent ${failedIntent.id} failed${
+                    failEmail ? ` (${failEmail})` : ""
+                }`
+            );
+
+            if (failEmail) {
+                trackKlaviyoEvent({
+                    eventName: "Payment Failed",
+                    email: failEmail,
+                    firstName: failFirstName,
+                    lastName: failLastName,
+                    value: failedIntent.amount / 100,
+                    properties: {
+                        cart_value: failedIntent.amount / 100,
+                        currency: failedIntent.currency?.toUpperCase(),
+                        failure_message:
+                            failedIntent.last_payment_error?.message || "",
+                        failure_code:
+                            failedIntent.last_payment_error?.code || "",
+                        stripe_payment_intent_id: failedIntent.id,
+                        checkout_url: "https://mydormstore.ca/cart",
+                    },
+                });
+            }
+            break;
+        }
+
         default:
             console.log(`unhandled event type ${event.type}`);
     }
