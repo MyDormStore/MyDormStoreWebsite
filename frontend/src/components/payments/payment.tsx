@@ -5,7 +5,6 @@ import {
     CardHeader,
     CardTitle,
 } from "../ui/card";
-
 import { stripe } from "@/api/stripe";
 import { useCartContext } from "@/context/cartContext";
 import { useShippingContext } from "@/context/shippingContext";
@@ -44,35 +43,28 @@ import { Loader2 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { usePayloadStore } from "@/core/payload";
 import { constructFromSymbol } from "date-fns/constants";
-
 // payment form for checkout
-
 interface PaymentFormProps {
     prevTab: () => void;
 }
-
 export default function PaymentForm({ prevTab }: PaymentFormProps) {
     const { cart } = useCartContext();
     const { shippingCost, taxLines } = useShippingContext();
     const delivery = useFormStore((state) => state.delivery);
     const shipping = useFormStore((state) => state.shipping);
     const notInCart = useFormStore((state) => state.notInCart);
-
     const [clientSecret, setClientSecret] = useState("");
     const [loadError, setLoadError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     const [searchParams] = useSearchParams();
-
     const payload = usePayloadStore((state) => state.payload);
     const setPayload = usePayloadStore((state) => state.setPayload);
-
     useEffect(() => {
         const fetchData = async () => {
             if (cart && clientSecret === "") {
                 setLoadError(null);
                 console.log(cart);
                 const lineItems = cart.lines.nodes; // contains cart items
-
                 const baseAmount = parseFloat(
                     cart.cost.totalAmount.amount || "0"
                 );
@@ -83,12 +75,16 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                             parseFloat(line?.priceSet?.shopMoney?.amount || "0")
                         );
                     }, 0) || 0;
-
                 const totalShipping = Number(shippingCost || "0");
-
                 const amount = baseAmount + totalTax + totalShipping;
-
                 const rp_id = searchParams.get("rp_id");
+
+                // Pull the cart's currency (Shopify Markets sets this to
+                // USD for US visitors, CAD for Canadian, etc.) so the Stripe
+                // charge matches what the customer saw on the page.
+                const currency =
+                    cart.cost?.totalAmount?.currencyCode?.toLowerCase() ||
+                    "cad";
 
                 const newPayload = {
                     ...payload,
@@ -104,36 +100,30 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                     taxLines: taxLines,
                     shipping: shipping,
                     amount: Math.round(amount * 100),
+                    currency: currency,
                     notInCart: notInCart,
                     discountCodes: cart.discountCodes?.[0]?.applicable
                         ? [cart.discountCodes?.[0].code]
                         : undefined,
                     rp_id: rp_id ? rp_id : undefined,
                 };
-
                 try {
                     const finalAmount = await axios.post(
                         `${import.meta.env.VITE_BACKEND_URL}/Shopify/finalize`,
                         newPayload
                     );
-
                     console.log(
                         "Final amount from Shopify:",
                         Number(finalAmount.data)
                     );
-
                     console.log("original amount", newPayload.amount);
-
                     if (finalAmount.data) {
                         newPayload.amount = Math.round(
                             (Number(finalAmount.data) + totalShipping) * 100
                         );
                     }
-
                     console.log("validated amount", newPayload.amount);
-
                     setPayload(newPayload);
-
                     if (amount > 0) {
                         const response = await axios.post(
                             `${
@@ -141,7 +131,6 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                             }/Stripe/create-payment-intent`,
                             newPayload
                         );
-
                         if (response.data?.clientSecret) {
                             setClientSecret(response.data.clientSecret);
                         } else {
@@ -164,7 +153,6 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
         };
         fetchData();
     }, [cart, retryCount]);
-
     return (
         <div className="flex flex-col gap-4">
             <Card>
@@ -228,14 +216,11 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
         </div>
     );
 }
-
 const CheckoutForm = () => {
     const elements = useElements();
     const stripe = useStripe();
-
     const payment = useFormStore((state) => state.payment);
     const addPayment = useFormStore((state) => state.addPayment);
-
     const form = useForm<SecondaryAddressSchemaType>({
         resolver: zodResolver(secondaryAddressSchema),
         defaultValues: payment
@@ -251,40 +236,31 @@ const CheckoutForm = () => {
         mode: "onChange",
         reValidateMode: "onChange",
     });
-
     console.log(form.formState.errors, form.getValues());
-
     const payload = usePayloadStore((state) => state.payload);
     const setPayload = usePayloadStore((state) => state.setPayload);
-
     const [loading, setLoading] = useState(false);
-
     const { cartID } = useParams();
     const [searchParams] = useSearchParams();
-
     const onSubmit = async (data: SecondaryAddressSchemaType) => {
         setLoading(true);
         addPayment(data);
-
         const newPayload = {
             ...payload,
             secondaryDetails: data,
         };
         setPayload(newPayload);
-
         console.log(payload);
         try {
             if (stripe && elements) {
                 const { error } = await stripe.confirmPayment({
                     elements,
-
                     confirmParams: {
                         return_url: `${
                             window.location.origin
                         }/${cartID}/success?key=${searchParams.get("key")}`,
                     },
                 });
-
                 if (error) {
                     console.error("Payment error", error);
                     // optionally show user error
@@ -298,31 +274,25 @@ const CheckoutForm = () => {
             setLoading(false);
         }
     };
-
     const [toggleSecondaryDetails, setToggleSecondaryDetails] = useState(
         payment.toggleSecondaryDetails ? true : false
     );
-
     const [countryValue, setCountryValue] = useState(
         form.getValues(`billingAddress.country`) || ""
     );
     const [stateValue, setStateValue] = useState(
         form.getValues(`billingAddress.state`) || ""
     );
-
     const [openCountryDropdown, setOpenCountryDropdown] = useState(false);
     const [openStateDropdown, setOpenStateDropdown] = useState(false);
-
     useEffect(() => {
         form.setValue(`billingAddress.country`, countryValue);
         form.clearErrors(`billingAddress.country`);
     }, [countryValue]);
-
     useEffect(() => {
         form.setValue(`billingAddress.state`, stateValue);
         form.clearErrors(`billingAddress.state`);
     }, [stateValue]);
-
     return (
         <Form {...form}>
             <form
@@ -362,12 +332,10 @@ const CheckoutForm = () => {
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-
                         <div className="grid gap-2 grid-cols-2">
                             <FormField
                                 control={form.control}
@@ -380,7 +348,6 @@ const CheckoutForm = () => {
                                         <FormControl>
                                             <Input {...field} />
                                         </FormControl>
-
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -396,7 +363,6 @@ const CheckoutForm = () => {
                                         <FormControl>
                                             <Input {...field} />
                                         </FormControl>
-
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -413,7 +379,6 @@ const CheckoutForm = () => {
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -429,7 +394,6 @@ const CheckoutForm = () => {
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -443,7 +407,6 @@ const CheckoutForm = () => {
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -505,7 +468,6 @@ const CheckoutForm = () => {
                                         <FormControl>
                                             <Input {...field} />
                                         </FormControl>
-
                                         <FormMessage />
                                     </FormItem>
                                 )}
