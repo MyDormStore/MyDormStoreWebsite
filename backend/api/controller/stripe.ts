@@ -142,10 +142,11 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     });
 
     // 7. Fire "Started Checkout" event to Klaviyo for abandoned-cart
-    //    recovery flows. Wrapped in its own try/catch internally so
-    //    failures don't break the response.
+    //    recovery flows. AWAITED so the Vercel serverless function
+    //    doesn't terminate before the Klaviyo HTTP call completes.
+    //    The helper has its own try/catch so failures don't throw.
     if (payload.deliveryDetails?.email) {
-        trackKlaviyoEvent({
+        await trackKlaviyoEvent({
             eventName: "Started Checkout",
             email: payload.deliveryDetails.email,
             firstName: payload.deliveryDetails.firstName,
@@ -228,9 +229,10 @@ export const webhook = async (req: Request, res: Response) => {
             );
 
             // Fire "Placed Order" event so Klaviyo knows to exclude
-            // this customer from abandoned-cart flows.
+            // this customer from abandoned-cart flows. Awaited so the
+            // serverless function doesn't terminate before the call.
             if (payload.deliveryDetails?.email) {
-                trackKlaviyoEvent({
+                await trackKlaviyoEvent({
                     eventName: "Placed Order",
                     email: payload.deliveryDetails.email,
                     firstName: payload.deliveryDetails.firstName,
@@ -290,7 +292,7 @@ export const webhook = async (req: Request, res: Response) => {
             );
 
             if (failEmail) {
-                trackKlaviyoEvent({
+                await trackKlaviyoEvent({
                     eventName: "Payment Failed",
                     email: failEmail,
                     firstName: failFirstName,
