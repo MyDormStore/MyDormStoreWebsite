@@ -53,6 +53,12 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         taxLines: JSON.stringify(payload.taxLines),
         shipping: JSON.stringify(payload.shipping),
         amount: payload.amount,
+        // Pass discount info through so the webhook can apply the
+        // discount to the Shopify order it creates.
+        discountAmount: req.body.discountAmount ?? 0,
+        discountCodes: req.body.discountCodes
+            ? JSON.stringify(req.body.discountCodes)
+            : null,
         secondaryDetails: payload.secondaryDetails
             ? JSON.stringify(payload.secondaryDetails)
             : null,
@@ -63,14 +69,74 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     lineItemChunks.forEach((chunk, index) => {
         metadata[`lineItems_part_${index + 1}`] = chunk;
     });
-    // 5. Create PaymentIntent
+    // 5. Create or find a Stripe Customer so we can recover abandoned
+    //    carts later (failed payments, never-completed checkouts).
+    //    Wrapped in try/catch — if this fails for any reason, we fall
+    //    through and create the PaymentIntent WITHOUT a customer attached,
+    //    so the customer can still complete their purchase.
+    let customerId: string | undefined;
+    try {
+        const email = payload.deliveryDetails?.email;
+        if (email) {
+            const firstName = payload.deliveryDetails?.firstName || "";
+            const lastName = payload.deliveryDetails?.lastName || "";
+            const fullName = `${firstName} ${lastName}`.trim();
+            const phone = payload.deliveryDetails?.phoneNumber;
+
+            const customerMetadata = {
+                last_cart_value_cents: String(payload.amount || 0),
+                last_dorm: payload.dorm || "",
+                last_school: payload.school || "",
+                last_checkout_started_at: new Date().toISOString(),
+            };
+
+            // Look for an existing customer with this email first to
+            // avoid creating duplicates if the same person checks out
+            // multiple times.
+            const existing = await stripe.customers.list({
+                email,
+                limit: 1,
+            });
+
+            if (existing.data.length > 0) {
+                const updated = await stripe.customers.update(
+                    existing.data[0].id,
+                    {
+                        name: fullName || undefined,
+                        phone: phone || undefined,
+                        metadata: customerMetadata,
+                    }
+                );
+                customerId = updated.id;
+            } else {
+                const created = await stripe.customers.create({
+                    email,
+                    name: fullName || undefined,
+                    phone: phone || undefined,
+                    metadata: customerMetadata,
+                });
+                customerId = created.id;
+            }
+        }
+    } catch (err) {
+        console.error(
+            "Stripe customer setup failed (continuing without customer):",
+            err
+        );
+        // Intentionally swallow — payment must still go through.
+    }
+
+    // 6. Create PaymentIntent
     //    Pull currency off the request body (sent from frontend based on
     //    Shopify cart's currencyCode). Defaults to "cad" if not provided
     //    so older clients keep working.
+    //    If customerId is undefined, Stripe accepts it — just means this
+    //    PaymentIntent isn't attached to a customer (rare edge case).
     const currency = (req.body.currency || "cad").toLowerCase();
     const paymentIntent = await stripe.paymentIntents.create({
         amount: parseInt(amount),
         currency,
+        customer: customerId,
         metadata,
     });
     res.send({
@@ -115,6 +181,14 @@ export const webhook = async (req: Request, res: Response) => {
                 deliveryDetails: JSON.parse(metadata.deliveryDetails),
                 taxLines: JSON.parse(metadata.taxLines),
                 shipping: JSON.parse(metadata.shipping),
+                // Read discount info back from metadata to apply to
+                // the Shopify order so the breakdown shows correctly.
+                discountAmount: metadata.discountAmount
+                    ? parseFloat(metadata.discountAmount)
+                    : 0,
+                discountCodes: metadata.discountCodes
+                    ? JSON.parse(metadata.discountCodes)
+                    : undefined,
                 secondaryDetails: metadata.secondaryDetails
                     ? JSON.parse(metadata.secondaryDetails)
                     : null,
