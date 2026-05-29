@@ -1,5 +1,6 @@
 import { client } from "../services/shopify";
 import { LineItems, Order, Payload } from "../types/types";
+
 const orderMutation = `
 mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOptionsInput) {
       orderCreate(order: $order, options: $options) {
@@ -12,6 +13,7 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
     }
   }
 }
+
 `;
 export const createOrder = async (payload: Payload) => {
     const {
@@ -26,13 +28,16 @@ export const createOrder = async (payload: Payload) => {
         dorm,
         school,
     } = payload;
+
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
         deliveryDetails;
+
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
             const index = item.attributes.findIndex(
                 (attribute) => attribute.key === "__byob",
             );
+
             if (index === -1) {
                 return [
                     {
@@ -42,6 +47,7 @@ export const createOrder = async (payload: Payload) => {
                     },
                 ];
             }
+
             let productItems: Array<any> = [];
             try {
                 const products: Array<any> = JSON.parse(
@@ -55,6 +61,7 @@ export const createOrder = async (payload: Payload) => {
             } catch (err) {
                 console.error("Failed to parse BYOB JSON:", err);
             }
+
             return [
                 {
                     variantId: item.variantId,
@@ -64,6 +71,7 @@ export const createOrder = async (payload: Payload) => {
                 ...productItems,
             ];
         }
+
         return [
             {
                 variantId: item.variantId,
@@ -73,13 +81,8 @@ export const createOrder = async (payload: Payload) => {
         ];
     });
 
-    // Use the actual currency the customer was charged in (e.g. "USD")
-    // so the Shopify order labels everything correctly. Defaults to CAD
-    // for backwards compatibility with older payloads.
-    const orderCurrency = (payload.currency || "CAD").toUpperCase();
-
     const order: Order = {
-        currency: orderCurrency,
+        currency: "CAD",
         financialStatus: "PAID",
         lineItems: cartItems,
         email: email,
@@ -98,7 +101,7 @@ export const createOrder = async (payload: Payload) => {
                 priceSet: {
                     shopMoney: {
                         amount: shipping.cost,
-                        currencyCode: orderCurrency,
+                        currencyCode: "CAD",
                     },
                 },
             },
@@ -111,24 +114,27 @@ export const createOrder = async (payload: Payload) => {
             amountSet: {
                 shopMoney: {
                     amount: amount / 100,
-                    currencyCode: orderCurrency,
+                    currencyCode: "CAD",
                 },
             },
         },
         customAttributes: [],
     };
+
     if (phoneNumber) {
         order.customAttributes?.push({
             key: "Phone number",
             value: phoneNumber,
         });
     }
+
     if (payload.discountCodes) {
         order.customAttributes?.push({
             key: "Discount Codes",
             value: payload.discountCodes.join(", "),
         });
     }
+
     // Add custom attributes conditionally
     if (shipping.moveInDate) {
         order.customAttributes?.push({
@@ -136,21 +142,26 @@ export const createOrder = async (payload: Payload) => {
             value: new Date(shipping.moveInDate).toDateString(),
         });
     }
+
     if (notInCart?.length) {
         order.customAttributes?.push({
             key: "Not In Cart",
             value: notInCart.join(", "),
         });
     }
+
     if (rp_id) {
         order.customAttributes?.push({ key: "rp_id", value: rp_id });
     }
+
     if (dorm) {
         order.customAttributes?.push({ key: "Dorm", value: dorm });
     }
+
     if (school) {
         order.customAttributes?.push({ key: "School", value: school });
     }
+
     if (secondaryDetails?.toggleSecondaryDetails) {
         order.billingAddress = {
             firstName: secondaryDetails.firstName,
@@ -162,6 +173,27 @@ export const createOrder = async (payload: Payload) => {
             provinceCode: secondaryDetails.billingAddress.state,
         };
     }
+
+    // If a discount code was applied, attach it to the order as a
+    // fixed-amount discount. This makes Shopify show the discount in
+    // the order breakdown — e.g. "Subtotal $427.96, Discount -$42.79,
+    // Total $385.17" — instead of looking like underpayment.
+    const discountAmount = payload.discountAmount || 0;
+    const firstDiscountCode = payload.discountCodes?.[0];
+    if (discountAmount > 0 && firstDiscountCode) {
+        (order as any).discountCode = {
+            itemFixedDiscountCode: {
+                code: firstDiscountCode,
+                amountSet: {
+                    shopMoney: {
+                        amount: discountAmount,
+                        currencyCode: orderCurrency,
+                    },
+                },
+            },
+        };
+    }
+
     try {
         const { data, errors } = await client.request(orderMutation, {
             variables: {
@@ -172,21 +204,25 @@ export const createOrder = async (payload: Payload) => {
                 },
             },
         });
+
         if (errors) {
             console.error("GraphQL errors:", errors);
             return { errors };
         }
+
         const userErrors = data.orderCreate.userErrors;
         if (userErrors?.length > 0) {
             console.error("User errors:", userErrors);
             return { userErrors };
         }
+
         return data.orderCreate.order.id;
     } catch (err) {
         console.error("Request failed:", err);
         return { error: "Failed to create order" };
     }
 };
+
 const draftOrderCalculateMutation = `
 mutation CalculateDraftOrder($input: DraftOrderInput!) {
     draftOrderCalculate(input: $input) {
@@ -226,6 +262,7 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
 export const calculateDraftOrder = async (payload: Payload) => {
     const { lineItems, deliveryDetails } = payload;
     const { shippingAddress, email } = deliveryDetails;
+
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
             const byobIndex = item.attributes.findIndex(
@@ -234,6 +271,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
             const discountedPrice = item.attributes.find(
                 (attr) => attr.key === "__totalByob",
             )?.value;
+
             if (
                 byobIndex !== -1 &&
                 discountedPrice &&
@@ -243,10 +281,12 @@ export const calculateDraftOrder = async (payload: Payload) => {
                     const products: Array<any> = JSON.parse(
                         item.attributes[byobIndex].value,
                     );
+
                     const productItems = products.map((product: any) => ({
                         variantId: `gid://shopify/ProductVariant/${product.id}`,
                         quantity: product.quantity,
                     }));
+
                     return [
                         {
                             variantId: item.variantId,
@@ -265,6 +305,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
                 }
             }
         }
+
         // Default case
         return [
             {
@@ -273,6 +314,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
             },
         ];
     });
+
     const draftOrder = {
         discountCodes: payload.discountCodes ?? [],
         lineItems: cartItems,
@@ -286,6 +328,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
         },
         useCustomerDefaultAddress: false,
     };
+
     try {
         const { data, errors } = await client.request(
             draftOrderCalculateMutation,
@@ -293,10 +336,12 @@ export const calculateDraftOrder = async (payload: Payload) => {
                 variables: { input: draftOrder },
             },
         );
+
         if (errors) {
             console.error("GraphQL Errors:", errors);
             return { error: errors };
         }
+
         // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return { data };
     } catch (err) {
@@ -304,6 +349,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
         return { error: err };
     }
 };
+
 const finalAmountMutation = `
 mutation CalculateDraftOrder($input: DraftOrderInput!) {
     draftOrderCalculate(input: $input) {
@@ -340,9 +386,11 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
     }
 }
 `;
+
 export const calculateFinalAmount = async (payload: Payload) => {
     const { lineItems, deliveryDetails } = payload;
     const { shippingAddress, email } = deliveryDetails;
+
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
             const byobIndex = item.attributes.findIndex(
@@ -351,6 +399,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
             const discountedPrice = item.attributes.find(
                 (attr) => attr.key === "__totalByob",
             )?.value;
+
             if (
                 byobIndex !== -1 &&
                 discountedPrice &&
@@ -360,10 +409,12 @@ export const calculateFinalAmount = async (payload: Payload) => {
                     const products: Array<any> = JSON.parse(
                         item.attributes[byobIndex].value,
                     );
+
                     const productItems = products.map((product: any) => ({
                         variantId: `gid://shopify/ProductVariant/${product.id}`,
                         quantity: product.quantity,
                     }));
+
                     return [
                         {
                             variantId: item.variantId,
@@ -382,6 +433,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
                 }
             }
         }
+
         // Default case
         return [
             {
@@ -390,6 +442,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
             },
         ];
     });
+
     const draftOrder = {
         discountCodes: payload.discountCodes ?? [],
         lineItems: cartItems,
@@ -403,6 +456,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
         },
         useCustomerDefaultAddress: false,
     };
+
     try {
         const { data, errors } = await client.request(
             draftOrderCalculateMutation,
@@ -410,10 +464,12 @@ export const calculateFinalAmount = async (payload: Payload) => {
                 variables: { input: draftOrder },
             },
         );
+
         if (errors) {
             console.error("GraphQL Errors:", errors);
             return { error: errors };
         }
+
         // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return { data: data.draftOrderCalculate.calculatedDraftOrder };
     } catch (err) {
