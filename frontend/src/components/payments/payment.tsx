@@ -117,7 +117,13 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                         Number(finalAmount.data)
                     );
                     console.log("original amount", newPayload.amount);
-                    if (finalAmount.data) {
+
+                    // Shopify's /finalize returns the amount in CAD (shopMoney).
+                    // For CAD carts, use that validated amount.
+                    // For USD carts, KEEP the cart's USD amount — otherwise we'd
+                    // overwrite the customer's USD total with the CAD equivalent
+                    // and charge them in CAD when they expected USD.
+                    if (finalAmount.data && currency === "cad") {
                         newPayload.amount = Math.round(
                             (Number(finalAmount.data) + totalShipping) * 100
                         );
