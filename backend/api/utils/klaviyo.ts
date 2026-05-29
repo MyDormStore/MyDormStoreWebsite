@@ -89,6 +89,10 @@ export async function trackKlaviyoEvent(
                 response.status,
                 errorBody
             );
+        } else {
+            console.log(
+                `Klaviyo event "${opts.eventName}" sent for ${opts.email} (status ${response.status})`
+            );
         }
     } catch (err) {
         // Catch network errors etc — never throw
