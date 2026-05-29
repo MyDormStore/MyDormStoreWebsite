@@ -2,7 +2,6 @@ type ProductImage = {
     id?: string;
     url?: string;
 };
-
 type ProductVariant = {
     id: string;
     title: string;
@@ -11,7 +10,6 @@ type ProductVariant = {
     };
     metafields: Metafields;
 };
-
 export interface ShopifyProductsType {
     id: string;
     onlineStoreUrl: string;
@@ -24,7 +22,6 @@ export interface ShopifyProductsType {
     };
     metafields: Metafields;
 }
-
 export interface ShopifyProductsData {
     products: {
         edges: {
@@ -32,12 +29,12 @@ export interface ShopifyProductsData {
         }[];
     };
 }
-
 export type Cart = {
     id: string;
     cost: {
         totalAmount: {
             amount: string;
+            currencyCode: string;
         };
     };
     discountCodes: [
@@ -51,7 +48,6 @@ export type Cart = {
     };
     totalQuantity: number;
 };
-
 export type CartLine = {
     id: string;
     attributes?: {
@@ -74,7 +70,6 @@ export type CartLine = {
         };
     };
 };
-
 export type Metafields = [
     {
         id: string;
