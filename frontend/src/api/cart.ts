@@ -1,6 +1,5 @@
 import { Cart } from "@/types/shopify";
 import { client } from "./client";
-
 const cartResponse = `
     id
     totalQuantity
@@ -11,6 +10,7 @@ const cartResponse = `
     cost {
       totalAmount {
         amount
+        currencyCode
       }
     }
     lines(first: 250) {
@@ -72,7 +72,6 @@ const cartResponse = `
       }
     }
 `;
-
 const cartQuery = `
 query GetCart($cartId: ID!) {
   cart(id: $cartId) {
@@ -80,7 +79,6 @@ query GetCart($cartId: ID!) {
   }
 }
 `;
-
 export const getCart = async (cartId: string) => {
     try {
         const { data, errors } = await client.request(cartQuery, {
@@ -88,18 +86,15 @@ export const getCart = async (cartId: string) => {
                 cartId: cartId,
             },
         });
-
         if (errors) {
             throw errors;
         }
-
         return data.cart as Cart;
     } catch (err) {
         console.error(err);
         return {} as Cart;
     }
 };
-
 const changeItemQuery = `
 mutation UpdateCartLine($cartId: ID!, $id: ID!, $quantity: Int!) {
   cartLinesUpdate(
@@ -115,7 +110,6 @@ mutation UpdateCartLine($cartId: ID!, $id: ID!, $quantity: Int!) {
 }
 }
 `;
-
 export const updateProductQuantity = async (
     id: string,
     quantity: number,
@@ -129,18 +123,15 @@ export const updateProductQuantity = async (
                 quantity: quantity,
             },
         });
-
         if (errors) {
             throw errors;
         }
-
         return data.cartLinesUpdate.cart as Cart;
     } catch (err) {
         console.error(err);
         return null;
     }
 };
-
 const addProductQuery = `
 mutation AddCartLine($cartId: ID!, $id: ID!) {
   cartLinesAdd(
@@ -155,7 +146,6 @@ mutation AddCartLine($cartId: ID!, $id: ID!) {
 }
 }
 `;
-
 export const addProductToCart = async (id: string, cartId: string) => {
     try {
         const { data, errors } = await client.request(addProductQuery, {
@@ -164,18 +154,15 @@ export const addProductToCart = async (id: string, cartId: string) => {
                 id: id,
             },
         });
-
         if (errors) {
             throw errors;
         }
-
         return data.cartLinesAdd.cart as Cart;
     } catch (err) {
         console.error(err);
         return null;
     }
 };
-
 const removeProductQuery = `
 mutation removeCartLines($cartId: ID!, $lineIds: [ID!]!) {
   cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
@@ -185,7 +172,6 @@ mutation removeCartLines($cartId: ID!, $lineIds: [ID!]!) {
 }
 }
 `;
-
 export const removeProductFromCart = async (id: string[], cartId: string) => {
     try {
         const { data, errors } = await client.request(removeProductQuery, {
@@ -194,18 +180,15 @@ export const removeProductFromCart = async (id: string[], cartId: string) => {
                 lineIds: id,
             },
         });
-
         if (errors) {
             throw errors;
         }
-
         return data.cartLinesRemove.cart as Cart;
     } catch (err) {
         console.error(err);
         return null;
     }
 };
-
 const applyDiscountQuery = `
 mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]!) {
   cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
@@ -219,7 +202,6 @@ mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]!) {
   }
 }
 `;
-
 export const applyDiscountCode = async (
     cartId: string,
     discountCode: string
@@ -231,13 +213,10 @@ export const applyDiscountCode = async (
                 discountCodes: [discountCode],
             },
         });
-
         if (errors) {
             throw errors;
         }
-
         console.log(data);
-
         return data.cartDiscountCodesUpdate.cart as Cart;
     } catch (err) {
         console.error(err);
