@@ -2161,6 +2161,7 @@ export type DormGroups =
     | "All"
     | "TwinOnly"
     | "DoubleOnly"
+    | "QueenOnly"  
     | "BothSizes"
     | "MPRequired"
     | "MPTwin"
@@ -2450,6 +2451,9 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Tamarack House",
 "THEO",
     ],
+     QueenOnly: [
+   "Carrefour Sherbrooke",
+          ],
     BothSizes: [
         "1Eleven",
 "308 King",
