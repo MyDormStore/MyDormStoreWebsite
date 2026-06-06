@@ -1,7 +1,8 @@
-import { ChevronLeft, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ShoppingCart, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import CheckoutLayout from "./components/layout/checkout-layout";
 import { Button } from "./components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 // import { products } from "./data/products";
 import { getCart } from "./api/cart";
 import { getProducts, getProductsByDorm } from "./api/products";
@@ -26,18 +27,14 @@ import { useParams, useSearchParams } from "react-router";
 import { MissingProducts } from "./components/missing-products";
 import { useFormStore } from "./core/form";
 import { checkGroupFromDorm } from "./lib/dorm-details";
-
 export default function App() {
     const [cart, setCart] = useState<Cart | null>(null);
-
     const [dorm, setDorm] = useState("");
     const [shippingCost, setShippingCost] = useState(0);
     const [taxLines, setTaxLines] = useState<any[]>([]);
-
-    const [products, setProducts] = useState<
+    const [products, setProducts] = useState
         ShopifyProductsData["products"]["edges"]
     >([]);
-
     /* 
         The website would load the cart and products on page load
         and then filter the products by the dorm selected
@@ -45,20 +42,15 @@ export default function App() {
         The dorm would be used to filter the products by the metafields of the variants/products
         The shipping cost and tax lines would be used to display the total cost of the cart
         The products would be used to display the recommended products based on the dorm selected
-
-
         to get the cartID, we can use the URL params
         and then use the cartID to get the cart from the API
     
     */
-
     const { cartID } = useParams();
     const [searchParams] = useSearchParams();
-
     /* 
         The website should get the cart and the products on page load
         with the products loaded, the dorm state should filter the list by the metafields of the variants/products
-
         * Only one API call -> filter the array and make shadow copy
     
     */
@@ -76,17 +68,14 @@ export default function App() {
         };
         fetchAPI();
     }, [cartID]);
-
     /* 
         For the required products, we can filter the products by the dorm selected
         and then filter the variants by the metafields of the variants/products
-
         Using the filtered list, we can display the list of products that are required that are missing from the cart by checking the cart lines
         variants and the metafields of the variants/products from the recommended products
     
     
     */
-
     const requiredProducts = products.filter((product) => {
         // filter the products that are assigned and then filter the variants
         // if (dorm) {
@@ -107,7 +96,6 @@ export default function App() {
         //     return true;
         // }
     });
-
     const recommendedProducts = products.filter((product) => {
         // filter the products that are assigned and then filter the variants
         // if (dorm) {
@@ -128,21 +116,45 @@ export default function App() {
         //     return true;
         // }
     });
-
     const notInCart = useFormStore((state) => state.notInCart);
     const addNotInCart = useFormStore((state) => state.addNotInCart);
     const orderType = useFormStore((state) => state.orderType);
 
+    // Scan cart for any variants flagged as not-allowed for this residence.
+    // Driven entirely by the Shopify metafield: dorm.not-allowed (index [2]) on each variant.
+    // To restrict a product from a residence group, just set this metafield in Shopify — no code changes needed.
+    const restrictedItems =
+        dorm && cart
+            ? Array.from(
+                  new Set(
+                      cart.lines.nodes
+                          .filter((line) => {
+                              const notAllowed =
+                                  line.merchandise.metafields?.[2];
+                              if (!notAllowed?.value) return false;
+                              return (
+                                  checkGroupFromDorm(
+                                      notAllowed.value
+                                          .replace(/^\[|\]$/g, "")
+                                          .replace(/^\"|\"$/g, "")
+                                          .split(",") as DormGroups[],
+                                      dorm
+                                  ) || notAllowed.value.includes(dorm)
+                              );
+                          })
+                          .map((line) => line.merchandise.product.title)
+                  )
+              )
+            : [];
+    const showRestrictedAlert = restrictedItems.length > 0;
+
     useEffect(() => {
         const missingProducts: string[] = [];
-
         if (cart && dorm) {
             requiredProducts.forEach((product) => {
                 const productVariants = product.node.variants.edges;
-
                 const isInCart = productVariants.some((variant) => {
                     const variantId = variant.node.id;
-
                     if (variant.node.title !== "Default Title") {
                         const hasDorm =
                             variant.node.metafields &&
@@ -157,15 +169,12 @@ export default function App() {
                                 variant.node.metafields[0].value.includes(
                                     dorm
                                 ));
-
                         if (!hasDorm) return false;
                     }
-
                     return cart.lines.nodes.some(
                         (line) => line.merchandise.id === variantId
                     );
                 });
-
                 if (!isInCart) {
                     const disclaimer = product.node.title;
                     missingProducts.push(disclaimer);
@@ -174,7 +183,6 @@ export default function App() {
         }
         addNotInCart(missingProducts);
     }, [cart, dorm]);
-
     if (!cartID) return;
     return (
         <CartContextProvider value={{ cart, setCart }}>
@@ -202,14 +210,29 @@ export default function App() {
                                     Shopping Cart
                                 </h1>
                             </div>
-
                             <SelectOrderType />
-
                             <div className="grid gap-4">
                                 <SelectDorm dorm={dorm} setDorm={setDorm} />
-
                                 {orderType === "move-in" && notInCart.length > 0 && (
                                     <MissingProducts products={notInCart} />
+                                )}
+                                {showRestrictedAlert && (
+                                    <Alert variant="destructive">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertTitle>
+                                            Some items aren't allowed at your
+                                            residence
+                                        </AlertTitle>
+                                        <AlertDescription>
+                                            Please remove the following from your
+                                            cart before checking out:
+                                            <ul className="list-disc list-inside mt-2">
+                                                {restrictedItems.map((name) => (
+                                                    <li key={name}>{name}</li>
+                                                ))}
+                                            </ul>
+                                        </AlertDescription>
+                                    </Alert>
                                 )}
                             </div>
                             <ProductTable dorm={dorm} products={products} />
@@ -236,7 +259,6 @@ export default function App() {
                                             .map((value) => {
                                                 const data =
                                                     value.node as ShopifyProductsType;
-
                                                 return [
                                                     data.variants.edges.filter(
                                                         (product) => {
@@ -270,7 +292,6 @@ export default function App() {
                                                                         )
                                                                     );
                                                                 }
-
                                                                 if (
                                                                     product.node
                                                                         .metafields[0] !==
