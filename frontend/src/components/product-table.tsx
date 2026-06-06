@@ -134,9 +134,9 @@ export function ProductTable({
                                                 side="bottom"
                                             >
                                                 <h1 className="text-center w-full font-bold">
-                                                    Incorrect bedding size for
+                                                    Incorrect for
                                                     your residence. Please
-                                                    update to the required size:
+                                                    update to the correct item:
                                                 </h1>
                                                 {[
                                                     recommendedProductVariants[0],
@@ -352,10 +352,9 @@ export function ProductTable({
                                                     side="right"
                                                 >
                                                     <h1 className="text-center w-full font-bold">
-                                                        Incorrect bedding size
-                                                        for your residence.
+                                                        Incorrect for your residence.
                                                         Please update to the
-                                                        required size:
+                                                        correct item:
                                                     </h1>
                                                     {[
                                                         recommendedProductVariants[0],
