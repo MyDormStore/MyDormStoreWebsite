@@ -226,7 +226,7 @@ export default function App() {
                                 )}
                                 {showRestrictedAlert && (
                                     <Alert>
-                                        <CircleAlert className="w-4 h-4 text-error" />
+                                        <CircleAlert className="w-4 h-4 !text-error" />
                                         <AlertTitle className="text-error line-clamp-none">
                                             Check your cart — some items need
                                             attention
