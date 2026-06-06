@@ -339,11 +339,6 @@ export const dormSelectList: dormSelectListType[] = [
         school: "University of Alberta",
     },
     {
-        key: "University of Alberta Bookstore",
-        label: "University of Alberta Bookstore",
-        school: "University of Alberta",
-    },
-    {
         key: "Elsey's House",
         label: "Elsey's House",
         school: "University of Alberta",
@@ -658,16 +653,6 @@ export const dormSelectList: dormSelectListType[] = [
         key: "Maisonville Yards",
         label: "Maisonville Yards",
         school: "Western University",
-    },
-    {
-        key: "Wilfrid Laurier University HawkShop (Waterloo)",
-        label: "Wilfrid Laurier University HawkShop (Waterloo)",
-        school: "Wilfrid Laurier University",
-    },
-    {
-        key: "Wilfrid Laurier University HawkShop (Brantford)",
-        label: "Wilfrid Laurier University HawkShop (Brantford)",
-        school: "Wilfrid Laurier University",
     },
     {
         key: "MyRez on Lester (181 Lester)",
