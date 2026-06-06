@@ -227,7 +227,7 @@ export default function App() {
                                 {showRestrictedAlert && (
                                     <Alert>
                                         <CircleAlert className="w-4 h-4 text-orange-500" />
-                                        <AlertTitle>
+                                        <AlertTitle className="text-error line-clamp-none">
                                             Check your cart — some items may
                                             need to be updated for your
                                             residence. Tap the orange ⚠ icon
@@ -238,12 +238,7 @@ export default function App() {
                                         <AlertDescription>
                                             <ul className="list-disc pl-5">
                                                 {restrictedItems.map((name) => (
-                                                    <li
-                                                        key={name}
-                                                        className="text-error"
-                                                    >
-                                                        {name}
-                                                    </li>
+                                                    <li key={name}>{name}</li>
                                                 ))}
                                             </ul>
                                         </AlertDescription>
