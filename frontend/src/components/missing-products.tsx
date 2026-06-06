@@ -4,7 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 export function MissingProducts({ products }: { products: string[] }) {
     return (
         <Alert>
-            <CircleAlert className="w-4 h-4 text-orange-500" />
+            <CircleAlert className="w-4 h-4 text-error" />
 
             <AlertTitle className="text-error line-clamp-none">
                 Products are missing from your cart. Please check the following
