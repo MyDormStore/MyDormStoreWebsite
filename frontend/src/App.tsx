@@ -226,16 +226,18 @@ export default function App() {
                                 )}
                                 {showRestrictedAlert && (
                                     <Alert>
-                                        <CircleAlert className="w-4 h-4 text-orange-500" />
+                                        <CircleAlert className="w-4 h-4 text-error" />
                                         <AlertTitle className="text-error line-clamp-none">
-                                            Check your cart — some items may
-                                            need to be updated for your
-                                            residence. Tap the orange ⚠ icon
-                                            next to each item to swap it for
-                                            the correct option, or remove items
-                                            that don't apply.
+                                            Check your cart — some items need
+                                            attention
                                         </AlertTitle>
                                         <AlertDescription>
+                                            <p>
+                                                Tap the orange ⚠ icon next to
+                                                each item to swap it for the
+                                                correct option, or remove items
+                                                that don't apply.
+                                            </p>
                                             <ul className="list-disc pl-5">
                                                 {restrictedItems.map((name) => (
                                                     <li key={name}>{name}</li>
