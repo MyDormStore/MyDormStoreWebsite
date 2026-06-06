@@ -28,13 +28,11 @@ import { MissingProducts } from "./components/missing-products";
 import { useFormStore } from "./core/form";
 import { checkGroupFromDorm } from "./lib/dorm-details";
 export default function App() {
-    const [cart, setCart] = useState<Cart | null>(null);
-    const [dorm, setDorm] = useState("");
-    const [shippingCost, setShippingCost] = useState(0);
-    const [taxLines, setTaxLines] = useState<any[]>([]);
-    const [products, setProducts] = useState
-        ShopifyProductsData["products"]["edges"]
-    >([]);
+   const [cart, setCart] = useState<Cart | null>(null);
+const [dorm, setDorm] = useState("");
+const [shippingCost, setShippingCost] = useState(0);
+const [taxLines, setTaxLines] = useState<any[]>([]);
+const [products, setProducts] = useState<ShopifyProductsData["products"]["edges"]>([]);
     /* 
         The website would load the cart and products on page load
         and then filter the products by the dorm selected
