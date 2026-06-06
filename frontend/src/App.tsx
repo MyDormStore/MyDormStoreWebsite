@@ -29,22 +29,33 @@ import { useFormStore } from "./core/form";
 import { checkGroupFromDorm } from "./lib/dorm-details";
 
 // Parse a Shopify list-metafield value safely.
-// Handles proper JSON arrays from Shopify (e.g. '["TwinOnly","QueenOnly"]')
-// as well as legacy comma-separated values. Strips quotes and whitespace.
+// Handles every format we've seen: proper JSON arrays, plain comma-separated
+// strings, AND list entries that themselves contain comma-separated values.
 const parseMetafieldGroups = (value: string | undefined): DormGroups[] => {
     if (!value) return [];
+    let raw: string[] = [];
     try {
         const parsed = JSON.parse(value);
         if (Array.isArray(parsed)) {
-            return parsed.map((s) => String(s).trim()) as DormGroups[];
+            raw = parsed.map((s) => String(s));
+        } else {
+            raw = [String(parsed)];
         }
     } catch {
-        // fall through to manual parsing
+        raw = value
+            .replace(/^\[|\]$/g, "")
+            .split(",")
+            .map((s) => s.replace(/^"|"$/g, ""));
     }
-    return value
-        .replace(/^\[|\]$/g, "")
-        .split(",")
-        .map((s) => s.trim().replace(/^"|"$/g, "")) as DormGroups[];
+    // Each entry might itself be a comma-separated string of groups
+    const flattened: string[] = [];
+    raw.forEach((entry) => {
+        entry.split(",").forEach((group) => {
+            const trimmed = group.trim();
+            if (trimmed) flattened.push(trimmed);
+        });
+    });
+    return flattened as DormGroups[];
 };
 
 export default function App() {
@@ -124,7 +135,6 @@ export default function App() {
 
     // Scan cart for any variants flagged as not-allowed for this residence.
     // Driven entirely by the Shopify metafield: dorm.not-allowed (index [2]) on each variant.
-    // To restrict a product from a residence group, just set this metafield in Shopify — no code changes needed.
     const restrictedItems =
         dorm && cart
             ? Array.from(
