@@ -27,6 +27,26 @@ import { useParams, useSearchParams } from "react-router";
 import { MissingProducts } from "./components/missing-products";
 import { useFormStore } from "./core/form";
 import { checkGroupFromDorm } from "./lib/dorm-details";
+
+// Parse a Shopify list-metafield value safely.
+// Handles proper JSON arrays from Shopify (e.g. '["TwinOnly","QueenOnly"]')
+// as well as legacy comma-separated values. Strips quotes and whitespace.
+const parseMetafieldGroups = (value: string | undefined): DormGroups[] => {
+    if (!value) return [];
+    try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+            return parsed.map((s) => String(s).trim()) as DormGroups[];
+        }
+    } catch {
+        // fall through to manual parsing
+    }
+    return value
+        .replace(/^\[|\]$/g, "")
+        .split(",")
+        .map((s) => s.trim().replace(/^"|"$/g, "")) as DormGroups[];
+};
+
 export default function App() {
     const [cart, setCart] = useState<Cart | null>(null);
     const [dorm, setDorm] = useState("");
@@ -75,44 +95,28 @@ export default function App() {
     
     */
     const requiredProducts = products.filter((product) => {
-        // filter the products that are assigned and then filter the variants
-        // if (dorm) {
         if (product.node.metafields && product.node.metafields[0] !== null) {
             const hasDorm =
                 checkGroupFromDorm(
-                    product.node.metafields[0].value
-                        .replace(/^\[|\]$/g, "")
-                        .replace(/^\"|\"$/g, "")
-                        .split(",") as DormGroups[],
+                    parseMetafieldGroups(product.node.metafields[0].value),
                     dorm
                 ) || product.node.metafields[0].value.includes(dorm);
             return hasDorm;
         } else {
             return false;
         }
-        // } else {
-        //     return true;
-        // }
     });
     const recommendedProducts = products.filter((product) => {
-        // filter the products that are assigned and then filter the variants
-        // if (dorm) {
         if (product.node.metafields && product.node.metafields[1] !== null) {
             const hasDorm =
                 checkGroupFromDorm(
-                    product.node.metafields[1].value
-                        .replace(/^\[|\]$/g, "")
-                        .replace(/^\"|\"$/g, "")
-                        .split(",") as DormGroups[],
+                    parseMetafieldGroups(product.node.metafields[1].value),
                     dorm
                 ) || product.node.metafields[1].value.includes(dorm);
             return hasDorm;
         } else {
             return false;
         }
-        // } else {
-        //     return true;
-        // }
     });
     const notInCart = useFormStore((state) => state.notInCart);
     const addNotInCart = useFormStore((state) => state.addNotInCart);
@@ -132,10 +136,7 @@ export default function App() {
                               if (!notAllowed?.value) return false;
                               return (
                                   checkGroupFromDorm(
-                                      notAllowed.value
-                                          .replace(/^\[|\]$/g, "")
-                                          .replace(/^\"|\"$/g, "")
-                                          .split(",") as DormGroups[],
+                                      parseMetafieldGroups(notAllowed.value),
                                       dorm
                                   ) || notAllowed.value.includes(dorm)
                               );
@@ -158,10 +159,9 @@ export default function App() {
                             variant.node.metafields &&
                             variant.node.metafields[0] !== null &&
                             (checkGroupFromDorm(
-                                variant.node.metafields[0].value
-                                    .replace(/^\[|\]$/g, "")
-                                    .replace(/^\"|\"$/g, "")
-                                    .split(",") as DormGroups[],
+                                parseMetafieldGroups(
+                                    variant.node.metafields[0].value
+                                ),
                                 dorm
                             ) ||
                                 variant.node.metafields[0].value.includes(
@@ -217,15 +217,13 @@ export default function App() {
                                 {showRestrictedAlert && (
                                     <Alert variant="destructive">
                                         <AlertTriangle className="h-4 w-4" />
-                                        <AlertTitle>
-                                            Check your cart — some items need attention
-                                        </AlertTitle>
+                                        <AlertTitle>Check your cart</AlertTitle>
                                         <AlertDescription>
-                                            The following items may be the wrong size
-                                            for your residence, or not allowed. Tap the
-                                            orange ⚠ icon next to each item to see the
-                                            correct option, or remove items that aren't
-                                            needed:
+                                            Some items may need to be updated
+                                            for your residence. Tap the orange
+                                            ⚠ icon next to each item to swap it
+                                            for the correct option, or remove
+                                            items that don't apply.
                                             <ul className="list-disc list-inside mt-2">
                                                 {restrictedItems.map((name) => (
                                                     <li key={name}>{name}</li>
@@ -273,18 +271,12 @@ export default function App() {
                                                                 ) {
                                                                     return !(
                                                                         checkGroupFromDorm(
-                                                                            product.node.metafields[2].value
-                                                                                .replace(
-                                                                                    /^\[|\]$/g,
-                                                                                    ""
-                                                                                )
-                                                                                .replace(
-                                                                                    /^\"|\"$/g,
-                                                                                    ""
-                                                                                )
-                                                                                .split(
-                                                                                    ","
-                                                                                ) as DormGroups[],
+                                                                            parseMetafieldGroups(
+                                                                                product
+                                                                                    .node
+                                                                                    .metafields[2]
+                                                                                    .value
+                                                                            ),
                                                                             dorm
                                                                         ) ||
                                                                         product.node.metafields[2].value.includes(
@@ -299,18 +291,12 @@ export default function App() {
                                                                 ) {
                                                                     return (
                                                                         checkGroupFromDorm(
-                                                                            product.node.metafields[0].value
-                                                                                .replace(
-                                                                                    /^\[|\]$/g,
-                                                                                    ""
-                                                                                )
-                                                                                .replace(
-                                                                                    /^\"|\"$/g,
-                                                                                    ""
-                                                                                )
-                                                                                .split(
-                                                                                    ","
-                                                                                ) as DormGroups[],
+                                                                            parseMetafieldGroups(
+                                                                                product
+                                                                                    .node
+                                                                                    .metafields[0]
+                                                                                    .value
+                                                                            ),
                                                                             dorm
                                                                         ) ||
                                                                         product.node.metafields[0].value.includes(
@@ -325,18 +311,12 @@ export default function App() {
                                                                 ) {
                                                                     return (
                                                                         checkGroupFromDorm(
-                                                                            product.node.metafields[1].value
-                                                                                .replace(
-                                                                                    /^\[|\]$/g,
-                                                                                    ""
-                                                                                )
-                                                                                .replace(
-                                                                                    /^\"|\"$/g,
-                                                                                    ""
-                                                                                )
-                                                                                .split(
-                                                                                    ","
-                                                                                ) as DormGroups[],
+                                                                            parseMetafieldGroups(
+                                                                                product
+                                                                                    .node
+                                                                                    .metafields[1]
+                                                                                    .value
+                                                                            ),
                                                                             dorm
                                                                         ) ||
                                                                         product.node.metafields[1].value.includes(
