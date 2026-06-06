@@ -6,7 +6,7 @@ export function MissingProducts({ products }: { products: string[] }) {
         <Alert>
             <CircleAlert className="w-4 h-4 text-orange-500" />
 
-            <AlertTitle>
+            <AlertTitle className="text-error line-clamp-none">
                 Products are missing from your cart. Please check the following
                 items:
             </AlertTitle>
@@ -14,7 +14,7 @@ export function MissingProducts({ products }: { products: string[] }) {
                 {products.length > 0 && (
                     <ul className="list-disc pl-5">
                         {products.map((product, index) => (
-                            <li key={index} className="text-error">
+                            <li key={index}>
                                 Required product "{product}" is not in the cart.
                             </li>
                         ))}
