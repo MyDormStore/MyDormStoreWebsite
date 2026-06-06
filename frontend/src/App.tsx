@@ -28,11 +28,11 @@ import { MissingProducts } from "./components/missing-products";
 import { useFormStore } from "./core/form";
 import { checkGroupFromDorm } from "./lib/dorm-details";
 export default function App() {
-   const [cart, setCart] = useState<Cart | null>(null);
-const [dorm, setDorm] = useState("");
-const [shippingCost, setShippingCost] = useState(0);
-const [taxLines, setTaxLines] = useState<any[]>([]);
-const [products, setProducts] = useState<ShopifyProductsData["products"]["edges"]>([]);
+    const [cart, setCart] = useState<Cart | null>(null);
+    const [dorm, setDorm] = useState("");
+    const [shippingCost, setShippingCost] = useState(0);
+    const [taxLines, setTaxLines] = useState<any[]>([]);
+    const [products, setProducts] = useState<ShopifyProductsData["products"]["edges"]>([]);
     /* 
         The website would load the cart and products on page load
         and then filter the products by the dorm selected
@@ -218,12 +218,14 @@ const [products, setProducts] = useState<ShopifyProductsData["products"]["edges"
                                     <Alert variant="destructive">
                                         <AlertTriangle className="h-4 w-4" />
                                         <AlertTitle>
-                                            Some items aren't allowed at your
-                                            residence
+                                            Check your cart — some items need attention
                                         </AlertTitle>
                                         <AlertDescription>
-                                            Please remove the following from your
-                                            cart before checking out:
+                                            The following items may be the wrong size
+                                            for your residence, or not allowed. Tap the
+                                            orange ⚠ icon next to each item to see the
+                                            correct option, or remove items that aren't
+                                            needed:
                                             <ul className="list-disc list-inside mt-2">
                                                 {restrictedItems.map((name) => (
                                                     <li key={name}>{name}</li>
