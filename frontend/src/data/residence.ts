@@ -2154,7 +2154,7 @@ export type DormGroups =
     | "MPBoth"
     | "SCRequired"
     | "Apartment"
-    | "Kitchen";
+    | "Kitchen"
     | "NoDoorDecor";
 
 export const dormGroupsList: Record<DormGroups, string[]> = {
