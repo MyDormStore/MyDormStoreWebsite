@@ -147,7 +147,7 @@ export function ProductTable({
                                 {hasAlternative && (
                                     <Popover>
                                         <PopoverTrigger>
-                                            <CircleAlert className="w-4 h-4 text-orange-500 -mr-4" />
+                                            <CircleAlert className="w-5 h-5 text-orange-500 -mr-4" />
                                         </PopoverTrigger>
                                         <PopoverContent
                                             className="flex flex-col gap-1"
@@ -235,7 +235,7 @@ export function ProductTable({
                                 {showRemoveOnlyIcon && (
                                     <Popover>
                                         <PopoverTrigger>
-                                            <Ban className="w-4 h-4 text-red-500 -mr-4" />
+                                            <Ban className="w-5 h-5 text-red-500 -mr-4" />
                                         </PopoverTrigger>
                                         <PopoverContent
                                             className="flex flex-col gap-2"
@@ -378,7 +378,7 @@ export function ProductTable({
                                     {hasAlternative && (
                                         <Popover>
                                             <PopoverTrigger>
-                                                <CircleAlert className="w-4 h-4 text-orange-500" />
+                                                <CircleAlert className="w-5 h-5 text-orange-500" />
                                             </PopoverTrigger>
                                             <PopoverContent
                                                 className="flex flex-col gap-1 w-full"
@@ -475,7 +475,7 @@ export function ProductTable({
                                     {showRemoveOnlyIcon && (
                                         <Popover>
                                             <PopoverTrigger>
-                                                <Ban className="w-4 h-4 text-red-500" />
+                                                <Ban className="w-5 h-5 text-red-500" />
                                             </PopoverTrigger>
                                             <PopoverContent
                                                 className="flex flex-col gap-2 w-full"
