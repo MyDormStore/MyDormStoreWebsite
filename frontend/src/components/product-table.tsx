@@ -30,21 +30,33 @@ import { checkGroupFromDorm } from "@/lib/dorm-details";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // Parse a Shopify list-metafield value safely.
-// Handles proper JSON arrays from Shopify as well as legacy comma-separated values.
+// Handles every format we've seen: proper JSON arrays, plain comma-separated
+// strings, AND list entries that themselves contain comma-separated values.
 const parseMetafieldGroups = (value: string | undefined): DormGroups[] => {
     if (!value) return [];
+    let raw: string[] = [];
     try {
         const parsed = JSON.parse(value);
         if (Array.isArray(parsed)) {
-            return parsed.map((s) => String(s).trim()) as DormGroups[];
+            raw = parsed.map((s) => String(s));
+        } else {
+            raw = [String(parsed)];
         }
     } catch {
-        // fall through
+        raw = value
+            .replace(/^\[|\]$/g, "")
+            .split(",")
+            .map((s) => s.replace(/^"|"$/g, ""));
     }
-    return value
-        .replace(/^\[|\]$/g, "")
-        .split(",")
-        .map((s) => s.trim().replace(/^"|"$/g, "")) as DormGroups[];
+    // Each entry might itself be a comma-separated string of groups
+    const flattened: string[] = [];
+    raw.forEach((entry) => {
+        entry.split(",").forEach((group) => {
+            const trimmed = group.trim();
+            if (trimmed) flattened.push(trimmed);
+        });
+    });
+    return flattened as DormGroups[];
 };
 
 export function ProductTable({
