@@ -2148,6 +2148,8 @@ export type DormGroups =
     | "DoubleOnly"
     | "QueenOnly"  
     | "BothSizes"
+    | "TwinQueen"
+    | "DoubleQueen"
     | "MPRequired"
     | "MPTwin"
     | "MPDouble"
@@ -2458,9 +2460,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Hazelview",
 "Hingston Hall",
 "King Street Towers",
-"La Citadelle",
 "Loretto College",
-"New Residence Hall",
 "Oak House",
 "Okanagan - Kelowna",
 "Okanagan - Vernon",
@@ -2483,6 +2483,12 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Wilfrid Laurier University HawkShop (Waterloo)",
 "Woodroffe Place",
     ],
+     TwinQueen: [
+   "La Citadelle",
+          ],
+     DoubleQueen: [
+   "New Residence Hall",
+          ],
     MPRequired: [
     "17Hundred",
 "1Eleven",
