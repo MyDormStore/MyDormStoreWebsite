@@ -1,4 +1,4 @@
-import { ChevronLeft, ShoppingCart, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ShoppingCart, CircleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import CheckoutLayout from "./components/layout/checkout-layout";
 import { Button } from "./components/ui/button";
@@ -64,7 +64,7 @@ export default function App() {
     const [shippingCost, setShippingCost] = useState(0);
     const [taxLines, setTaxLines] = useState<any[]>([]);
     const [products, setProducts] = useState<ShopifyProductsData["products"]["edges"]>([]);
-    /* 
+    /*
         The website would load the cart and products on page load
         and then filter the products by the dorm selected
         The cart would be used to display the products in the cart
@@ -73,15 +73,15 @@ export default function App() {
         The products would be used to display the recommended products based on the dorm selected
         to get the cartID, we can use the URL params
         and then use the cartID to get the cart from the API
-    
+
     */
     const { cartID } = useParams();
     const [searchParams] = useSearchParams();
-    /* 
+    /*
         The website should get the cart and the products on page load
         with the products loaded, the dorm state should filter the list by the metafields of the variants/products
         * Only one API call -> filter the array and make shadow copy
-    
+
     */
     useEffect(() => {
         const fetchAPI = async () => {
@@ -97,13 +97,13 @@ export default function App() {
         };
         fetchAPI();
     }, [cartID]);
-    /* 
+    /*
         For the required products, we can filter the products by the dorm selected
         and then filter the variants by the metafields of the variants/products
         Using the filtered list, we can display the list of products that are required that are missing from the cart by checking the cart lines
         variants and the metafields of the variants/products from the recommended products
-    
-    
+
+
     */
     const requiredProducts = products.filter((product) => {
         if (product.node.metafields && product.node.metafields[0] !== null) {
@@ -225,18 +225,25 @@ export default function App() {
                                     <MissingProducts products={notInCart} />
                                 )}
                                 {showRestrictedAlert && (
-                                    <Alert variant="destructive">
-                                        <AlertTriangle className="h-4 w-4" />
-                                        <AlertTitle>Check your cart</AlertTitle>
+                                    <Alert>
+                                        <CircleAlert className="w-4 h-4 text-orange-500" />
+                                        <AlertTitle>
+                                            Check your cart — some items may
+                                            need to be updated for your
+                                            residence. Tap the orange ⚠ icon
+                                            next to each item to swap it for
+                                            the correct option, or remove items
+                                            that don't apply.
+                                        </AlertTitle>
                                         <AlertDescription>
-                                            Some items may need to be updated
-                                            for your residence. Tap the orange
-                                            ⚠ icon next to each item to swap it
-                                            for the correct option, or remove
-                                            items that don't apply.
-                                            <ul className="list-disc list-inside mt-2">
+                                            <ul className="list-disc pl-5">
                                                 {restrictedItems.map((name) => (
-                                                    <li key={name}>{name}</li>
+                                                    <li
+                                                        key={name}
+                                                        className="text-error"
+                                                    >
+                                                        {name}
+                                                    </li>
                                                 ))}
                                             </ul>
                                         </AlertDescription>
