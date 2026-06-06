@@ -233,10 +233,11 @@ export default function App() {
                                         </AlertTitle>
                                         <AlertDescription>
                                             <p>
-                                                Tap the orange ⚠ icon next to
-                                                each item to swap it for the
-                                                correct option, or remove items
-                                                that don't apply.
+                                                Tap the orange{" "}
+                                                <CircleAlert className="inline w-4 h-4 text-orange-500 align-text-bottom" />{" "}
+                                                icon next to each item to swap
+                                                it for the correct option, or
+                                                remove items that don't apply.
                                             </p>
                                             <ul className="list-disc pl-5">
                                                 {restrictedItems.map((name) => (
