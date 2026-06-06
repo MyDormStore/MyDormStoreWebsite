@@ -2155,6 +2155,7 @@ export type DormGroups =
     | "SCRequired"
     | "Apartment"
     | "Kitchen";
+    | "NoDoorDecor";
 
 export const dormGroupsList: Record<DormGroups, string[]> = {
     All: [
@@ -2915,4 +2916,31 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Wilfrid Laurier University HawkShop (Waterloo)",
 "Woodroffe Place",
 ],
+     NoDoorDecor: [
+        "506 Pins", 
+         "510 Pins", 
+         "522 Pins",
+         "3559 University", 
+         "3601 University", 
+         "3643 University",
+  "3647 University", 
+         "3653 University", 
+         "3653 de la Montagne",
+         "3704 Peel", 
+         "3710 Peel",
+  "Carrefour Sherbrooke", 
+         "Douglas Hall", 
+         "Eco Residence",
+  "Gardner Hall", 
+         "Greenbriar", 
+         "Hutchison", 
+         "La Citadelle",
+  "Laird Hall", 
+         "McConnell Hall", 
+         "Molson Hall",
+  "New Residence Hall", 
+         "Royal Victoria College", 
+         "Solin Hall",
+  "University Hall",
+         ],
 };
