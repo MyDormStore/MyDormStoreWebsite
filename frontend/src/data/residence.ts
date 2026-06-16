@@ -945,6 +945,8 @@ key: "Collegeview Commons",
 label: "Collegeview Commons",
 school: "Wilfrid Laurier University",
 },
+   { key: "UVic Single Room", label: "UVic Single Room", school: "University of Victoria" },
+{ key: "UVic Double Room", label: "UVic Double Room", school: "University of Victoria" },
     {
         key: "Other",
         label: "Other/Not Listed",
@@ -1031,6 +1033,7 @@ export const schoolSelectList: dormSelectListType[] = [
     { key: "Ahuntsic College", label: "Ahuntsic College" },
     { key: "Dawson College", label: "Dawson College" },
     { key: "University of Southern California", label: "University of Southern California" },
+    { key: "University of Victoria", label: "University of Victoria" },
     { key: "Other", label: "Other/Not Listed" },
 ].sort((a, b) => {
     if (a.key < b.key) {
@@ -1132,14 +1135,14 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "MB",
         street: "2525 Pembina Highway",
     },
-    Avant: {
+    "Avant": {
         postalCode: "M5B 1J6",
         country: "CA",
         city: "TORONTO",
         state: "ON",
         street: "50 Gerrard Street East",
     },
-    Boreal: {
+    "Boreal": {
         postalCode: "P3A 6B1",
         country: "CA",
         city: "SUDBURY",
@@ -1153,7 +1156,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "ON",
         street: "328 Regina St N",
     },
-    Cambrian: {
+    "Cambrian": {
         postalCode: "P3A 3V8",
         country: "CA",
         city: "SUDBURY",
@@ -1174,7 +1177,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "ON",
         street: "253 College St.",
     },
-    Canadore: {
+    "Canadore": {
         postalCode: "P1B 8K9",
         country: "CA",
         city: "NORTH BAY",
@@ -1244,7 +1247,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "ON",
         street: "60 Ezra Avenue, Unit 3",
     },
-    Fanshawe: {
+    "Fanshawe": {
         postalCode: "N5Y 5W2",
         country: "CA",
         city: "LONDON",
@@ -1279,7 +1282,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "ON",
         street: "60 Harbord Street",
     },
-    HOEM: {
+    "HOEM": {
         postalCode: "M5B 2B7",
         country: "CA",
         city: "TORONTO",
@@ -1328,7 +1331,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "ON",
         street: "59 St. George Street",
     },
-    Lambton: {
+    "Lambton": {
         postalCode: "N7S 1P6",
         country: "CA",
         city: "SARNIA",
@@ -1545,7 +1548,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         state: "ON",
         street: "Ignatius Street",
     },
-    THEO: {
+    "THEO": {
         postalCode: "K1N 9E5",
         country: "CA",
         city: "OTTAWA",
@@ -2140,6 +2143,20 @@ city: "London",
 state: "ON",
 street: "190 Sherwood Forest Square",
 },  
+    "UVic Single Room": {
+  postalCode: "V8W 3H6",
+  country: "CA",
+  city: "VICTORIA",
+  state: "BC",
+  street: "UVic Bookstore, Box 2200, Stn CSC",
+},
+"UVic Double Room": {
+  postalCode: "V8W 3H6",
+  country: "CA",
+  city: "VICTORIA",
+  state: "BC",
+  street: "UVic Bookstore, Box 2200, Stn CSC",
+},
 };
 
 export type DormGroups =
@@ -2157,7 +2174,8 @@ export type DormGroups =
     | "SCRequired"
     | "Apartment"
     | "Kitchen"
-    | "NoDoorDecor";
+    | "NoDoorDecor"
+    | "NoTech";
 
 export const dormGroupsList: Record<DormGroups, string[]> = {
     All: [
@@ -2310,6 +2328,8 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University of Alberta Bookstore",
 "University of Sudbury",
 "UTM",
+"UVic Single Room",
+"UVic Double Room",
 "Victoria College",
 "West Village Suites",
 "Wilfrid Laurier University (Brantford Residence)",
@@ -2380,6 +2400,8 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University Hall",
 "University of Sudbury",
 "UTM",
+"UVic Single Room",
+"UVic Double Room",
 "Victoria College",
 "West Village Suites",
 "Woodsworth College",
@@ -2595,6 +2617,8 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University of Alberta Bookstore",
 "University of Sudbury",
 "UTM",
+"UVic Single Room",
+"UVic Double Room",
 "Victoria College",
 "West Village Suites",
 "Wilfrid Laurier University (Brantford Residence)",
@@ -2637,6 +2661,8 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University College",
 "University of Sudbury",
 "UTM",
+"UVic Single Room",
+"UVic Double Room",
 "Victoria College",
 "West Village Suites",
 "Woodsworth College",
@@ -2949,4 +2975,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
          "Solin Hall",
   "University Hall",
          ],
+    NoTech: [
+    "University College",
+],
 };
