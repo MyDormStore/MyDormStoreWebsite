@@ -66,36 +66,73 @@ const BOOKSTORE_RESIDENCES = new Set<string>([
     "Mount Allison University",
     // TMU
     "TMU Bookstore",
+    "TMU Residence",
     // Wilfrid Laurier
     "Wilfrid Laurier University (Waterloo Residence)",
     "Wilfrid Laurier University (Brantford Residence)",
     "Wilfrid Laurier University HawkShop (Waterloo)",
     "Wilfrid Laurier University HawkShop (Brantford)",
     // U of A
+    "University of Alberta Bookstore",
     "Elsey's House",
     "Marge's House",
     "Rockress (Graduate Residence)",
-    "Lister Centre",
+    "Stonecrop (Graduate Residence)",
+    "Juniper (Graduate Residence)",
+    "Speedwell (Graduate Residence)",
+    "Aspen House",
+    "Maple House",
+    "Alexander Mackenzie Hall (Lister)",
+    "Anthony Henday Hall (Lister)",
+    "Henry Kelsey Hall (Lister)",
+    "Mary Schäffer Hall (Lister)",
+    "Thelma Chalifoux Hall (Lister)",
+    "Peter Lougheed Hall",
+    "Alder House",
+    "Linden House",
+    "International House",
+    "Nîpisîy House",
+    "Résidence Saint-Jean",
     "Pinecrest House",
-    "Schaffer House",
-    "Mackenzie House",
-    "Henday Hall",
-    "Kelsey Hall",
-    "Aspenglen House",
+    "Tamarack House",
+    "HUB",
     // NSCC
-    "NSCC Akerley Campus",
-    "NSCC Annapolis Valley Campus",
-    "NSCC Burridge Campus",
-    "NSCC Cumberland Campus",
-    "NSCC Institute of Technology Campus",
-    "NSCC Kingstec Campus",
-    "NSCC Lunenburg Campus",
-    "NSCC Marconi Campus",
-    "NSCC Pictou Campus",
-    "NSCC Shelburne Campus",
-    "NSCC Strait Area Campus",
-    "NSCC Truro Campus",
-    "NSCC Waterfront Campus",
+    "Nova Scotia Community College",
+    "Akerley Campus",
+    "Centre of Geographic Sciences (COGS)",
+    "Ivany Campus",
+    "Pictou Campus",
+    "Strait Area Campus",
+    "Truro Campus",
+    // McGill
+    "Carrefour Sherbrooke",
+    "Douglas Hall",
+    "Eco Residence",
+    "Gardner Hall",
+    "Greenbriar",
+    "Hutchison",
+    "La Citadelle",
+    "Laird Hall",
+    "McConnell Hall",
+    "Molson Hall",
+    "New Residence Hall",
+    "Royal Victoria College",
+    "Solin Hall",
+    "University Hall",
+    "506 Pins",
+    "510 Pins",
+    "522 Pins",
+    "3559 University",
+    "3601 University",
+    "3643 University",
+    "3647 University",
+    "3653 University",
+    "3653 de la Montagne",
+    "3704 Peel",
+    "3710 Peel",
+    // UVic
+    "UVic Single Room",
+    "UVic Double Room",
 ]);
 export default function ShippingForm({
     prevTab,
@@ -127,12 +164,10 @@ export default function ShippingForm({
     const buildMoveInRate = (): Rates => {
         const province =
             delivery?.shippingAddress?.state?.toUpperCase() || "";
-
         // Detect the cart's currency (set by Shopify Markets based on
         // customer location — USD for US visitors, CAD for Canadian, etc.)
         const cartCurrency =
             cart?.cost?.totalAmount?.currencyCode?.toUpperCase() || "CAD";
-
         let moveInCost: number;
         if (cartCurrency === "USD") {
             // US customers see USD prices — charge $34.95 USD shipping
@@ -142,7 +177,6 @@ export default function ShippingForm({
             moveInCost =
                 province === "ON" || province === "QC" ? 19.95 : 34.95;
         }
-
         const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
         const serviceName = isBookstore
             ? "Bookstore Pickup"
