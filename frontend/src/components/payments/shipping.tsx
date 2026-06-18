@@ -131,8 +131,10 @@ const BOOKSTORE_RESIDENCES = new Set<string>([
     "3704 Peel",
     "3710 Peel",
     // UVic
-    "UVic Single Room",
-    "UVic Double Room",
+    "UVic Single Dorm",
+    "UVic Double Dorm",
+    "UVic Pod Single Dorm",
+    "UVic 4-Bedroom Cluster Room",
 ]);
 export default function ShippingForm({
     prevTab,
@@ -164,10 +166,12 @@ export default function ShippingForm({
     const buildMoveInRate = (): Rates => {
         const province =
             delivery?.shippingAddress?.state?.toUpperCase() || "";
+
         // Detect the cart's currency (set by Shopify Markets based on
         // customer location — USD for US visitors, CAD for Canadian, etc.)
         const cartCurrency =
             cart?.cost?.totalAmount?.currencyCode?.toUpperCase() || "CAD";
+
         let moveInCost: number;
         if (cartCurrency === "USD") {
             // US customers see USD prices — charge $34.95 USD shipping
@@ -177,6 +181,7 @@ export default function ShippingForm({
             moveInCost =
                 province === "ON" || province === "QC" ? 19.95 : 34.95;
         }
+
         const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
         const serviceName = isBookstore
             ? "Bookstore Pickup"
