@@ -1,31 +1,26 @@
 import { AddressSchemaType } from "@/schema/delivery-form";
-
 export type dorm = (typeof dormSelectList)[number]["key"];
-
 export type school = (typeof schoolSelectList)[number];
-
 interface dormSelectListType {
     key: string;
     label: string;
     school?: string;
 }
-
-/* 
-    To add a dorm to the list, add an object to the dormSelectList array using this structure 
+/*
+    To add a dorm to the list, add an object to the dormSelectList array using this structure
     {
         key: "Dorm Name",
         label: "Dorm Name",
-        school: "School Name"   
+        school: "School Name"
     }
     for a dorm that is associated with multiple schools, you can create duplicate objects in the array
-
     To add a new school, add an object to the schoolSelectList using this structure
     {
         key: "School Name",
         label: "School Name"
     }
-    
-    to add an address, create a new object in the structure using 
+
+    to add an address, create a new object in the structure using
     ["Dorm Name"]: {
         postalCode: "Postal Code",
         country: "CA", // Two Character Code
@@ -33,13 +28,10 @@ interface dormSelectListType {
         state: "ON", // Two Character Code
         street: "Street Name",
     }
-
-    To create a new group, add the group name to DormGroups using 
+    To create a new group, add the group name to DormGroups using
     | "Dorm Group"
     Add the dorms to the group by adding the "Dorm Name" to the group list
-
 */
-
 export const dormSelectList: dormSelectListType[] = [
     {
         key: "Woodroffe Place",
@@ -56,7 +48,7 @@ export const dormSelectList: dormSelectListType[] = [
         key: "Regent Student Living at Lake",
         label: "Regent Student Living at Lake",
         school: "Brock",
-    }, 
+    },
     {
         key: "Regent Student Living at James",
         label: "Regent Student Living at James",
@@ -151,7 +143,6 @@ export const dormSelectList: dormSelectListType[] = [
         label: "Alma at Montreal",
         school: "McGill University",
     },
-
     { key: "Campus1 MTL", label: "Campus1 MTL", school: "McGill University" },
     {
         key: "Alma at Montreal",
@@ -165,7 +156,6 @@ export const dormSelectList: dormSelectListType[] = [
         school: "Ahuntsic College",
     },
     { key: "Campus1 MTL", label: "Campus1 MTL", school: "Ahuntsic College" },
-
     {
         key: "West Village Suites",
         label: "West Village Suites",
@@ -920,22 +910,22 @@ school: "McGill University",
 key: "Solin Hall",
 label: "Solin Hall",
 school: "McGill University",
-},    
+},
     {
 key: "The W London",
 label: "The W London",
 school: "Fanshawe College",
-}, 
+},
     {
 key: "The W London",
 label: "The W London",
 school: "Western University",
-}, 
+},
      {
 key: "Collegeview Commons",
 label: "Collegeview Commons",
 school: "University of Waterloo",
-}, 
+},
     {
 key: "Collegeview Commons",
 label: "Collegeview Commons",
@@ -946,8 +936,10 @@ key: "Collegeview Commons",
 label: "Collegeview Commons",
 school: "Wilfrid Laurier University",
 },
-   { key: "UVic Single Room", label: "UVic Single Room", school: "University of Victoria" },
-{ key: "UVic Double Room", label: "UVic Double Room", school: "University of Victoria" },
+   { key: "UVic Single Dorm", label: "UVic Single Dorm", school: "University of Victoria" },
+   { key: "UVic Double Dorm", label: "UVic Double Dorm", school: "University of Victoria" },
+   { key: "UVic Pod Single Dorm", label: "UVic Pod Single Dorm", school: "University of Victoria" },
+   { key: "UVic 4-Bedroom Cluster Room", label: "UVic 4-Bedroom Cluster Room", school: "University of Victoria" },
     {
         key: "Other",
         label: "Other/Not Listed",
@@ -1043,7 +1035,6 @@ export const schoolSelectList: dormSelectListType[] = [
         return 1;
     }
 });
-
 export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
     "17Hundred": {
         postalCode: "L1G 4X9",
@@ -2137,7 +2128,7 @@ city: "Montréal",
 state: "QC",
 street: "680 Sherbrooke Street West",
 },
-"Collegeview Commons": { 
+"Collegeview Commons": {
 postalCode: "N2P 0C7",
 country: "CA",
 city: "Kitchener",
@@ -2150,15 +2141,29 @@ country: "CA",
 city: "London",
 state: "ON",
 street: "190 Sherwood Forest Square",
-},  
-    "UVic Single Room": {
+},
+    "UVic Single Dorm": {
   postalCode: "V8W 3H6",
   country: "CA",
   city: "VICTORIA",
   state: "BC",
   street: "UVic Bookstore, Box 2200, Stn CSC",
 },
-"UVic Double Room": {
+"UVic Double Dorm": {
+  postalCode: "V8W 3H6",
+  country: "CA",
+  city: "VICTORIA",
+  state: "BC",
+  street: "UVic Bookstore, Box 2200, Stn CSC",
+},
+"UVic Pod Single Dorm": {
+  postalCode: "V8W 3H6",
+  country: "CA",
+  city: "VICTORIA",
+  state: "BC",
+  street: "UVic Bookstore, Box 2200, Stn CSC",
+},
+"UVic 4-Bedroom Cluster Room": {
   postalCode: "V8W 3H6",
   country: "CA",
   city: "VICTORIA",
@@ -2166,12 +2171,11 @@ street: "190 Sherwood Forest Square",
   street: "UVic Bookstore, Box 2200, Stn CSC",
 },
 };
-
 export type DormGroups =
     | "All"
     | "TwinOnly"
     | "DoubleOnly"
-    | "QueenOnly"  
+    | "QueenOnly"
     | "BothSizes"
     | "TwinQueen"
     | "DoubleQueen"
@@ -2183,8 +2187,10 @@ export type DormGroups =
     | "Apartment"
     | "Kitchen"
     | "NoDoorDecor"
-    | "NoTech";
-
+    | "NoTech"
+    | "NoCompleteKitchen"
+    | "NoHousehold"
+    | "NoOrganization";
 export const dormGroupsList: Record<DormGroups, string[]> = {
     All: [
         "1Eleven",
@@ -2337,8 +2343,10 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University of Alberta Bookstore",
 "University of Sudbury",
 "UTM",
-"UVic Single Room",
-"UVic Double Room",
+"UVic Single Dorm",
+"UVic Double Dorm",
+"UVic Pod Single Dorm",
+"UVic 4-Bedroom Cluster Room",
 "Victoria College",
 "West Village Suites",
 "Wilfrid Laurier University (Brantford Residence)",
@@ -2409,8 +2417,10 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University Hall",
 "University of Sudbury",
 "UTM",
-"UVic Single Room",
-"UVic Double Room",
+"UVic Single Dorm",
+"UVic Double Dorm",
+"UVic Pod Single Dorm",
+"UVic 4-Bedroom Cluster Room",
 "Victoria College",
 "West Village Suites",
 "Woodsworth College",
@@ -2628,8 +2638,6 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University of Alberta Bookstore",
 "University of Sudbury",
 "UTM",
-"UVic Single Room",
-"UVic Double Room",
 "Victoria College",
 "West Village Suites",
 "Wilfrid Laurier University (Brantford Residence)",
@@ -2672,8 +2680,6 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "University College",
 "University of Sudbury",
 "UTM",
-"UVic Single Room",
-"UVic Double Room",
 "Victoria College",
 "West Village Suites",
 "Woodsworth College",
@@ -2956,6 +2962,8 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Unity Place",
 "Unity Point",
 "University of Sudbury",
+"UVic Pod Single Dorm",
+"UVic 4-Bedroom Cluster Room",
 "West Village Suites",
 "Wilfrid Laurier University (Brantford Residence)",
 "Wilfrid Laurier University (Waterloo Residence)",
@@ -2964,33 +2972,52 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Woodroffe Place",
 ],
      NoDoorDecor: [
-        "506 Pins", 
-         "510 Pins", 
+        "506 Pins",
+         "510 Pins",
          "522 Pins",
-         "3559 University", 
-         "3601 University", 
+         "3559 University",
+         "3601 University",
          "3643 University",
-  "3647 University", 
-         "3653 University", 
+  "3647 University",
+         "3653 University",
          "3653 de la Montagne",
-         "3704 Peel", 
+         "3704 Peel",
          "3710 Peel",
-  "Carrefour Sherbrooke", 
-         "Douglas Hall", 
+  "Carrefour Sherbrooke",
+         "Douglas Hall",
          "Eco Residence",
-  "Gardner Hall", 
-         "Greenbriar", 
-         "Hutchison", 
+  "Gardner Hall",
+         "Greenbriar",
+         "Hutchison",
          "La Citadelle",
-  "Laird Hall", 
-         "McConnell Hall", 
+  "Laird Hall",
+         "McConnell Hall",
          "Molson Hall",
-  "New Residence Hall", 
-         "Royal Victoria College", 
+  "New Residence Hall",
+         "Royal Victoria College",
          "Solin Hall",
   "University Hall",
+  "UVic Single Dorm",
+  "UVic Double Dorm",
+  "UVic Pod Single Dorm",
+  "UVic 4-Bedroom Cluster Room",
          ],
     NoTech: [
     "University College",
+],
+    NoCompleteKitchen: [
+    "UVic Single Dorm",
+    "UVic Double Dorm",
+],
+    NoHousehold: [
+    "UVic Single Dorm",
+    "UVic Double Dorm",
+    "UVic Pod Single Dorm",
+],
+    NoOrganization: [
+    "UVic Single Dorm",
+    "UVic Double Dorm",
+    "UVic Pod Single Dorm",
+    "UVic 4-Bedroom Cluster Room",
 ],
 };
