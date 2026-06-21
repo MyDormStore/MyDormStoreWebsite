@@ -54,9 +54,16 @@ interface Rates {
     cost: number;
     transitTime: number;
 }
+// Per-residence label overrides for the bookstore pickup rate.
+// If a residence has an entry here, that exact label is used on the
+// shipping page. Otherwise the generic "Bookstore Pickup" is shown.
+const BOOKSTORE_LABEL_OVERRIDES: Record<string, string> = {
+    "Algonquin College": "Pick Up at Connections - The Campus Store",
+};
 // Residences that have an on-campus bookstore partnership.
 // If the customer picks one of these as their dorm, the
-// "Move-In Day Delivery" rate is renamed to "Bookstore Pickup".
+// "Move-In Day Delivery" rate is renamed to "Bookstore Pickup"
+// (or the override from BOOKSTORE_LABEL_OVERRIDES if defined).
 const BOOKSTORE_RESIDENCES = new Set<string>([
     // Algonquin
     "Algonquin College",
@@ -184,7 +191,7 @@ export default function ShippingForm({
 
         const isBookstore = BOOKSTORE_RESIDENCES.has(dorm);
         const serviceName = isBookstore
-            ? "Bookstore Pickup"
+            ? (BOOKSTORE_LABEL_OVERRIDES[dorm] ?? "Bookstore Pickup")
             : "Move-In Day Delivery";
         return {
             service: serviceName,
@@ -291,7 +298,8 @@ export default function ShippingForm({
     const getDeliveryTimeText = (service: string, transitTime: number) => {
         if (
             service.includes("Move-In Day") ||
-            service.includes("Bookstore Pickup")
+            service.includes("Bookstore Pickup") ||
+            service.includes("Pick Up at")
         ) {
             return "Arrives by move-in day";
         }
