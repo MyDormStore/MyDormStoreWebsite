@@ -1104,7 +1104,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         country: "CA",
         city: "OTTAWA",
         state: "ON",
-        street: "Campus Store Receiving, 1385 Woodroffe Ave., Building ‘H’",
+        street: "Connections - The Campus Store, 1385 Woodroffe Ave., Building ‘H’",
     },
     "Alma Sandy Hill": {
         postalCode: "K1N 7Z9",
