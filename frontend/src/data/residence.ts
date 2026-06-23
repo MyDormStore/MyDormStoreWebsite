@@ -961,6 +961,7 @@ school: "Wilfrid Laurier University",
     { key: "Alma Gastown", label: "Alma Gastown", school: "SFU Vancouver (Harbour Centre)" },
     { key: "Alma Gastown", label: "Alma Gastown", school: "BCIT Downtown Campus" },
     { key: "Alma Gastown", label: "Alma Gastown", school: "Vancouver Community College (Downtown Campus)" },
+    { key: "Capilano University", label: "Capilano University", school: "Capilano University" },
     {
         key: "Other",
         label: "Other/Not Listed",
@@ -1048,6 +1049,7 @@ export const schoolSelectList: dormSelectListType[] = [
     { key: "Dawson College", label: "Dawson College" },
     { key: "University of Southern California", label: "University of Southern California" },
     { key: "University of Victoria", label: "University of Victoria" },
+    { key: "Capilano University", label: "Capilano University" },
     { key: "Other", label: "Other/Not Listed" },
 ].sort((a, b) => {
     if (a.key < b.key) {
@@ -2212,6 +2214,13 @@ street: "190 Sherwood Forest Square",
         state: "BC",
         street: "455 Abbott St",
     },
+    "Capilano University": {
+        postalCode: "V7J 3H1",
+        country: "CA",
+        city: "North Vancouver",
+        state: "BC",
+        street: "2075 Tantalus Road",
+    },
 };
 export type DormGroups =
     | "All"
@@ -2400,6 +2409,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Alma Quartier Latin",
 "Alma Gastown",
 "King Street Towers- Tower 2",
+"Capilano University",
     ],
     TwinOnly: [
    "506 Pins",
@@ -2469,6 +2479,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Victoria College",
 "West Village Suites",
 "Woodsworth College",
+"Capilano University",
     ],
     DoubleOnly: [
         "17Hundred",
@@ -2677,6 +2688,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Wilfrid Laurier University HawkShop (Brantford)",
 "Wilfrid Laurier University HawkShop (Waterloo)",
 "Woodsworth College",
+"Capilano University",
     ],
     MPTwin: [
        "Alder House",
@@ -2713,6 +2725,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "UTM",
 "Victoria College",
 "Woodsworth College",
+"Capilano University",
     ],
     MPDouble: [
 "Align (Winnipeg)",
@@ -2841,6 +2854,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "Wilfrid Laurier University HawkShop (Brantford)",
 "Wilfrid Laurier University HawkShop (Waterloo)",
 "Woodroffe Place",
+"Capilano University",
     ],
     Apartment: [
        "17Hundred",
@@ -3026,6 +3040,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
     NoCompleteKitchen: [
     "UVic Single Dorm",
     "UVic Double Dorm",
+    "Capilano University",
 ],
     NoHousehold: [
     "UVic Single Dorm",
