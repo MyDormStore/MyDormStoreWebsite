@@ -2529,7 +2529,6 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "ALMA South End",
 "Seneca (King)",
 "Seneca (Newham)",
-"Southern Alberta Institute of Technology (SAIT)",
 "Speedwell (Graduate Residence)",
 "St. Clair College (Chatham)",
 "St. Clair College (Windsor)",
@@ -2541,6 +2540,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
     ],
      QueenOnly: [
    "Carrefour Sherbrooke",
+"Southern Alberta Institute of Technology (SAIT)",
           ],
     BothSizes: [
         "1Eleven",
@@ -2757,7 +2757,6 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "ALMA South End",
 "Seneca (King)",
 "Seneca (Newham)",
-"Southern Alberta Institute of Technology (SAIT)",
 "Speedwell (Graduate Residence)",
 "St. Clair College (Chatham)",
 "St. Clair College (Windsor)",
