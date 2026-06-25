@@ -1925,7 +1925,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         country: "CA",
         city: "Lawrencetown",
         state: "NS",
-        street: "50 Elliott Road",
+        street: "50 Elliott Rd",
     },
      "Ivany Campus": {
         postalCode: "B2Y 0A5",
@@ -1949,7 +1949,7 @@ export const dormAddresses: { [key: dorm]: AddressSchemaType } = {
         street: "226 Reeves Street",
     },
      "Truro Campus": {
-        postalCode: "B2N 1X5",
+        postalCode: "B2N 1X6",
         country: "CA",
         city: "Truro",
         state: "NS",
