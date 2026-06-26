@@ -2477,7 +2477,6 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "UVic Pod Single Dorm",
 "UVic 4-Bedroom Cluster Room",
 "Victoria College",
-"West Village Suites",
 "Woodsworth College",
 "Capilano University",
     ],
@@ -2537,6 +2536,7 @@ export const dormGroupsList: Record<DormGroups, string[]> = {
 "THEO",
 "Alma Quartier Latin",
 "Alma Gastown",
+"West Village Suites",
     ],
      QueenOnly: [
    "Carrefour Sherbrooke",
