@@ -81,8 +81,10 @@ export const createOrder = async (payload: Payload) => {
         ];
     });
 
+    const orderCurrency = (payload.currency || "CAD").toUpperCase();
+
     const order: Order = {
-        currency: "CAD",
+        currency: orderCurrency,
         financialStatus: "PAID",
         lineItems: cartItems,
         email: email,
@@ -101,7 +103,7 @@ export const createOrder = async (payload: Payload) => {
                 priceSet: {
                     shopMoney: {
                         amount: shipping.cost,
-                        currencyCode: "CAD",
+                        currencyCode: orderCurrency,
                     },
                 },
             },
@@ -114,7 +116,7 @@ export const createOrder = async (payload: Payload) => {
             amountSet: {
                 shopMoney: {
                     amount: amount / 100,
-                    currencyCode: "CAD",
+                    currencyCode: orderCurrency,
                 },
             },
         },
