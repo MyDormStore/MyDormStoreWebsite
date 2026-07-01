@@ -10,13 +10,14 @@ const port = 3000;
 
 // setting up middlewares
 app.use(cors());
+
+// Stripe webhook handler
+app.post("/Stripe/webhook", webhook);
+
 app.use(express.json());
 
 app.use("/Stripe", StripeRouter);
 app.use("/Shopify", ShopifyRouter);
-
-// Stripe webhook handler
-app.post("/Stripe/webhook", webhook);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Hello, TypeScript with Express!");
