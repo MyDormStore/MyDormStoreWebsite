@@ -11,8 +11,8 @@ const port = 3000;
 // setting up middlewares
 app.use(cors());
 
-// Stripe webhook handler
-app.post("/Stripe/webhook", webhook);
+// Stripe webhook handler - must use raw body for signature verification
+app.post("/Stripe/webhook", express.raw({type: "application/json"}), webhook);
 
 app.use(express.json());
 

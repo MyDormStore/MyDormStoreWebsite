@@ -106,7 +106,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
                         name: fullName || undefined,
                         phone: phone || undefined,
                         metadata: customerMetadata,
-                    }
+                    },
                 );
                 customerId = updated.id;
             } else {
@@ -122,7 +122,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     } catch (err) {
         console.error(
             "Stripe customer setup failed (continuing without customer):",
-            err
+            err,
         );
         // Intentionally swallow — payment must still go through.
     }
@@ -180,14 +180,20 @@ export const webhook = async (req: Request, res: Response) => {
         const signature = req.headers["stripe-signature"];
         if (signature) {
             try {
+                // req.body is now a Buffer due to express.raw() middleware
+                const body =
+                    typeof req.body === "string"
+                        ? req.body
+                        : req.body.toString();
                 event = stripe.webhooks.constructEvent(
-                    req.body,
-                    signature,
-                    endpointSecret
+                    body,
+                    signature as string,
+                    endpointSecret,
                 );
             } catch (err) {
                 console.error(`Webhook signature verification failed.`, err);
                 res.sendStatus(400);
+                return;
             }
         }
     }
@@ -225,7 +231,7 @@ export const webhook = async (req: Request, res: Response) => {
             console.log(payload);
             const ID = await createOrder(payload);
             console.log(
-                `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`
+                `PaymentIntent for ${paymentIntent.amount} was successful! Order ${ID} was created!`,
             );
 
             // Fire "Placed Order" event so Klaviyo knows to exclude
@@ -263,7 +269,7 @@ export const webhook = async (req: Request, res: Response) => {
             try {
                 if (failedIntent.customer) {
                     const stripeCustomer = await stripe.customers.retrieve(
-                        failedIntent.customer as string
+                        failedIntent.customer as string,
                     );
                     if (!("deleted" in stripeCustomer)) {
                         failEmail = stripeCustomer.email || undefined;
@@ -281,14 +287,14 @@ export const webhook = async (req: Request, res: Response) => {
             } catch (e) {
                 console.warn(
                     "Couldn't look up customer for failed payment:",
-                    e
+                    e,
                 );
             }
 
             console.log(
                 `PaymentIntent ${failedIntent.id} failed${
                     failEmail ? ` (${failEmail})` : ""
-                }`
+                }`,
             );
 
             if (failEmail) {
