@@ -201,6 +201,21 @@ export const webhook = async (req: Request, res: Response) => {
         case "payment_intent.succeeded":
             const paymentIntent = event.data.object;
             const metadata = paymentIntent.metadata;
+
+            // Reconstruct line items from chunked metadata (same as createPaymentIntent)
+            function reconstructLineItemsFromMetadata(metadata: any): any[] {
+                const parts = Object.keys(metadata)
+                    .filter((key: string) => key.startsWith("lineItems_part_"))
+                    .sort((a: string, b: string) => {
+                        const aIndex = parseInt(a.split("_").pop() ?? "0");
+                        const bIndex = parseInt(b.split("_").pop() ?? "0");
+                        return aIndex - bIndex;
+                    })
+                    .map((key: string) => metadata[key]);
+                const fullJson = parts.join("");
+                return JSON.parse(fullJson);
+            }
+
             const payload: Payload = {
                 amount: parseFloat(metadata.amount),
                 // Pass through the actual currency Stripe charged in
@@ -208,7 +223,7 @@ export const webhook = async (req: Request, res: Response) => {
                 // is created with the matching currency labels.
                 currency: (paymentIntent.currency || "cad").toUpperCase(),
                 customer: metadata.customer,
-                lineItems: JSON.parse(metadata.lineItems),
+                lineItems: reconstructLineItemsFromMetadata(metadata),
                 deliveryDetails: JSON.parse(metadata.deliveryDetails),
                 taxLines: JSON.parse(metadata.taxLines),
                 shipping: JSON.parse(metadata.shipping),
