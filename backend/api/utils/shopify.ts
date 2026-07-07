@@ -1,6 +1,18 @@
 import { client } from "../services/shopify";
 import { LineItems, Order, Payload } from "../types/types";
 
+export type OrderCreationResult =
+    | {
+          ok: true;
+          orderId: string;
+          duplicate: boolean;
+      }
+    | {
+          ok: false;
+          error: string;
+          details?: unknown;
+      };
+
 const orderMutation = `
 mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOptionsInput) {
       orderCreate(order: $order, options: $options) {
@@ -13,24 +25,145 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
     }
   }
 }
-
 `;
-export const createOrder = async (payload: Payload) => {
+
+const checkForDuplicateOrderQuery = `
+query CheckExistingOrder($email: String!, $address1: String!, $city: String!, $country: String!, $zip: String!, $totalPriceSet: MoneyFilterInput!) {
+      existingOrders(input: {
+       emailAddresses: { equals: $email },
+       addresses: {
+         street: { equals: $address1 },
+         city: { equals: $city },
+         countryCode: { equals: $country },
+         zipCode: { equals: $zip }
+       },
+       totalPriceSet: {
+         currencyCodes: { includes: $totalPriceSet.currencyCode },
+         amounts: { includes: [ $totalPriceSet.amount ]}
+       }
+      }) {
+       orders {
+         id
+         orderNumber
+         financialStatus
+         totalPriceSet {
+           shopMoney {
+             amount
+             currencyCode
+            }
+          }
+        }
+      }
+}`;
+
+type DuplicateOrderLookupInput = {
+    email: string;
+    address1: string;
+    city: string;
+    country: string;
+    zip: string;
+    totalAmountCents: number;
+    currencyCode: string;
+};
+
+export const buildDuplicateOrderLookupInput = (
+    payload: Payload,
+): DuplicateOrderLookupInput => {
+    const { deliveryDetails } = payload;
+    const { shippingAddress, email } = deliveryDetails;
+
+    return {
+        email: email.trim().toLowerCase(),
+        address1: shippingAddress.street.trim(),
+        city: shippingAddress.city.trim(),
+        country: shippingAddress.country.trim().toUpperCase(),
+        zip: shippingAddress.postalCode
+            .replace(/\s+/g, "")
+            .trim()
+            .toUpperCase(),
+        totalAmountCents: Math.round(payload.amount),
+        currencyCode: (payload.currency || "CAD").toUpperCase(),
+    };
+};
+
+/**
+ * Check if an existing order matches the given criteria in Shopify.
+ * Searches for orders by email, shipping address, and total within the last 24 hours.
+ */
+async function checkForDuplicateOrder(
+    input: DuplicateOrderLookupInput,
+): Promise<{ id?: string; orderNumber?: string } | null> {
+    try {
+        const variables: Record<string, any> = {
+            email: input.email,
+            address1: input.address1,
+            city: input.city,
+            country: input.country,
+            zip: input.zip,
+            totalPriceSet: {
+                amount: input.totalAmountCents / 100,
+                currencyCode: input.currencyCode,
+            },
+        };
+
+        const { data } = await client.request(checkForDuplicateOrderQuery, {
+            variables,
+        });
+
+        if (data?.existingOrders?.orders?.length) {
+            return {
+                id: data.existingOrders.orders[0].id,
+                orderNumber: data.existingOrders.orders[0].orderNumber,
+            };
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Duplicate order check failed:", error);
+        return null;
+    }
+}
+
+export const createOrder = async (
+    payload: Payload,
+): Promise<OrderCreationResult> => {
+    const totalAmount = Math.round(payload.amount) / 100;
     const {
         lineItems,
         deliveryDetails,
         taxLines,
         shipping,
-        amount,
         secondaryDetails,
         notInCart,
         rp_id,
         dorm,
         school,
+        stripePaymentIntentId,
     } = payload;
-
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
         deliveryDetails;
+
+    if (!email || !lineItems?.length) {
+        return {
+            ok: false,
+            error: "Missing required order information",
+            details: {
+                email: Boolean(email),
+                lineItems: lineItems?.length ?? 0,
+            },
+        };
+    }
+
+    const duplicateLookupInput = buildDuplicateOrderLookupInput(payload);
+    const duplicateOrder = await checkForDuplicateOrder(duplicateLookupInput);
+
+    if (duplicateOrder?.id) {
+        return {
+            ok: true,
+            orderId: duplicateOrder.id,
+            duplicate: true,
+        };
+    }
 
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
@@ -115,7 +248,7 @@ export const createOrder = async (payload: Payload) => {
         transactions: {
             amountSet: {
                 shopMoney: {
-                    amount: amount / 100,
+                    amount: totalAmount,
                     currencyCode: orderCurrency,
                 },
             },
@@ -137,7 +270,6 @@ export const createOrder = async (payload: Payload) => {
         });
     }
 
-    // Add custom attributes conditionally
     if (shipping.moveInDate) {
         order.customAttributes?.push({
             key: "Move In Date",
@@ -149,6 +281,13 @@ export const createOrder = async (payload: Payload) => {
         order.customAttributes?.push({
             key: "Not In Cart",
             value: notInCart.join(", "),
+        });
+    }
+
+    if (stripePaymentIntentId) {
+        order.customAttributes?.push({
+            key: "stripe_payment_intent_id",
+            value: stripePaymentIntentId,
         });
     }
 
@@ -176,10 +315,6 @@ export const createOrder = async (payload: Payload) => {
         };
     }
 
-    // If a discount code was applied, attach it to the order as a
-    // fixed-amount discount. This makes Shopify show the discount in
-    // the order breakdown — e.g. "Subtotal $427.96, Discount -$42.79,
-    // Total $385.17" — instead of looking like underpayment.
     const discountAmount = payload.discountAmount || 0;
     const firstDiscountCode = payload.discountCodes?.[0];
     if (discountAmount > 0 && firstDiscountCode) {
@@ -209,19 +344,35 @@ export const createOrder = async (payload: Payload) => {
 
         if (errors) {
             console.error("GraphQL errors:", errors);
-            return { errors };
+            return {
+                ok: false,
+                error: "Shopify rejected order creation",
+                details: errors,
+            };
         }
 
         const userErrors = data.orderCreate.userErrors;
         if (userErrors?.length > 0) {
             console.error("User errors:", userErrors);
-            return { userErrors };
+            return {
+                ok: false,
+                error: "Shopify rejected order creation",
+                details: userErrors,
+            };
         }
 
-        return data.orderCreate.order.id;
+        return {
+            ok: true,
+            orderId: data.orderCreate.order.id,
+            duplicate: false,
+        };
     } catch (err) {
         console.error("Request failed:", err);
-        return { error: "Failed to create order" };
+        return {
+            ok: false,
+            error: "Failed to create order",
+            details: err,
+        };
     }
 };
 

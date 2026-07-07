@@ -22,6 +22,7 @@ export type Payload = {
     amount: number;
     currency?: string;
     discountAmount?: number;
+    stripePaymentIntentId?: string;
     secondaryDetails?: {
         toggleSecondaryDetails?: boolean;
         email: string;
@@ -48,7 +49,7 @@ type TaxLines = [
             };
         };
         title?: string;
-    }
+    },
 ];
 type DeliveryForm = {
     email: string;

@@ -8,12 +8,15 @@ import {
 export const orderCreation = async (req: Request, res: Response) => {
     const payload = req.body;
 
-    const data = await createOrder(payload);
-    if (!data) {
-        res.status(500).json({ error: "Failed to create order" }).end();
+    const result = await createOrder(payload);
+    if (!result.ok) {
+        res.status(500)
+            .json({ error: result.error, details: result.details })
+            .end();
+        return;
     }
 
-    res.send(data);
+    res.status(200).json(result);
 };
 
 export const calculateOrder = async (req: Request, res: Response) => {
