@@ -41,7 +41,7 @@ export function SuccessPage() {
                 const key = searchParams.get("key");
                 console.log(key);
                 const cartResponse = await getCart(
-                    `gid://shopify/Cart/${cartID}?key=${key}`
+                    `gid://shopify/Cart/${cartID}?key=${key}`,
                 );
                 setCart(cartResponse);
 
@@ -79,14 +79,14 @@ export function SuccessPage() {
                 const response = await axios.get(
                     `${
                         import.meta.env.VITE_BACKEND_URL
-                    }/Stripe/payment-intent/${paymentIntent}`
+                    }/Stripe/payment-intent/${paymentIntent}`,
                 );
                 const data = response.data;
 
                 if (data.status === "succeeded") {
                     const orderResponse = await axios.post(
                         `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
-                        payload
+                        payload,
                     );
                     console.log(orderResponse);
 
@@ -95,7 +95,7 @@ export function SuccessPage() {
                         setPayload({});
                         // Only clear cart after order is successful
                         const IDs = cart.lines.nodes.map(
-                            (cartLine) => cartLine.id
+                            (cartLine) => cartLine.id,
                         );
                         await removeProductFromCart(IDs, cart.id);
                     } else {
@@ -201,7 +201,7 @@ export function SuccessPage() {
                                                     {Number(
                                                         product.cost
                                                             .amountPerQuantity
-                                                            .amount
+                                                            .amount,
                                                     ).toFixed(2)}
                                                 </span>
                                             </TableCell>
@@ -217,7 +217,7 @@ export function SuccessPage() {
                                                         Number(
                                                             product.cost
                                                                 .amountPerQuantity
-                                                                .amount
+                                                                .amount,
                                                         ) * product.quantity
                                                     ).toFixed(2)}
                                                 </span>

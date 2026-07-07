@@ -27,103 +27,6 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
 }
 `;
 
-const checkForDuplicateOrderQuery = `
-query CheckExistingOrder($email: String!, $address1: String!, $city: String!, $country: String!, $zip: String!, $totalPriceSet: MoneyFilterInput!) {
-      existingOrders(input: {
-       emailAddresses: { equals: $email },
-       addresses: {
-         street: { equals: $address1 },
-         city: { equals: $city },
-         countryCode: { equals: $country },
-         zipCode: { equals: $zip }
-       },
-       totalPriceSet: {
-         currencyCodes: { includes: $totalPriceSet.currencyCode },
-         amounts: { includes: [ $totalPriceSet.amount ]}
-       }
-      }) {
-       orders {
-         id
-         orderNumber
-         financialStatus
-         totalPriceSet {
-           shopMoney {
-             amount
-             currencyCode
-            }
-          }
-        }
-      }
-}`;
-
-type DuplicateOrderLookupInput = {
-    email: string;
-    address1: string;
-    city: string;
-    country: string;
-    zip: string;
-    totalAmountCents: number;
-    currencyCode: string;
-};
-
-export const buildDuplicateOrderLookupInput = (
-    payload: Payload,
-): DuplicateOrderLookupInput => {
-    const { deliveryDetails } = payload;
-    const { shippingAddress, email } = deliveryDetails;
-
-    return {
-        email: email.trim().toLowerCase(),
-        address1: shippingAddress.street.trim(),
-        city: shippingAddress.city.trim(),
-        country: shippingAddress.country.trim().toUpperCase(),
-        zip: shippingAddress.postalCode
-            .replace(/\s+/g, "")
-            .trim()
-            .toUpperCase(),
-        totalAmountCents: Math.round(payload.amount),
-        currencyCode: (payload.currency || "CAD").toUpperCase(),
-    };
-};
-
-/**
- * Check if an existing order matches the given criteria in Shopify.
- * Searches for orders by email, shipping address, and total within the last 24 hours.
- */
-async function checkForDuplicateOrder(
-    input: DuplicateOrderLookupInput,
-): Promise<{ id?: string; orderNumber?: string } | null> {
-    try {
-        const variables: Record<string, any> = {
-            email: input.email,
-            address1: input.address1,
-            city: input.city,
-            country: input.country,
-            zip: input.zip,
-            totalPriceSet: {
-                amount: input.totalAmountCents / 100,
-                currencyCode: input.currencyCode,
-            },
-        };
-
-        const { data } = await client.request(checkForDuplicateOrderQuery, {
-            variables,
-        });
-
-        if (data?.existingOrders?.orders?.length) {
-            return {
-                id: data.existingOrders.orders[0].id,
-                orderNumber: data.existingOrders.orders[0].orderNumber,
-            };
-        }
-
-        return null;
-    } catch (error) {
-        console.error("Duplicate order check failed:", error);
-        return null;
-    }
-}
-
 export const createOrder = async (
     payload: Payload,
 ): Promise<OrderCreationResult> => {
@@ -151,17 +54,6 @@ export const createOrder = async (
                 email: Boolean(email),
                 lineItems: lineItems?.length ?? 0,
             },
-        };
-    }
-
-    const duplicateLookupInput = buildDuplicateOrderLookupInput(payload);
-    const duplicateOrder = await checkForDuplicateOrder(duplicateLookupInput);
-
-    if (duplicateOrder?.id) {
-        return {
-            ok: true,
-            orderId: duplicateOrder.id,
-            duplicate: true,
         };
     }
 
@@ -242,7 +134,20 @@ export const createOrder = async (
             },
         ],
         taxLines: taxLines?.length
-            ? [{ ...taxLines[0], title: "HST" }]
+            ? [
+                  {
+                      rate: taxLines[0].rate,
+                      priceSet: {
+                          shopMoney: {
+                              amount: String(
+                                  taxLines[0].priceSet.shopMoney.amount,
+                              ), // or taxLines[0].amount, depending on your data
+                              currencyCode: orderCurrency,
+                          },
+                      },
+                      title: "HST",
+                  },
+              ]
             : undefined,
         billingAddress: undefined,
         transactions: {

@@ -12,7 +12,8 @@ const port = 3000;
 app.use(cors());
 
 // Stripe webhook handler - must use raw body for signature verification
-app.post("/Stripe/webhook", express.raw({type: "application/json"}), webhook);
+// ! DISABLED WEBHOOK SINCE IT IS NOT IN THE CURRENT IMPLEMENTATION. INSTEAD THE FINAL PAGE DOES THE CHECKOUT
+// app.post("/Stripe/webhook", express.raw({type: "application/json"}), webhook);
 
 app.use(express.json());
 
