@@ -326,27 +326,12 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
     }
 }
 `;
+
 export const calculateDraftOrder = async (payload: Payload) => {
     const { lineItems, deliveryDetails } = payload;
     const { shippingAddress, email } = deliveryDetails;
-    const orderCurrency = (payload.currency || "CAD").toUpperCase();
 
     const cartItems = lineItems.flatMap((item) => {
-        const lineItemBase: any = {
-            variantId: item.variantId,
-            quantity: item.quantity,
-        };
-
-        // Add priceSet if amount is available
-        if (item.amount !== undefined && item.amount > 0) {
-            lineItemBase.priceSet = {
-                shopMoney: {
-                    amount: String(item.amount),
-                    currencyCode: orderCurrency,
-                },
-            };
-        }
-
         if (item.attributes) {
             const byobIndex = item.attributes.findIndex(
                 (attr) => attr.key === "__byob",
@@ -365,35 +350,37 @@ export const calculateDraftOrder = async (payload: Payload) => {
                         item.attributes[byobIndex].value,
                     );
 
-                    const productItems = products.map((product: any) => {
-                        const productItem: any = {
-                            variantId: `gid://shopify/ProductVariant/${product.id}`,
-                            quantity: product.quantity,
-                        };
-                        if (
-                            product.amount !== undefined &&
-                            product.amount > 0
-                        ) {
-                            productItem.priceSet = {
-                                shopMoney: {
-                                    amount: String(product.amount),
-                                    currencyCode: orderCurrency,
-                                },
-                            };
-                        }
-                        return productItem;
-                    });
+                    const productItems = products.map((product: any) => ({
+                        variantId: `gid://shopify/ProductVariant/${product.id}`,
+                        quantity: product.quantity,
+                    }));
 
-                    return [lineItemBase, ...productItems];
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                        ...productItems,
+                    ];
                 } catch (error) {
                     console.error("Failed to parse BYOB JSON:", error);
-                    return [lineItemBase];
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                    ];
                 }
             }
         }
 
         // Default case
-        return [lineItemBase];
+        return [
+            {
+                variantId: item.variantId,
+                quantity: item.quantity,
+            },
+        ];
     });
 
     const draftOrder = {
