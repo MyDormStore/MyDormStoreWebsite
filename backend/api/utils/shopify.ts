@@ -67,7 +67,10 @@ export const createOrder = async (
         };
 
         // Add priceSet if amount is available (required when currency differs from shop currency)
-        if (item.amount !== undefined && item.amount > 0) {
+        if (
+            orderCurrency !== "CAD" ||
+            (item.amount !== undefined && item.amount > 0)
+        ) {
             lineItemBase.priceSet = {
                 shopMoney: {
                     amount: String(item.amount),
@@ -97,7 +100,10 @@ export const createOrder = async (
                         requiresShipping: true,
                     };
                     // Add priceSet for BYOB products if amount is available
-                    if (product.amount !== undefined && product.amount > 0) {
+                    if (
+                        orderCurrency !== "CAD" ||
+                        (product.amount !== undefined && product.amount > 0)
+                    ) {
                         productItem.priceSet = {
                             shopMoney: {
                                 amount: String(product.amount),
