@@ -84,22 +84,43 @@ export function SuccessPage() {
                 const data = response.data;
 
                 if (data.status === "succeeded") {
-                    const orderResponse = await axios.post(
-                        `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
-                        payload,
-                    );
-                    console.log(orderResponse);
-
-                    if (!orderResponse.data.graphQLErrors) {
-                        setHasOrdered(true); // Update state
-                        setPayload({});
-                        // Only clear cart after order is successful
-                        const IDs = cart.lines.nodes.map(
-                            (cartLine) => cartLine.id,
+                    const metadata = response.data.metadata;
+                    if (metadata) {
+                        const orderResponse = await axios.post(
+                            `${import.meta.env.VITE_BACKEND_URL}/Stripe/create-order-from-metadata`,
+                            metadata,
                         );
-                        await removeProductFromCart(IDs, cart.id);
+                        console.log(orderResponse);
+
+                        if (!orderResponse.data.error) {
+                            setHasOrdered(true); // Update state
+                            setPayload({});
+                            // Only clear cart after order is successful
+                            const IDs = cart.lines.nodes.map(
+                                (cartLine) => cartLine.id,
+                            );
+                            await removeProductFromCart(IDs, cart.id);
+                        } else {
+                            throw new Error();
+                        }
                     } else {
-                        throw new Error();
+                        const orderResponse = await axios.post(
+                            `${import.meta.env.VITE_BACKEND_URL}/Shopify/order`,
+                            payload,
+                        );
+                        console.log(orderResponse);
+
+                        if (!orderResponse.data.graphQLErrors) {
+                            setHasOrdered(true); // Update state
+                            setPayload({});
+                            // Only clear cart after order is successful
+                            const IDs = cart.lines.nodes.map(
+                                (cartLine) => cartLine.id,
+                            );
+                            await removeProductFromCart(IDs, cart.id);
+                        } else {
+                            throw new Error();
+                        }
                     }
                 }
             } catch (error: any) {
