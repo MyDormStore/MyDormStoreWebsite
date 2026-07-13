@@ -171,6 +171,8 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
             : null,
         notInCart: payload.notInCart ? JSON.stringify(payload.notInCart) : null,
         rp_id: payload.rp_id ?? null,
+        dorm: payload.dorm ?? null,
+        school: payload.school ?? null,
     };
     // 4. Add chunked lineItems into metadata
     lineItemChunks.forEach((chunk, index) => {
