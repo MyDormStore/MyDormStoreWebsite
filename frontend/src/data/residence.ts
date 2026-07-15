@@ -2320,11 +2320,11 @@ street: "190 Sherwood Forest Square",
         street: "376 Wallbridge-Loyalist Road, PO Box 4200",
     },
     "University of New Brunswick": {
-        postalCode: "E3B 6C2",
+        postalCode: "E3B 5A3",
         country: "CA",
         city: "Fredericton",
         state: "NB",
-        street: "29 Dineen Drive, P.O. Box 9350 MPO",
+        street: "Student Union Building, 21 Pacey Drive",
     },
     "Trent University": {
         postalCode: "K9J 7B8",
