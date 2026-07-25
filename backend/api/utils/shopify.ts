@@ -149,21 +149,17 @@ export const createOrder = async (
             },
         ],
         taxLines: taxLines?.length
-            ? [
-                  {
-                      rate: taxLines[0].rate,
-                      priceSet: {
-                          shopMoney: {
-                              amount: String(
-                                  taxLines[0].priceSet.shopMoney.amount,
-                              ), // or taxLines[0].amount, depending on your data
-                              currencyCode: orderCurrency,
-                          },
-                      },
-                      title: "HST",
-                  },
-              ]
-            : undefined,
+    ? taxLines.map(line => ({
+        rate: line.rate,
+        priceSet: {
+            shopMoney: {
+                amount: String(line.priceSet.shopMoney.amount),
+                currencyCode: "CAD",
+            },
+        },
+        title: line.title || "Tax",
+    }))
+    : undefined,
         billingAddress: undefined,
         transactions: {
             amountSet: {
