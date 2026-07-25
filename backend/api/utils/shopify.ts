@@ -26,6 +26,7 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
 `;
 
 // ── Duplicate detection ─────────────────────────────────────────────
+// Query includes customAttributes so we can match by PaymentIntent ID
 const checkForDuplicateOrderQuery = `
 query CheckExistingOrder($query: String!) {
   orders(first: 10, query: $query, sortKey: CREATED_AT, reverse: true) {
@@ -40,33 +41,67 @@ query CheckExistingOrder($query: String!) {
           currencyCode
         }
       }
+      customAttributes {
+        key
+        value
+      }
     }
   }
 }`;
 
 /**
  * Check if a matching order already exists in Shopify.
- * Searches for paid orders from the same email in the last 48 hours
- * with a similar total (within $1 tolerance).
  *
- * To disable: have this function return null.
- * To tighten: reduce the time window or tolerance.
+ * Layer 1 (most reliable): same stripe_payment_intent_id custom attribute
+ * Layer 2 (fallback):      same email + similar total within $1
+ *
+ * Searches paid orders from the same email in the last 48 hours.
  */
 async function checkForDuplicateOrder(
     email: string,
     totalAmountCents: number,
+    paymentIntentId?: string,
 ): Promise<{ id?: string; orderNumber?: string } | null> {
     try {
         const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
         const searchQuery = `email:${email} financial_status:paid created_at:>=${since}`;
 
-        const { data } = await client.request(checkForDuplicateOrderQuery, {
-            variables: { query: searchQuery },
-        });
+        console.log(`[dedup] Searching orders: ${searchQuery}`);
+
+        const { data, errors } = await client.request(
+            checkForDuplicateOrderQuery,
+            { variables: { query: searchQuery } },
+        );
+
+        if (errors) {
+            console.error("[dedup] GraphQL errors:", JSON.stringify(errors));
+            return null;
+        }
 
         const orders = data?.orders?.nodes;
+        console.log(
+            `[dedup] Found ${orders?.length ?? 0} recent orders for ${email}`,
+        );
+
         if (!orders?.length) return null;
 
+        // Layer 1: Match by PaymentIntent ID (catches same-PI re-submissions)
+        if (paymentIntentId) {
+            const piMatch = orders.find((order: any) => {
+                const piAttr = order.customAttributes?.find(
+                    (attr: any) => attr.key === "stripe_payment_intent_id",
+                );
+                return piAttr?.value === paymentIntentId;
+            });
+            if (piMatch) {
+                console.log(
+                    `[dedup] PI match: order ${piMatch.name} has same PI ${paymentIntentId}`,
+                );
+                return { id: piMatch.id, orderNumber: piMatch.name };
+            }
+        }
+
+        // Layer 2: Match by total amount (catches re-checkout with new PI)
         const payloadTotal = totalAmountCents / 100;
 
         const match = orders.find((order: any) => {
@@ -78,15 +113,16 @@ async function checkForDuplicateOrder(
 
         if (match) {
             console.log(
-                `Duplicate detected: existing order ${match.name} matches ` +
-                `email=${email} total=${payloadTotal}`,
+                `[dedup] Total match: order ${match.name} ` +
+                    `(${match.totalPriceSet?.shopMoney?.amount}) ≈ ${payloadTotal}`,
             );
             return { id: match.id, orderNumber: match.name };
         }
 
+        console.log(`[dedup] No duplicate found for ${email} / ${payloadTotal}`);
         return null;
     } catch (error) {
-        console.error("Duplicate order check failed:", error);
+        console.error("[dedup] Duplicate check THREW:", error);
         return null;
     }
 }
@@ -121,10 +157,11 @@ export const createOrder = async (
         };
     }
 
-    // ── Duplicate check ──────────────────────────────────────────────
+    // ── Duplicate check (PI + email/total) ───────────────────────────
     const duplicateOrder = await checkForDuplicateOrder(
         email,
         Math.round(payload.amount),
+        stripePaymentIntentId,
     );
     if (duplicateOrder?.id) {
         console.log(
