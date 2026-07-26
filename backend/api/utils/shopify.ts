@@ -26,25 +26,15 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
 `;
 
 // ── Duplicate detection ─────────────────────────────────────────────
-// Query includes customAttributes so we can match by PaymentIntent ID
+// Minimal query — only id + name to avoid field-compatibility errors.
+// PI matching uses Shopify order tags (searchable via the query filter)
+// so we don't need customAttributes in the query at all.
 const checkForDuplicateOrderQuery = `
 query CheckExistingOrder($query: String!) {
-  orders(first: 10, query: $query, sortKey: CREATED_AT, reverse: true) {
+  orders(first: 5, query: $query) {
     nodes {
       id
       name
-      financialStatus
-      createdAt
-      totalPriceSet {
-        shopMoney {
-          amount
-          currencyCode
-        }
-      }
-      customAttributes {
-        key
-        value
-      }
     }
   }
 }`;
@@ -52,10 +42,11 @@ query CheckExistingOrder($query: String!) {
 /**
  * Check if a matching order already exists in Shopify.
  *
- * Layer 1 (most reliable): same stripe_payment_intent_id custom attribute
- * Layer 2 (fallback):      same email + similar total within $1
+ * Layer 1 (most reliable): search for an order tagged with the same PI
+ * Layer 2 (fallback):      any paid order from the same email in last 48h
  *
- * Searches paid orders from the same email in the last 48 hours.
+ * Both layers use a minimal GraphQL query (id + name only) to avoid
+ * field-level errors that caused v2 to silently fail.
  */
 async function checkForDuplicateOrder(
     email: string,
@@ -63,63 +54,57 @@ async function checkForDuplicateOrder(
     paymentIntentId?: string,
 ): Promise<{ id?: string; orderNumber?: string } | null> {
     try {
-        const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-        const searchQuery = `email:${email} financial_status:paid created_at:>=${since}`;
-
-        console.log(`[dedup] Searching orders: ${searchQuery}`);
-
-        const { data, errors } = await client.request(
-            checkForDuplicateOrderQuery,
-            { variables: { query: searchQuery } },
-        );
-
-        if (errors) {
-            console.error("[dedup] GraphQL errors:", JSON.stringify(errors));
-            return null;
-        }
-
-        const orders = data?.orders?.nodes;
-        console.log(
-            `[dedup] Found ${orders?.length ?? 0} recent orders for ${email}`,
-        );
-
-        if (!orders?.length) return null;
-
-        // Layer 1: Match by PaymentIntent ID (catches same-PI re-submissions)
+        // Layer 1: Match by PaymentIntent tag (exact match, most reliable)
         if (paymentIntentId) {
-            const piMatch = orders.find((order: any) => {
-                const piAttr = order.customAttributes?.find(
-                    (attr: any) => attr.key === "stripe_payment_intent_id",
+            const piQuery = `tag:"${paymentIntentId}"`;
+            console.log(`[dedup] Layer 1 — searching by PI tag: ${piQuery}`);
+
+            try {
+                const { data, errors } = await client.request(
+                    checkForDuplicateOrderQuery,
+                    { variables: { query: piQuery } },
                 );
-                return piAttr?.value === paymentIntentId;
-            });
-            if (piMatch) {
-                console.log(
-                    `[dedup] PI match: order ${piMatch.name} has same PI ${paymentIntentId}`,
-                );
-                return { id: piMatch.id, orderNumber: piMatch.name };
+
+                if (errors) {
+                    console.error("[dedup] Layer 1 GraphQL errors:", JSON.stringify(errors));
+                } else if (data?.orders?.nodes?.length) {
+                    const match = data.orders.nodes[0];
+                    console.log(`[dedup] PI tag match found: order ${match.name}`);
+                    return { id: match.id, orderNumber: match.name };
+                } else {
+                    console.log("[dedup] Layer 1 — no PI tag match");
+                }
+            } catch (err) {
+                console.error("[dedup] Layer 1 threw:", err);
             }
         }
 
-        // Layer 2: Match by total amount (catches re-checkout with new PI)
-        const payloadTotal = totalAmountCents / 100;
+        // Layer 2: Any recent paid order from same email (catches same-session dupes)
+        const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+        const emailQuery = `email:"${email}" financial_status:paid created_at:>=${since}`;
+        console.log(`[dedup] Layer 2 — searching by email: ${emailQuery}`);
 
-        const match = orders.find((order: any) => {
-            const orderTotal = parseFloat(
-                order.totalPriceSet?.shopMoney?.amount || "0",
+        try {
+            const { data, errors } = await client.request(
+                checkForDuplicateOrderQuery,
+                { variables: { query: emailQuery } },
             );
-            return Math.abs(orderTotal - payloadTotal) < 1.0;
-        });
 
-        if (match) {
-            console.log(
-                `[dedup] Total match: order ${match.name} ` +
-                    `(${match.totalPriceSet?.shopMoney?.amount}) ≈ ${payloadTotal}`,
-            );
-            return { id: match.id, orderNumber: match.name };
+            if (errors) {
+                console.error("[dedup] Layer 2 GraphQL errors:", JSON.stringify(errors));
+                return null;
+            }
+
+            if (data?.orders?.nodes?.length) {
+                const match = data.orders.nodes[0];
+                console.log(`[dedup] Email match found: order ${match.name} for ${email}`);
+                return { id: match.id, orderNumber: match.name };
+            }
+        } catch (err) {
+            console.error("[dedup] Layer 2 threw:", err);
         }
 
-        console.log(`[dedup] No duplicate found for ${email} / ${payloadTotal}`);
+        console.log(`[dedup] No duplicate found for ${email}`);
         return null;
     } catch (error) {
         console.error("[dedup] Duplicate check THREW:", error);
@@ -182,11 +167,8 @@ export const createOrder = async (
             quantity: item.quantity,
             requiresShipping: true,
         };
-        // Add priceSet if amount is available (required when currency differs from shop currency)
-        if (
-            orderCurrency !== "CAD" ||
-            (item.amount !== undefined && item.amount > 0)
-        ) {
+        // Add priceSet only when amount is a real number
+        if (item.amount !== undefined && item.amount !== null && !isNaN(Number(item.amount))) {
             lineItemBase.priceSet = {
                 shopMoney: {
                     amount: String(item.amount),
@@ -212,11 +194,8 @@ export const createOrder = async (
                         quantity: product.quantity,
                         requiresShipping: true,
                     };
-                    // Add priceSet for BYOB products if amount is available
-                    if (
-                        orderCurrency !== "CAD" ||
-                        (product.amount !== undefined && product.amount > 0)
-                    ) {
+                    // Add priceSet only when amount is a real number
+                    if (product.amount !== undefined && product.amount !== null && !isNaN(Number(product.amount))) {
                         productItem.priceSet = {
                             shopMoney: {
                                 amount: String(product.amount),
@@ -280,6 +259,7 @@ export const createOrder = async (
             },
         },
         customAttributes: [],
+        tags: [] as string[],
     };
     if (phoneNumber) {
         order.customAttributes?.push({
@@ -310,6 +290,8 @@ export const createOrder = async (
             key: "stripe_payment_intent_id",
             value: stripePaymentIntentId,
         });
+        // Also add as a tag so the dedup query can search by it directly
+        (order as any).tags.push(stripePaymentIntentId);
     }
     if (rp_id) {
         order.customAttributes?.push({ key: "rp_id", value: rp_id });
