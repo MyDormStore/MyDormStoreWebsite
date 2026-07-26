@@ -160,15 +160,29 @@ export const createOrder = async (
     }
     // ─────────────────────────────────────────────────────────────────
 
-    const orderCurrency = (payload.currency || "CAD").toUpperCase();
+    // If any line item is missing an amount, force CAD so Shopify uses default prices.
+    // This prevents USD orders with no priceSet from being rejected.
+    const hasAllAmounts = lineItems.every(
+        (item) => item.amount !== undefined && item.amount !== null && !isNaN(Number(item.amount)),
+    );
+    const orderCurrency = hasAllAmounts
+        ? (payload.currency || "CAD").toUpperCase()
+        : "CAD";
+
+    if (!hasAllAmounts && payload.currency && payload.currency.toUpperCase() !== "CAD") {
+        console.log(
+            `[order] Forcing CAD — line items missing amounts (original currency: ${payload.currency})`,
+        );
+    }
+
     const cartItems = lineItems.flatMap((item) => {
         const lineItemBase: any = {
             variantId: item.variantId,
             quantity: item.quantity,
             requiresShipping: true,
         };
-        // Add priceSet only when amount is a real number
-        if (item.amount !== undefined && item.amount !== null && !isNaN(Number(item.amount))) {
+        // Add priceSet only when amount is a real number AND we have all amounts
+        if (hasAllAmounts && item.amount !== undefined && item.amount !== null && !isNaN(Number(item.amount))) {
             lineItemBase.priceSet = {
                 shopMoney: {
                     amount: String(item.amount),
@@ -194,8 +208,8 @@ export const createOrder = async (
                         quantity: product.quantity,
                         requiresShipping: true,
                     };
-                    // Add priceSet only when amount is a real number
-                    if (product.amount !== undefined && product.amount !== null && !isNaN(Number(product.amount))) {
+                    // Add priceSet only when all amounts are present
+                    if (hasAllAmounts && product.amount !== undefined && product.amount !== null && !isNaN(Number(product.amount))) {
                         productItem.priceSet = {
                             shopMoney: {
                                 amount: String(product.amount),
