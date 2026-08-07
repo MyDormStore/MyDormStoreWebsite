@@ -1,5 +1,6 @@
 import { client } from "../services/shopify";
 import { LineItems, Order, Payload } from "../types/types";
+
 export type OrderCreationResult =
     | {
           ok: true;
@@ -11,6 +12,7 @@ export type OrderCreationResult =
           error: string;
           details?: unknown;
       };
+
 const orderMutation = `
 mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOptionsInput) {
       orderCreate(order: $order, options: $options) {
@@ -25,93 +27,102 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
 }
 `;
 
-// ── Duplicate detection ─────────────────────────────────────────────
-// Minimal query — only id + name to avoid field-compatibility errors.
-// PI matching uses Shopify order tags (searchable via the query filter)
-// so we don't need customAttributes in the query at all.
 const checkForDuplicateOrderQuery = `
-query CheckExistingOrder($query: String!) {
-  orders(first: 5, query: $query) {
-    nodes {
-      id
-      name
-    }
-  }
+query CheckExistingOrder($email: String!, $address1: String!, $city: String!, $country: String!, $zip: String!, $totalPriceSet: MoneyFilterInput!) {
+      existingOrders(input: {
+       emailAddresses: { equals: $email },
+       addresses: {
+         street: { equals: $address1 },
+         city: { equals: $city },
+         countryCode: { equals: $country },
+         zipCode: { equals: $zip }
+       },
+       totalPriceSet: {
+         currencyCodes: { includes: $totalPriceSet.currencyCode },
+         amounts: { includes: [ $totalPriceSet.amount ]}
+       }
+      }) {
+       orders {
+         id
+         orderNumber
+         financialStatus
+         totalPriceSet {
+           shopMoney {
+             amount
+             currencyCode
+            }
+          }
+        }
+      }
 }`;
 
+type DuplicateOrderLookupInput = {
+    email: string;
+    address1: string;
+    city: string;
+    country: string;
+    zip: string;
+    totalAmountCents: number;
+    currencyCode: string;
+};
+
+export const buildDuplicateOrderLookupInput = (
+    payload: Payload,
+): DuplicateOrderLookupInput => {
+    const { deliveryDetails } = payload;
+    const { shippingAddress, email } = deliveryDetails;
+
+    return {
+        email: email.trim().toLowerCase(),
+        address1: shippingAddress.street.trim(),
+        city: shippingAddress.city.trim(),
+        country: shippingAddress.country.trim().toUpperCase(),
+        zip: shippingAddress.postalCode
+            .replace(/\s+/g, "")
+            .trim()
+            .toUpperCase(),
+        totalAmountCents: Math.round(payload.amount),
+        currencyCode: (payload.currency || "CAD").toUpperCase(),
+    };
+};
+
 /**
- * Check if a matching order already exists in Shopify.
- *
- * Layer 1 (most reliable): search for an order tagged with the same PI
- * Layer 2 (fallback):      any paid order from the same email in last 48h
- *
- * Both layers use a minimal GraphQL query (id + name only) to avoid
- * field-level errors that caused v2 to silently fail.
+ * Check if an existing order matches the given criteria in Shopify.
+ * Searches for orders by email, shipping address, and total within the last 24 hours.
  */
 async function checkForDuplicateOrder(
-    email: string,
-    totalAmountCents: number,
-    paymentIntentId?: string,
+    input: DuplicateOrderLookupInput,
 ): Promise<{ id?: string; orderNumber?: string } | null> {
     try {
-        // Layer 1: Match by PaymentIntent tag (exact match, most reliable)
-        if (paymentIntentId) {
-            const piQuery = `tag:"${paymentIntentId}"`;
-            console.log(`[dedup] Layer 1 — searching by PI tag: ${piQuery}`);
+        const variables: Record<string, any> = {
+            email: input.email,
+            address1: input.address1,
+            city: input.city,
+            country: input.country,
+            zip: input.zip,
+            totalPriceSet: {
+                amount: input.totalAmountCents / 100,
+                currencyCode: input.currencyCode,
+            },
+        };
 
-            try {
-                const { data, errors } = await client.request(
-                    checkForDuplicateOrderQuery,
-                    { variables: { query: piQuery } },
-                );
+        const { data } = await client.request(checkForDuplicateOrderQuery, {
+            variables,
+        });
 
-                if (errors) {
-                    console.error("[dedup] Layer 1 GraphQL errors:", JSON.stringify(errors));
-                } else if (data?.orders?.nodes?.length) {
-                    const match = data.orders.nodes[0];
-                    console.log(`[dedup] PI tag match found: order ${match.name}`);
-                    return { id: match.id, orderNumber: match.name };
-                } else {
-                    console.log("[dedup] Layer 1 — no PI tag match");
-                }
-            } catch (err) {
-                console.error("[dedup] Layer 1 threw:", err);
-            }
+        if (data?.existingOrders?.orders?.length) {
+            return {
+                id: data.existingOrders.orders[0].id,
+                orderNumber: data.existingOrders.orders[0].orderNumber,
+            };
         }
 
-        // Layer 2: Any recent paid order from same email (catches same-session dupes)
-        const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-        const emailQuery = `email:"${email}" financial_status:paid created_at:>=${since}`;
-        console.log(`[dedup] Layer 2 — searching by email: ${emailQuery}`);
-
-        try {
-            const { data, errors } = await client.request(
-                checkForDuplicateOrderQuery,
-                { variables: { query: emailQuery } },
-            );
-
-            if (errors) {
-                console.error("[dedup] Layer 2 GraphQL errors:", JSON.stringify(errors));
-                return null;
-            }
-
-            if (data?.orders?.nodes?.length) {
-                const match = data.orders.nodes[0];
-                console.log(`[dedup] Email match found: order ${match.name} for ${email}`);
-                return { id: match.id, orderNumber: match.name };
-            }
-        } catch (err) {
-            console.error("[dedup] Layer 2 threw:", err);
-        }
-
-        console.log(`[dedup] No duplicate found for ${email}`);
         return null;
     } catch (error) {
-        console.error("[dedup] Duplicate check THREW:", error);
+        console.error("Duplicate order check failed:", error);
         return null;
     }
 }
-// ─────────────────────────────────────────────────────────────────────
 
 export const createOrder = async (
     payload: Payload,
@@ -131,6 +142,7 @@ export const createOrder = async (
     } = payload;
     const { shippingAddress, firstName, lastName, email, phoneNumber } =
         deliveryDetails;
+
     if (!email || !lineItems?.length) {
         return {
             ok: false,
@@ -142,90 +154,68 @@ export const createOrder = async (
         };
     }
 
-    // ── Duplicate check (PI + email/total) ───────────────────────────
-    const duplicateOrder = await checkForDuplicateOrder(
-        email,
-        Math.round(payload.amount),
-        stripePaymentIntentId,
-    );
+    const duplicateLookupInput = buildDuplicateOrderLookupInput(payload);
+    const duplicateOrder = await checkForDuplicateOrder(duplicateLookupInput);
+
     if (duplicateOrder?.id) {
-        console.log(
-            `Skipping order creation — duplicate of ${duplicateOrder.orderNumber}`,
-        );
         return {
             ok: true,
             orderId: duplicateOrder.id,
             duplicate: true,
         };
     }
-    // ─────────────────────────────────────────────────────────────────
-
-    // If any line item is missing an amount, force CAD so Shopify uses default prices.
-    // This prevents USD orders with no priceSet from being rejected.
-    const hasAllAmounts = lineItems.every(
-        (item) => item.amount !== undefined && item.amount !== null && !isNaN(Number(item.amount)),
-    );
-    const orderCurrency = hasAllAmounts
-        ? (payload.currency || "CAD").toUpperCase()
-        : "CAD";
-
-    if (!hasAllAmounts && payload.currency && payload.currency.toUpperCase() !== "CAD") {
-        console.log(
-            `[order] Forcing CAD — line items missing amounts (original currency: ${payload.currency})`,
-        );
-    }
 
     const cartItems = lineItems.flatMap((item) => {
-        const lineItemBase: any = {
-            variantId: item.variantId,
-            quantity: item.quantity,
-            requiresShipping: true,
-        };
-        // Add priceSet only when amount is a real number AND we have all amounts
-        if (hasAllAmounts && item.amount !== undefined && item.amount !== null && !isNaN(Number(item.amount))) {
-            lineItemBase.priceSet = {
-                shopMoney: {
-                    amount: String(item.amount),
-                    currencyCode: orderCurrency,
-                },
-            };
-        }
         if (item.attributes) {
             const index = item.attributes.findIndex(
                 (attribute) => attribute.key === "__byob",
             );
+
             if (index === -1) {
-                return [lineItemBase];
+                return [
+                    {
+                        variantId: item.variantId,
+                        quantity: item.quantity,
+                        requiresShipping: true,
+                    },
+                ];
             }
+
             let productItems: Array<any> = [];
             try {
                 const products: Array<any> = JSON.parse(
                     item.attributes[index]?.value || "[]",
                 );
-                productItems = products.map((product: any) => {
-                    const productItem: any = {
-                        variantId: `gid://shopify/ProductVariant/${product.id}`,
-                        quantity: product.quantity,
-                        requiresShipping: true,
-                    };
-                    // Add priceSet only when all amounts are present
-                    if (hasAllAmounts && product.amount !== undefined && product.amount !== null && !isNaN(Number(product.amount))) {
-                        productItem.priceSet = {
-                            shopMoney: {
-                                amount: String(product.amount),
-                                currencyCode: orderCurrency,
-                            },
-                        };
-                    }
-                    return productItem;
-                });
+                productItems = products.map((product: any) => ({
+                    variantId: `gid://shopify/ProductVariant/${product.id}`,
+                    quantity: product.quantity,
+                    requiresShipping: true,
+                }));
             } catch (err) {
                 console.error("Failed to parse BYOB JSON:", err);
             }
-            return [lineItemBase, ...productItems];
+
+            return [
+                {
+                    variantId: item.variantId,
+                    quantity: item.quantity,
+                    requiresShipping: true,
+                },
+                ...productItems,
+            ];
         }
-        return [lineItemBase];
+
+        return [
+            {
+                variantId: item.variantId,
+                quantity: item.quantity,
+                requiresShipping: true,
+            },
+        ];
     });
+
+    const orderCurrency = (payload.currency || "CAD").toUpperCase();
+
     const order: Order = {
         currency: orderCurrency,
         financialStatus: "PAID",
@@ -252,17 +242,8 @@ export const createOrder = async (
             },
         ],
         taxLines: taxLines?.length
-    ? taxLines.map(line => ({
-        rate: line.rate,
-        priceSet: {
-            shopMoney: {
-                amount: String(line.priceSet.shopMoney.amount),
-                currencyCode: "CAD",
-            },
-        },
-        title: line.title || "Tax",
-    }))
-    : undefined,
+            ? [{ ...taxLines[0], title: "HST" }]
+            : undefined,
         billingAddress: undefined,
         transactions: {
             amountSet: {
@@ -273,60 +254,86 @@ export const createOrder = async (
             },
         },
         customAttributes: [],
-        tags: [] as string[],
     };
+
     if (phoneNumber) {
         order.customAttributes?.push({
             key: "Phone number",
             value: phoneNumber,
         });
     }
+
     if (payload.discountCodes) {
         order.customAttributes?.push({
             key: "Discount Codes",
             value: payload.discountCodes.join(", "),
         });
     }
+
     if (shipping.moveInDate) {
         order.customAttributes?.push({
             key: "Move In Date",
             value: new Date(shipping.moveInDate).toDateString(),
         });
     }
+
     if (notInCart?.length) {
         order.customAttributes?.push({
             key: "Not In Cart",
             value: notInCart.join(", "),
         });
     }
+
     if (stripePaymentIntentId) {
         order.customAttributes?.push({
             key: "stripe_payment_intent_id",
             value: stripePaymentIntentId,
         });
-        // Also add as a tag so the dedup query can search by it directly
-        (order as any).tags.push(stripePaymentIntentId);
     }
+
     if (rp_id) {
         order.customAttributes?.push({ key: "rp_id", value: rp_id });
     }
+
     if (dorm) {
         order.customAttributes?.push({ key: "Dorm", value: dorm });
     }
+
     if (school) {
         order.customAttributes?.push({ key: "School", value: school });
     }
+
     if (secondaryDetails?.toggleSecondaryDetails) {
+        // ─────────────────────────────────────────────────────────────
+        // NEW GUARD (added Aug 2026):
+        // Shopify's orderCreate rejects the whole order if
+        // billingAddress.countryCode is empty or not a valid ISO code.
+        // Between Jul 24 – Jul 26 2026 this caused ~33,000 failed order
+        // creations — the frontend sent an empty country when the
+        // customer toggled secondary billing on but didn't fill it.
+        // Validate here and fall back to CA (shop country) if invalid,
+        // so the order still goes through instead of failing entirely.
+        // ─────────────────────────────────────────────────────────────
+        const rawCountry = (
+            secondaryDetails.billingAddress.country || ""
+        ).toUpperCase();
+        const country = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : "CA";
+        if (country !== rawCountry) {
+            console.warn(
+                `[shopify order] billingAddress.country was "${secondaryDetails.billingAddress.country}", falling back to "CA"`,
+            );
+        }
         order.billingAddress = {
             firstName: secondaryDetails.firstName,
             lastName: secondaryDetails.lastName,
             address1: secondaryDetails.billingAddress.street,
             city: secondaryDetails.billingAddress.city,
-            countryCode: secondaryDetails.billingAddress.country,
+            countryCode: country,
             zip: secondaryDetails.billingAddress.postalCode,
             provinceCode: secondaryDetails.billingAddress.state,
         };
     }
+
     const discountAmount = payload.discountAmount || 0;
     const firstDiscountCode = payload.discountCodes?.[0];
     if (discountAmount > 0 && firstDiscountCode) {
@@ -342,6 +349,7 @@ export const createOrder = async (
             },
         };
     }
+
     try {
         const { data, errors } = await client.request(orderMutation, {
             variables: {
@@ -352,6 +360,7 @@ export const createOrder = async (
                 },
             },
         });
+
         if (errors) {
             console.error("GraphQL errors:", errors);
             return {
@@ -360,6 +369,7 @@ export const createOrder = async (
                 details: errors,
             };
         }
+
         const userErrors = data.orderCreate.userErrors;
         if (userErrors?.length > 0) {
             console.error("User errors:", userErrors);
@@ -369,6 +379,7 @@ export const createOrder = async (
                 details: userErrors,
             };
         }
+
         return {
             ok: true,
             orderId: data.orderCreate.order.id,
@@ -383,6 +394,7 @@ export const createOrder = async (
         };
     }
 };
+
 const draftOrderCalculateMutation = `
 mutation CalculateDraftOrder($input: DraftOrderInput!) {
     draftOrderCalculate(input: $input) {
@@ -422,6 +434,7 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
 export const calculateDraftOrder = async (payload: Payload) => {
     const { lineItems, deliveryDetails } = payload;
     const { shippingAddress, email } = deliveryDetails;
+
     const cartItems = lineItems.flatMap((item) => {
         if (item.attributes) {
             const byobIndex = item.attributes.findIndex(
@@ -430,6 +443,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
             const discountedPrice = item.attributes.find(
                 (attr) => attr.key === "__totalByob",
             )?.value;
+
             if (
                 byobIndex !== -1 &&
                 discountedPrice &&
@@ -439,10 +453,12 @@ export const calculateDraftOrder = async (payload: Payload) => {
                     const products: Array<any> = JSON.parse(
                         item.attributes[byobIndex].value,
                     );
+
                     const productItems = products.map((product: any) => ({
                         variantId: `gid://shopify/ProductVariant/${product.id}`,
                         quantity: product.quantity,
                     }));
+
                     return [
                         {
                             variantId: item.variantId,
@@ -461,6 +477,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
                 }
             }
         }
+
         // Default case
         return [
             {
@@ -469,6 +486,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
             },
         ];
     });
+
     const draftOrder = {
         discountCodes: payload.discountCodes ?? [],
         lineItems: cartItems,
@@ -482,6 +500,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
         },
         useCustomerDefaultAddress: false,
     };
+
     try {
         const { data, errors } = await client.request(
             draftOrderCalculateMutation,
@@ -489,10 +508,12 @@ export const calculateDraftOrder = async (payload: Payload) => {
                 variables: { input: draftOrder },
             },
         );
+
         if (errors) {
             console.error("GraphQL Errors:", errors);
             return { error: errors };
         }
+
         // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return { data };
     } catch (err) {
@@ -500,6 +521,7 @@ export const calculateDraftOrder = async (payload: Payload) => {
         return { error: err };
     }
 };
+
 const finalAmountMutation = `
 mutation CalculateDraftOrder($input: DraftOrderInput!) {
     draftOrderCalculate(input: $input) {
@@ -536,24 +558,12 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
     }
 }
 `;
+
 export const calculateFinalAmount = async (payload: Payload) => {
     const { lineItems, deliveryDetails } = payload;
     const { shippingAddress, email } = deliveryDetails;
-    const orderCurrency = (payload.currency || "CAD").toUpperCase();
+
     const cartItems = lineItems.flatMap((item) => {
-        const lineItemBase: any = {
-            variantId: item.variantId,
-            quantity: item.quantity,
-        };
-        // Add priceSet if amount is available
-        if (item.amount !== undefined && item.amount > 0) {
-            lineItemBase.priceSet = {
-                shopMoney: {
-                    amount: String(item.amount),
-                    currencyCode: orderCurrency,
-                },
-            };
-        }
         if (item.attributes) {
             const byobIndex = item.attributes.findIndex(
                 (attr) => attr.key === "__byob",
@@ -561,6 +571,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
             const discountedPrice = item.attributes.find(
                 (attr) => attr.key === "__totalByob",
             )?.value;
+
             if (
                 byobIndex !== -1 &&
                 discountedPrice &&
@@ -570,34 +581,40 @@ export const calculateFinalAmount = async (payload: Payload) => {
                     const products: Array<any> = JSON.parse(
                         item.attributes[byobIndex].value,
                     );
-                    const productItems = products.map((product: any) => {
-                        const productItem: any = {
-                            variantId: `gid://shopify/ProductVariant/${product.id}`,
-                            quantity: product.quantity,
-                        };
-                        if (
-                            product.amount !== undefined &&
-                            product.amount > 0
-                        ) {
-                            productItem.priceSet = {
-                                shopMoney: {
-                                    amount: String(product.amount),
-                                    currencyCode: orderCurrency,
-                                },
-                            };
-                        }
-                        return productItem;
-                    });
-                    return [lineItemBase, ...productItems];
+
+                    const productItems = products.map((product: any) => ({
+                        variantId: `gid://shopify/ProductVariant/${product.id}`,
+                        quantity: product.quantity,
+                    }));
+
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                        ...productItems,
+                    ];
                 } catch (error) {
                     console.error("Failed to parse BYOB JSON:", error);
-                    return [lineItemBase];
+                    return [
+                        {
+                            variantId: item.variantId,
+                            quantity: item.quantity,
+                        },
+                    ];
                 }
             }
         }
+
         // Default case
-        return [lineItemBase];
+        return [
+            {
+                variantId: item.variantId,
+                quantity: item.quantity,
+            },
+        ];
     });
+
     const draftOrder = {
         discountCodes: payload.discountCodes ?? [],
         lineItems: cartItems,
@@ -611,6 +628,7 @@ export const calculateFinalAmount = async (payload: Payload) => {
         },
         useCustomerDefaultAddress: false,
     };
+
     try {
         const { data, errors } = await client.request(
             draftOrderCalculateMutation,
@@ -618,10 +636,12 @@ export const calculateFinalAmount = async (payload: Payload) => {
                 variables: { input: draftOrder },
             },
         );
+
         if (errors) {
             console.error("GraphQL Errors:", errors);
             return { error: errors };
         }
+
         // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return { data: data.draftOrderCalculate.calculatedDraftOrder };
     } catch (err) {
