@@ -171,8 +171,6 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
             : null,
         notInCart: payload.notInCart ? JSON.stringify(payload.notInCart) : null,
         rp_id: payload.rp_id ?? null,
-        dorm: payload.dorm ?? null,
-        school: payload.school ?? null,
     };
     // 4. Add chunked lineItems into metadata
     lineItemChunks.forEach((chunk, index) => {
@@ -239,9 +237,28 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     //    Pull currency off the request body (sent from frontend based on
     //    Shopify cart's currencyCode). Defaults to "cad" if not provided
     //    so older clients keep working.
-    //    If customerId is undefined, Stripe accepts it — just means this
-    //    PaymentIntent isn't attached to a customer (rare edge case).
-    const currency = (req.body.currency || "cad").toLowerCase();
+    //
+    //    ─────────────────────────────────────────────────────────────
+    //    NEW GUARD (added Aug 2026):
+    //    Whitelist currencies to the ones this Stripe account actually
+    //    supports. Shopify Markets can hand us deprecated ISO codes
+    //    (e.g. "SLL" — renamed to SLE in 2022 when Sierra Leone
+    //    redenominated) which Stripe rejects with a 400, killing the
+    //    checkout. Anything not in the allowlist falls back to CAD so
+    //    the intent still succeeds instead of blocking the customer.
+    //    Aug 5 2026: 15 checkout attempts were killed by "sll" — this
+    //    prevents that from happening again.
+    //    ─────────────────────────────────────────────────────────────
+    const ALLOWED_CURRENCIES = new Set(["cad", "usd", "eur", "gbp", "aud"]);
+    const rawCurrency = (req.body.currency || "cad").toLowerCase();
+    const currency = ALLOWED_CURRENCIES.has(rawCurrency)
+        ? rawCurrency
+        : "cad";
+    if (rawCurrency !== currency) {
+        console.warn(
+            `[create-payment-intent] Rejected unsupported currency "${rawCurrency}", falling back to "cad"`,
+        );
+    }
     const paymentIntent = await stripe.paymentIntents.create({
         amount: parseInt(amount),
         currency,
