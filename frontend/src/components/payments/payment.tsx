@@ -82,9 +82,24 @@ export default function PaymentForm({ prevTab }: PaymentFormProps) {
                 // Pull the cart's currency (Shopify Markets sets this to
                 // USD for US visitors, CAD for Canadian, etc.) so the Stripe
                 // charge matches what the customer saw on the page.
-                const currency =
+                //
+                // ─────────────────────────────────────────────────────────
+                // NEW GUARD (added Aug 2026):
+                // Whitelist to currencies the Stripe account supports.
+                // Shopify Markets can occasionally hand us deprecated ISO
+                // codes (e.g. "SLL" – renamed to SLE in 2022) that Stripe
+                // rejects, killing the checkout with a 400 before the
+                // customer can pay. Fall back to CAD for anything outside
+                // this list so the customer can still complete the order.
+                // Aug 5 2026 log had 15 checkout attempts blocked by "sll".
+                // ─────────────────────────────────────────────────────────
+                const ALLOWED_CURRENCIES = ["cad", "usd", "eur", "gbp", "aud"];
+                const rawCurrency =
                     cart.cost?.totalAmount?.currencyCode?.toLowerCase() ||
                     "cad";
+                const currency = ALLOWED_CURRENCIES.includes(rawCurrency)
+                    ? rawCurrency
+                    : "cad";
 
                 const newPayload = {
                     ...payload,
