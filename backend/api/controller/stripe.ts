@@ -153,6 +153,12 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     // 2. Chunk into pieces ≤ 500 characters
     const lineItemChunks = chunkString(lineItemsJson, 500);
     // 3. Start building metadata
+    //    NOTE (Aug 8 2026): dorm + school MUST be in Stripe metadata so
+    //    the webhook path can populate the Residence column on the
+    //    Shopify order. Before this fix, only the frontend
+    //    /create-order-from-metadata path received dorm/school (via
+    //    req.body) — whenever the webhook created the order instead,
+    //    Residence came out empty in the ORDER_DETAILS sheet.
     const metadata: { [key: string]: string | number | null } = {
         customer: payload.customer,
         stripePaymentIntentId: null,
@@ -160,6 +166,8 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         taxLines: JSON.stringify(payload.taxLines),
         shipping: JSON.stringify(payload.shipping),
         amount: payload.amount,
+        dorm: payload.dorm ?? req.body.dorm ?? null,       // ← added
+        school: payload.school ?? req.body.school ?? null, // ← added
         // Pass discount info through so the webhook can apply the
         // discount to the Shopify order it creates.
         discountAmount: req.body.discountAmount ?? 0,
