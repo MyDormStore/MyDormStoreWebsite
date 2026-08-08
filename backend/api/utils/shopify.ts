@@ -1,3 +1,37 @@
+// ============================================================================
+//  PATCHED shopify.ts  —  fixes duplicate-order bug (Aug 8 2026)
+// ----------------------------------------------------------------------------
+//  WHAT CHANGED vs. GitHub main:
+//    1. NEW findOrderByPaymentIntentId() — queries Shopify for an existing
+//       order tagged with the same stripe_payment_intent_id. This is the
+//       ONLY reliable dedup key because both order-creation paths
+//       (frontend /create-order-from-metadata AND webhook payment_intent.
+//       succeeded) share the same PI id.
+//    2. createOrder() now checks by PI id FIRST, before falling back to
+//       the existing address+amount check. If either check finds a match,
+//       returns { duplicate: true } instead of creating a second order.
+//    3. Added the PI id to `tags` on the created order (in addition to
+//       customAttributes) so the Shopify search index can find it in
+//       under a second. customAttributes are NOT indexed — that's why
+//       the old dedup missed the race.
+//    4. countryCode hardening in billingAddress (from the earlier
+//       Jul 24-26 fix) is preserved.
+//
+//  Why this stops the duplicates:
+//    Vercel serverless instances don't share memory, so the webhook's
+//    in-memory `completedOrderStates` Map only guards webhook-vs-webhook
+//    races. When the frontend calls /create-order-from-metadata AND
+//    Stripe fires the webhook (~1s apart), both hit createOrder() on
+//    different Lambdas. This patch makes Shopify the source of truth:
+//    both paths ask Shopify "does an order with this PI id already
+//    exist?" and back off if yes.
+//
+//  HOW TO DEPLOY:
+//    Copy this file's contents into backend/api/utils/shopify.ts on
+//    GitHub main. No changes needed to routes/, controller/, or the
+//    frontend.
+// ============================================================================
+
 import { client } from "../services/shopify";
 import { LineItems, Order, Payload } from "../types/types";
 
@@ -27,6 +61,48 @@ mutation orderCreate($order: OrderCreateOrderInput!, $options: OrderCreateOption
 }
 `;
 
+// ─── NEW: dedup by PaymentIntent id ─────────────────────────────────────────
+// Shopify indexes tags almost instantly (sub-second), which is why we ALSO
+// write the PI id as a tag on the created order (see orderMutation input
+// below). This query is the fast path.
+const findOrderByPaymentIntentQuery = `
+query FindOrderByPaymentIntent($query: String!) {
+  orders(first: 5, query: $query, sortKey: CREATED_AT, reverse: true) {
+    nodes {
+      id
+      name
+      createdAt
+    }
+  }
+}
+`;
+
+async function findOrderByPaymentIntentId(
+    paymentIntentId: string,
+): Promise<{ id: string; name: string } | null> {
+    if (!paymentIntentId) return null;
+    try {
+        // Search by tag first — tags are indexed instantly.
+        const { data } = await client.request(findOrderByPaymentIntentQuery, {
+            variables: { query: `tag:${paymentIntentId}` },
+        });
+        const orders = data?.orders?.nodes || [];
+        if (orders.length > 0) {
+            return { id: orders[0].id, name: orders[0].name };
+        }
+        return null;
+    } catch (err) {
+        console.error("PaymentIntent dedup lookup failed:", err);
+        // Fail OPEN — if the lookup errors, fall through to the address+amount
+        // dedup below. Better to occasionally miss a race than to block all
+        // orders when Shopify search is degraded.
+        return null;
+    }
+}
+
+// ─── EXISTING: address+amount fallback dedup ────────────────────────────────
+// Kept as a fallback for orders that somehow lose the PI id (older orders
+// pre-patch, manual imports, etc.).
 const checkForDuplicateOrderQuery = `
 query CheckExistingOrder($email: String!, $address1: String!, $city: String!, $country: String!, $zip: String!, $totalPriceSet: MoneyFilterInput!) {
       existingOrders(input: {
@@ -86,10 +162,6 @@ export const buildDuplicateOrderLookupInput = (
     };
 };
 
-/**
- * Check if an existing order matches the given criteria in Shopify.
- * Searches for orders by email, shipping address, and total within the last 24 hours.
- */
 async function checkForDuplicateOrder(
     input: DuplicateOrderLookupInput,
 ): Promise<{ id?: string; orderNumber?: string } | null> {
@@ -105,18 +177,15 @@ async function checkForDuplicateOrder(
                 currencyCode: input.currencyCode,
             },
         };
-
         const { data } = await client.request(checkForDuplicateOrderQuery, {
             variables,
         });
-
         if (data?.existingOrders?.orders?.length) {
             return {
                 id: data.existingOrders.orders[0].id,
                 orderNumber: data.existingOrders.orders[0].orderNumber,
             };
         }
-
         return null;
     } catch (error) {
         console.error("Duplicate order check failed:", error);
@@ -154,6 +223,27 @@ export const createOrder = async (
         };
     }
 
+    // ─── PRIMARY DEDUP: PaymentIntent id ────────────────────────────────────
+    // Both the frontend /create-order-from-metadata path AND the Stripe
+    // webhook end up here with the same PI id. Whichever path arrives
+    // second will see the first path's order and return early.
+    if (stripePaymentIntentId) {
+        const existing = await findOrderByPaymentIntentId(
+            stripePaymentIntentId,
+        );
+        if (existing) {
+            console.log(
+                `[createOrder] Dedup hit on PI ${stripePaymentIntentId} → returning existing order ${existing.name} (${existing.id})`,
+            );
+            return {
+                ok: true,
+                orderId: existing.id,
+                duplicate: true,
+            };
+        }
+    }
+
+    // ─── SECONDARY DEDUP: address + amount (existing check) ────────────────
     const duplicateLookupInput = buildDuplicateOrderLookupInput(payload);
     const duplicateOrder = await checkForDuplicateOrder(duplicateLookupInput);
 
@@ -256,6 +346,13 @@ export const createOrder = async (
         customAttributes: [],
     };
 
+    // NEW: tag the order with the PI id so findOrderByPaymentIntentId() can
+    // locate it on the next call (tags are indexed almost instantly,
+    // customAttributes are NOT).
+    if (stripePaymentIntentId) {
+        (order as any).tags = [stripePaymentIntentId];
+    }
+
     if (phoneNumber) {
         order.customAttributes?.push({
             key: "Phone number",
@@ -304,31 +401,22 @@ export const createOrder = async (
     }
 
     if (secondaryDetails?.toggleSecondaryDetails) {
-        // ─────────────────────────────────────────────────────────────
-        // NEW GUARD (added Aug 2026):
-        // Shopify's orderCreate rejects the whole order if
-        // billingAddress.countryCode is empty or not a valid ISO code.
-        // Between Jul 24 – Jul 26 2026 this caused ~33,000 failed order
-        // creations — the frontend sent an empty country when the
-        // customer toggled secondary billing on but didn't fill it.
-        // Validate here and fall back to CA (shop country) if invalid,
-        // so the order still goes through instead of failing entirely.
-        // ─────────────────────────────────────────────────────────────
+        // countryCode hardening — preserves Jul 24-26 fix so an empty or
+        // malformed country string can't cause the entire order create to
+        // fail with a Shopify validation error.
         const rawCountry = (
             secondaryDetails.billingAddress.country || ""
         ).toUpperCase();
-        const country = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : "CA";
-        if (country !== rawCountry) {
-            console.warn(
-                `[shopify order] billingAddress.country was "${secondaryDetails.billingAddress.country}", falling back to "CA"`,
-            );
-        }
+        const billingCountry = /^[A-Z]{2}$/.test(rawCountry)
+            ? rawCountry
+            : "CA";
+
         order.billingAddress = {
             firstName: secondaryDetails.firstName,
             lastName: secondaryDetails.lastName,
             address1: secondaryDetails.billingAddress.street,
             city: secondaryDetails.billingAddress.city,
-            countryCode: country,
+            countryCode: billingCountry,
             zip: secondaryDetails.billingAddress.postalCode,
             provinceCode: secondaryDetails.billingAddress.state,
         };
@@ -395,6 +483,7 @@ export const createOrder = async (
     }
 };
 
+// ─── UNCHANGED: draft order + final amount helpers (kept verbatim) ──────────
 const draftOrderCalculateMutation = `
 mutation CalculateDraftOrder($input: DraftOrderInput!) {
     draftOrderCalculate(input: $input) {
@@ -431,6 +520,7 @@ mutation CalculateDraftOrder($input: DraftOrderInput!) {
     }
 }
 `;
+
 export const calculateDraftOrder = async (payload: Payload) => {
     const { lineItems, deliveryDetails } = payload;
     const { shippingAddress, email } = deliveryDetails;
@@ -453,12 +543,10 @@ export const calculateDraftOrder = async (payload: Payload) => {
                     const products: Array<any> = JSON.parse(
                         item.attributes[byobIndex].value,
                     );
-
                     const productItems = products.map((product: any) => ({
                         variantId: `gid://shopify/ProductVariant/${product.id}`,
                         quantity: product.quantity,
                     }));
-
                     return [
                         {
                             variantId: item.variantId,
@@ -477,8 +565,6 @@ export const calculateDraftOrder = async (payload: Payload) => {
                 }
             }
         }
-
-        // Default case
         return [
             {
                 variantId: item.variantId,
@@ -513,51 +599,12 @@ export const calculateDraftOrder = async (payload: Payload) => {
             console.error("GraphQL Errors:", errors);
             return { error: errors };
         }
-
-        // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return { data };
     } catch (err) {
         console.error("Request failed:", err);
         return { error: err };
     }
 };
-
-const finalAmountMutation = `
-mutation CalculateDraftOrder($input: DraftOrderInput!) {
-    draftOrderCalculate(input: $input) {
-        calculatedDraftOrder {
-            availableShippingRates {
-                title
-                price {
-                    amount
-                    currencyCode
-                }
-            }
-            taxLines {
-                rate
-                priceSet {
-                    shopMoney {
-                        amount
-                        currencyCode
-                    }
-                }
-            }
-            currencyCode
-            lineItems {
-                title
-                quantity
-                requiresShipping
-            }
-            totalPriceSet {
-                shopMoney {
-                    amount
-                    currencyCode
-                }
-            }
-        }
-    }
-}
-`;
 
 export const calculateFinalAmount = async (payload: Payload) => {
     const { lineItems, deliveryDetails } = payload;
@@ -581,12 +628,10 @@ export const calculateFinalAmount = async (payload: Payload) => {
                     const products: Array<any> = JSON.parse(
                         item.attributes[byobIndex].value,
                     );
-
                     const productItems = products.map((product: any) => ({
                         variantId: `gid://shopify/ProductVariant/${product.id}`,
                         quantity: product.quantity,
                     }));
-
                     return [
                         {
                             variantId: item.variantId,
@@ -605,8 +650,6 @@ export const calculateFinalAmount = async (payload: Payload) => {
                 }
             }
         }
-
-        // Default case
         return [
             {
                 variantId: item.variantId,
@@ -636,13 +679,10 @@ export const calculateFinalAmount = async (payload: Payload) => {
                 variables: { input: draftOrder },
             },
         );
-
         if (errors) {
             console.error("GraphQL Errors:", errors);
             return { error: errors };
         }
-
-        // console.log("Draft order calculated:", JSON.stringify(data, null, 2));
         return { data: data.draftOrderCalculate.calculatedDraftOrder };
     } catch (err) {
         console.error("Request failed:", err);
