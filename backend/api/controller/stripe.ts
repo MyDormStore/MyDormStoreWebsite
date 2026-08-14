@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import Stripe from "stripe";
 import { config } from "dotenv";
 import { Payload } from "../types/types";
-import { createOrder, OrderCreationResult } from "../utils/shopify";
+import {
+    createOrder,
+    OrderCreationResult,
+    calculateFinalAmount,
+} from "../utils/shopify";
 import { trackKlaviyoEvent } from "../utils/klaviyo";
 config({ path: ".env" });
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
@@ -143,22 +147,28 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    //  CURRENCY/COUNTRY MISMATCH GUARD (added Aug 14 2026)
+    //  CURRENCY/COUNTRY AUTO-CORRECT (updated Aug 14 2026)
     //  ---------------------------------------------------------------
-    //  Shopify Markets sometimes converts prices to the customer's
-    //  browser-locale currency (e.g. a Nigerian parent browsing from
-    //  Lagos sees prices in NGN even though they're shipping to their
-    //  daughter's dorm in Waterloo). The frontend then hands us:
-    //    - currency: "ngn"
-    //    - amount: ~30,000,000 (NGN cents for a ~$300 CAD order)
-    //  Our existing currency whitelist forces "ngn" → "cad", but the
-    //  amount is still the NGN-cent number. Stripe then rejects with
-    //  "amount exceeds max" and the customer sees a broken payment form.
+    //  Shopify Markets converts prices to the customer's browser-locale
+    //  currency (a French parent browsing from Paris sees €22.30 even
+    //  though they're shipping to their kid's dorm in Waterloo). The
+    //  frontend then hands us:
+    //    - currency: "eur"
+    //    - amount: 2233 (EUR cents)
+    //  If we let this through, Stripe rejects because the merchant
+    //  account is CAD-only and the amount doesn't match a CAD order.
     //
-    //  Fix: if the shipping address is in Canada/US, currency MUST be
-    //  CAD (or USD). Reject early with a clear message so the customer
-    //  can refresh the page (which resets to shop currency) or contact
-    //  support for a manual invoice.
+    //  Previous version REJECTED with a "refresh the page" message —
+    //  but refreshing doesn't help when the customer's IP is stuck in
+    //  France/Nigeria/etc. They stayed stranded, dozens of retries.
+    //
+    //  NEW: auto-recalculate the CAD amount server-side by calling
+    //  Shopify's draftOrderCalculate (which uses the shop's default
+    //  currency = CAD, regardless of the customer's browser locale).
+    //  Then swap the payload currency/amount to the correct CAD values
+    //  and continue. Customer proceeds to checkout normally. Their
+    //  card gets charged in CAD; if their bank presents in EUR, the
+    //  bank does the FX conversion.
     // ─────────────────────────────────────────────────────────────────
     const shippingCountryRaw = String(
         payload.deliveryDetails?.shippingAddress?.country || "",
@@ -172,29 +182,57 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     };
     const currencyAllowlist = ALLOWED_CURRENCY_BY_COUNTRY[shippingCountryRaw];
     if (currencyAllowlist && !currencyAllowlist.has(rawCurrencyForCheck)) {
-        const expected = shippingCountryRaw === "CA" ? "CAD" : "USD";
-        const countryName =
-            shippingCountryRaw === "CA" ? "Canada" : "the United States";
         console.warn(
-            `[create-payment-intent] Currency/country mismatch: shipping to ${shippingCountryRaw} but currency=${rawCurrencyForCheck} — Shopify Markets likely converted for international browser. Amount ${amount} would blow up in Stripe. Rejecting.`,
+            `[create-payment-intent] Currency mismatch: shipping to ${shippingCountryRaw} but currency=${rawCurrencyForCheck}, amount=${amount}. Auto-recalculating in CAD via Shopify...`,
         );
-        res.status(400).json({
-            error:
-                "It looks like your prices are showing in " +
-                rawCurrencyForCheck.toUpperCase() +
-                " but you're shipping to " +
-                countryName +
-                ". Please refresh the page — prices should reset to " +
-                expected +
-                ". If the problem continues, email contactus@mydormstore.ca and we'll send you a direct payment link.",
-            code: "currency_country_mismatch",
-            detected: {
-                currency: rawCurrencyForCheck,
-                shippingCountry: shippingCountryRaw,
-                expected: expected.toLowerCase(),
-            },
-        });
-        return;
+        try {
+            const recalc = await calculateFinalAmount(payload);
+            if (recalc.error || !recalc.data) {
+                throw new Error(
+                    "Shopify recalc returned no data: " +
+                        JSON.stringify(recalc.error || "null"),
+                );
+            }
+            const cadAmountFloat = parseFloat(
+                String(
+                    (recalc.data as any)?.totalPriceSet?.shopMoney?.amount ||
+                        "0",
+                ),
+            );
+            if (!cadAmountFloat || cadAmountFloat <= 0) {
+                throw new Error(
+                    "Shopify recalc returned invalid amount: " + cadAmountFloat,
+                );
+            }
+            const cadAmountCents = Math.round(cadAmountFloat * 100);
+            console.warn(
+                `[create-payment-intent] Auto-corrected ${rawCurrencyForCheck} ${amount} → cad ${cadAmountCents} cents (${cadAmountFloat} CAD)`,
+            );
+            // Overwrite so the rest of this function uses the CAD values
+            req.body.currency = "cad";
+            req.body.amount = cadAmountCents;
+            (payload as any).amount = cadAmountCents;
+            (payload as any).currency = "CAD";
+        } catch (recalcErr) {
+            console.error(
+                `[create-payment-intent] Auto-recalc FAILED — falling back to reject:`,
+                recalcErr,
+            );
+            const expected = shippingCountryRaw === "CA" ? "CAD" : "USD";
+            const countryName =
+                shippingCountryRaw === "CA" ? "Canada" : "the United States";
+            res.status(400).json({
+                error:
+                    "We couldn't process your payment right now. Please email contactus@mydormstore.ca and we'll send you a direct payment link within a few hours.",
+                code: "currency_country_mismatch_recalc_failed",
+                detected: {
+                    currency: rawCurrencyForCheck,
+                    shippingCountry: shippingCountryRaw,
+                    expected: expected.toLowerCase(),
+                },
+            });
+            return;
+        }
     }
     function chunkString(str: string, maxLength: number): string[] {
         const chunks = [];
