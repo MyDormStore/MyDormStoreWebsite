@@ -141,6 +141,61 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     if (!amount) {
         res.status(400).send("Missing amount");
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  CURRENCY/COUNTRY MISMATCH GUARD (added Aug 14 2026)
+    //  ---------------------------------------------------------------
+    //  Shopify Markets sometimes converts prices to the customer's
+    //  browser-locale currency (e.g. a Nigerian parent browsing from
+    //  Lagos sees prices in NGN even though they're shipping to their
+    //  daughter's dorm in Waterloo). The frontend then hands us:
+    //    - currency: "ngn"
+    //    - amount: ~30,000,000 (NGN cents for a ~$300 CAD order)
+    //  Our existing currency whitelist forces "ngn" → "cad", but the
+    //  amount is still the NGN-cent number. Stripe then rejects with
+    //  "amount exceeds max" and the customer sees a broken payment form.
+    //
+    //  Fix: if the shipping address is in Canada/US, currency MUST be
+    //  CAD (or USD). Reject early with a clear message so the customer
+    //  can refresh the page (which resets to shop currency) or contact
+    //  support for a manual invoice.
+    // ─────────────────────────────────────────────────────────────────
+    const shippingCountryRaw = String(
+        payload.deliveryDetails?.shippingAddress?.country || "",
+    )
+        .toUpperCase()
+        .trim();
+    const rawCurrencyForCheck = String(req.body.currency || "cad").toLowerCase();
+    const ALLOWED_CURRENCY_BY_COUNTRY: Record<string, Set<string>> = {
+        CA: new Set(["cad", "usd"]),
+        US: new Set(["usd", "cad"]),
+    };
+    const currencyAllowlist = ALLOWED_CURRENCY_BY_COUNTRY[shippingCountryRaw];
+    if (currencyAllowlist && !currencyAllowlist.has(rawCurrencyForCheck)) {
+        const expected = shippingCountryRaw === "CA" ? "CAD" : "USD";
+        const countryName =
+            shippingCountryRaw === "CA" ? "Canada" : "the United States";
+        console.warn(
+            `[create-payment-intent] Currency/country mismatch: shipping to ${shippingCountryRaw} but currency=${rawCurrencyForCheck} — Shopify Markets likely converted for international browser. Amount ${amount} would blow up in Stripe. Rejecting.`,
+        );
+        res.status(400).json({
+            error:
+                "It looks like your prices are showing in " +
+                rawCurrencyForCheck.toUpperCase() +
+                " but you're shipping to " +
+                countryName +
+                ". Please refresh the page — prices should reset to " +
+                expected +
+                ". If the problem continues, email contactus@mydormstore.ca and we'll send you a direct payment link.",
+            code: "currency_country_mismatch",
+            detected: {
+                currency: rawCurrencyForCheck,
+                shippingCountry: shippingCountryRaw,
+                expected: expected.toLowerCase(),
+            },
+        });
+        return;
+    }
     function chunkString(str: string, maxLength: number): string[] {
         const chunks = [];
         for (let i = 0; i < str.length; i += maxLength) {
