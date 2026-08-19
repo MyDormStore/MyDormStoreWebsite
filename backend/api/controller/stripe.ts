@@ -142,6 +142,26 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     const payload: Payload = req.body;
     // console.log(payload);
     const amount = req.body.amount;
+
+    // ─────────────────────────────────────────────────────────────────
+    //  DIAGNOSTIC LOG (added Aug 19 2026)
+    //  Logs every incoming payment intent request so we can debug
+    //  customer failures without guessing. Lets us see exactly what
+    //  currency/amount/country arrived — the auto-recalc "silent"
+    //  bug for anjali.adiceam@gmail.com was invisible before this.
+    // ─────────────────────────────────────────────────────────────────
+    console.log(
+        `[create-payment-intent] IN: email=${
+            req.body.deliveryDetails?.email || "(none)"
+        }, currency=${req.body.currency}, amount=${amount}, shipCountry=${
+            req.body.deliveryDetails?.shippingAddress?.country || "(none)"
+        }, shipState=${
+            req.body.deliveryDetails?.shippingAddress?.state || "(none)"
+        }, shipZip=${
+            req.body.deliveryDetails?.shippingAddress?.postalCode || "(none)"
+        }`,
+    );
+
     if (!amount) {
         res.status(400).send("Missing amount");
     }
