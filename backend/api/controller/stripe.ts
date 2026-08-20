@@ -1,3 +1,60 @@
+// ============================================================================
+//  backend/api/controller/stripe.ts
+//  FIXED Aug 20 2026 — undercharge in createPaymentIntent
+// ----------------------------------------------------------------------------
+//  This replaces the whole file. Three fixes, all inside createPaymentIntent,
+//  all in the currency auto-correct block added Aug 14. Nothing else changed.
+//
+//  1. THE AMOUNT CHARGED WAS A STALE COPY.
+//       const amount = req.body.amount;      <- snapshot taken here
+//       ...
+//       req.body.amount = cadAmountCents;    <- auto-correct rewrites the body
+//       (payload as any).amount = cadAmountCents;
+//       ...
+//       amount: payload.amount,              <- metadata gets the NEW number
+//       ...
+//       stripe.paymentIntents.create({ amount: parseInt(amount) })
+//                                            <- Stripe gets the OLD one
+//
+//     `amount` was a const captured before the correction ran. The correction
+//     updated req.body and payload but not that local — and that local was the
+//     only one Stripe ever saw. Customers were charged the price shown in THEIR
+//     browser's currency, but billed in CAD.
+//
+//     Order #2637: browser priced the cart at 274.38, Shopify recalculated CAD
+//     421.07, the metadata recorded 421.07, Stripe charged CA$274.38.
+//
+//     FIXED by having ONE variable (amountCents) feed both the charge and the
+//     metadata, so they cannot drift apart again.
+//
+//  2. THE RECALCULATED TOTAL LEFT OUT SHIPPING.
+//     calculateFinalAmount() builds its draft order with no shippingLine, so
+//     Shopify returns subtotal + tax only. The FRONTEND knows this and adds
+//     shipping itself (payment.tsx: `Number(finalAmount.data) + totalShipping`).
+//     This block never did, so every auto-corrected order came up short by its
+//     shipping fee. #2637: collected 421.07 against a 441.02 order — the 19.95
+//     Move-In Day Delivery fee, never charged.
+//
+//     FIXED by adding payload.shipping.cost, matching what the frontend and
+//     createOrder() both do.
+//
+//  3. `if (!amount) res.status(400).send(...)` HAD NO `return`, so a missing
+//     amount sent a 400 and then carried straight on into Stripe anyway.
+//
+//  NEW GUARD: immediately before the charge, the amount about to be charged is
+//  compared against the amount about to be recorded. If they ever disagree the
+//  checkout refuses instead of quietly taking the wrong number. That check is
+//  what was missing on Aug 19.
+//
+//  KNOWN, NOT FIXED HERE: a USD cart shipping to Canada skips validation
+//  entirely (payment.tsx only revalidates when currency === "cad", and the
+//  backend allowlist permits usd for CA), so nothing rechecks it against
+//  Shopify. Separate decision, separate change.
+//
+//  HOW TO DEPLOY
+//    Replace backend/api/controller/stripe.ts with this file. Commit on a
+//    branch, not straight to main — Vercel auto-deploys main.
+// ============================================================================
 import { Request, Response } from "express";
 import Stripe from "stripe";
 import { config } from "dotenv";
@@ -141,7 +198,14 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 export const createPaymentIntent = async (req: Request, res: Response) => {
     const payload: Payload = req.body;
     // console.log(payload);
-    const amount = req.body.amount;
+
+    // ── FIX (fault 1) ──────────────────────────────────────────────────
+    // This used to be `const amount = req.body.amount` — a snapshot taken
+    // before the currency auto-correct below rewrites req.body.amount. The
+    // snapshot was what got charged; the corrected value was what got
+    // recorded. One mutable variable now feeds BOTH, so they cannot drift.
+    let amountCents = parseInt(String(req.body.amount), 10);
+    const amount = amountCents;   // kept for the diagnostic log below only
 
     // ─────────────────────────────────────────────────────────────────
     //  DIAGNOSTIC LOG (added Aug 19 2026)
@@ -162,8 +226,11 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         }`,
     );
 
-    if (!amount) {
+    // ── FIX (fault 3) ── this had no `return`, so a missing amount sent a
+    // 400 and then carried straight on into Stripe anyway.
+    if (!amountCents || Number.isNaN(amountCents) || amountCents <= 0) {
         res.status(400).send("Missing amount");
+        return;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -224,15 +291,27 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
                     "Shopify recalc returned invalid amount: " + cadAmountFloat,
                 );
             }
-            const cadAmountCents = Math.round(cadAmountFloat * 100);
+            // ── FIX (fault 2) ───────────────────────────────────────
+            // calculateFinalAmount() builds its draft order WITHOUT a
+            // shipping line, so Shopify hands back subtotal + tax only.
+            // createOrder() does pass shippingLines, so the Shopify order
+            // ends up higher than the amount we collect and the difference
+            // sits on the order as an unpaid balance for ever.
+            // Add the same shipping cost createOrder will use.
+            const shippingCost = Number(payload.shipping?.cost ?? 0) || 0;
+            const cadAmountCents = Math.round(
+                (cadAmountFloat + shippingCost) * 100,
+            );
             console.warn(
-                `[create-payment-intent] Auto-corrected ${rawCurrencyForCheck} ${amount} → cad ${cadAmountCents} cents (${cadAmountFloat} CAD)`,
+                `[create-payment-intent] Auto-corrected ${rawCurrencyForCheck} ${amount} → cad ${cadAmountCents} cents ` +
+                    `(${cadAmountFloat} CAD + ${shippingCost} shipping)`,
             );
             // Overwrite so the rest of this function uses the CAD values
             req.body.currency = "cad";
             req.body.amount = cadAmountCents;
             (payload as any).amount = cadAmountCents;
             (payload as any).currency = "CAD";
+            amountCents = cadAmountCents;   // <- the one that reaches Stripe
         } catch (recalcErr) {
             console.error(
                 `[create-payment-intent] Auto-recalc FAILED — falling back to reject:`,
@@ -278,7 +357,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         deliveryDetails: JSON.stringify(payload.deliveryDetails),
         taxLines: JSON.stringify(payload.taxLines),
         shipping: JSON.stringify(payload.shipping),
-        amount: payload.amount,
+        amount: amountCents,
         dorm: payload.dorm ?? req.body.dorm ?? null,       // ← added
         school: payload.school ?? req.body.school ?? null, // ← added
         // Pass discount info through so the webhook can apply the
@@ -380,8 +459,25 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
             `[create-payment-intent] Rejected unsupported currency "${rawCurrency}", falling back to "cad"`,
         );
     }
+    // ── THE GUARD ──────────────────────────────────────────────────────
+    // The number about to be charged and the number about to be recorded are
+    // now the same variable, so this can only fire if someone reintroduces a
+    // second source. That is exactly the mistake that produced #2637, so it
+    // is worth refusing the sale over rather than discovering it in October.
+    if (parseInt(String(metadata.amount), 10) !== amountCents) {
+        console.error(
+            `[create-payment-intent] REFUSING: about to charge ${amountCents} ` +
+                `but metadata records ${metadata.amount}. These must be equal.`,
+        );
+        res.status(500).json({
+            error: "We couldn't process your payment right now. Please email contactus@mydormstore.ca and we'll send you a direct payment link within a few hours.",
+            code: "amount_mismatch_guard",
+        });
+        return;
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
-        amount: parseInt(amount),
+        amount: amountCents,
         currency,
         customer: customerId,
         metadata,
