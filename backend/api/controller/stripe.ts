@@ -518,7 +518,16 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     });
 };
 export const getPaymentIntent = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    // Was: const { id } = req.params;
+    // Depending on the Express types in use, req.params values widen to
+    // `string | string[]`, which no longer matches any paymentIntents.retrieve
+    // overload — TS2769 / TS2345 on this line. This error predates the
+    // undercharge fix; it is corrected here because it was blocking the build.
+    const id = String(req.params.id ?? "");
+    if (!id) {
+        res.status(400).send("Missing payment intent id");
+        return;
+    }
     const paymentIntent = await stripe.paymentIntents.retrieve(id);
     res.send(paymentIntent);
 };
