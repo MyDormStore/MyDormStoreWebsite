@@ -9,7 +9,7 @@ import {
 
 import { useFormStore } from "@/core/form";
 import { dorm } from "@/data/residence";
-import { getAddress } from "@/lib/dorm-details";
+import { checkGroupFromDorm, getAddress } from "@/lib/dorm-details";
 import {
     deliveryFormSchema,
     type DeliveryFormSchemaType,
@@ -102,6 +102,11 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
         }
     }, [dorm]);
 
+    // Bookstore-pickup residences ship to the campus store, not the building.
+    const isBookstorePickup = dorm
+        ? checkGroupFromDorm(["BookstorePickup"], dorm as dorm)
+        : false;
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -109,8 +114,9 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                     <CardHeader>
                         <CardTitle>Delivery Details</CardTitle>
                         <CardDescription>
-                            Fill your delivery details for the residence you're
-                            staying at.
+                            {isBookstorePickup
+                                ? "Your order ships to the campus bookstore for pickup. Fill in your details below."
+                                : "Fill your delivery details for the residence you're staying at."}
                         </CardDescription>
                     </CardHeader>
 
@@ -190,7 +196,11 @@ export default function DeliveryForm({ nextTab, dorm }: DeliveryFormProps) {
                                 name={`shippingAddress.street`}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Residence Address</FormLabel>
+                                        <FormLabel>
+                                            {isBookstorePickup
+                                                ? "On-Campus Bookstore Pickup Address"
+                                                : "Residence Address"}
+                                        </FormLabel>
                                         <FormControl>
                                             <Input {...field} />
                                         </FormControl>
